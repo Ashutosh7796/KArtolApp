@@ -13,7 +13,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @OpenAPIDefinition(
 		info = @Info(
 				title = " REST API Documentation",
-				description = " REST API Documentation",
+				description = " REST API Documentation" ,
 				version = "v1",
 				contact = @Contact(
 						name = "A",
