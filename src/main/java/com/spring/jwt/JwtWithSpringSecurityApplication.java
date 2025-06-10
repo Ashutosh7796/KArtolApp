@@ -12,8 +12,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @OpenAPIDefinition(
 		info = @Info(
-				title = "AutoCarCare REST API Documentation",
-				description = "AutoCarCare REST API Documentation",
+				title = " REST API Documentation",
+				description = " REST API Documentation",
 				version = "v1",
 				contact = @Contact(
 						name = "A",

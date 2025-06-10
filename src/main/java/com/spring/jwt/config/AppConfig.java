@@ -136,6 +136,7 @@ public class AppConfig {
                     ).permitAll()
                     .requestMatchers("/user/**").permitAll()
                     .requestMatchers("/emailVerification/**").permitAll()
+                        .requestMatchers("/questions/**").permitAll()
                     .anyRequest().authenticated()
                 )
                 .authenticationManager(manager)
