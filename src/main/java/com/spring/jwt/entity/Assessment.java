@@ -1,32 +1,39 @@
 package com.spring.jwt.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import java.util.List;
+
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "assessment")
+@Builder
+@ToString(exclude = {"questions", "user"})
 public class Assessment {
-
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer assessmentId;
-    private Integer questionId;
-    private String question;
-    private String op1;
-    private String op2;
-    private String op3;
-    private String op4;
-    private String ans;
-    private String type;
-    private String sub;
-    private String level;
-    private String marks;
-    private String quastioncol;
+
+    @Column(name = "set_number")
+    private Long setNumber;
+
+    @Column(name = "assessment_date")
     private String assessmentDate;
-    private String time;
+
     private String duration;
-    private String teacherName;
+    private String startTime;
+    private String endTime;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user; // Teacher/creator
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "assessment_questions",
+            joinColumns = @JoinColumn(name = "assessment_id"),
+            inverseJoinColumns = @JoinColumn(name = "question_id")
+    )
+    private List<Question> questions;
 }

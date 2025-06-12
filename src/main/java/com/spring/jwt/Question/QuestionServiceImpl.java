@@ -1,12 +1,10 @@
 package com.spring.jwt.Question;
 
-
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.data.jpa.domain.Specification;
-
 import java.util.List;
 
 @Service
@@ -16,31 +14,40 @@ public class QuestionServiceImpl implements QuestionService {
     private QuestionRepository questionRepository;
 
     @Autowired
-     private UserRepository userRepository;
+    private UserRepository userRepository;
 
     @Override
     public Question createQuestion(Question question) {
-        Long userId = requireNonNullElseThrow(question.getUserId(), "userId must be provided.");
-        if (!userRepository.existsById(userId)) {
+        Integer userId = requireNonNullElseThrow(question.getUserId(), "userId must be provided.");
+        if (!userRepository.existsById(Long.valueOf(userId))) {
             throw new InvalidQuestionException("User with userId " + userId + " does not exist.");
         }
-        checkHasText(question.getSub(), "Subject (sub) must not be blank.");
+        checkHasText(question.getSubject(), "Subject must not be blank.");
         checkHasText(question.getType(), "Type must not be blank.");
         checkHasText(question.getLevel(), "Level must not be blank.");
         checkHasText(question.getMarks(), "Marks must not be blank.");
-        checkHasText(question.getQuestion(), "Question must not be blank.");
+        checkHasText(question.getQuestionText(), "Question text must not be blank.");
+
+        // Option fields checks (optional)
+        checkHasText(question.getOption1(), "Option1 must not be blank.");
+        checkHasText(question.getOption2(), "Option2 must not be blank.");
+        checkHasText(question.getOption3(), "Option3 must not be blank.");
+        checkHasText(question.getOption4(), "Option4 must not be blank.");
+        checkHasText(question.getAnswer(), "Answer must not be blank.");
 
         return questionRepository.save(question);
     }
-    private static Long requireNonNullElseThrow(Object value, String message) {
+
+    private static Integer requireNonNullElseThrow(Object value, String message) {
         if (value == null) {
             throw new InvalidQuestionException(message);
         }
-        if (value instanceof Long) return (Long) value;
-        if (value instanceof Integer) return ((Integer) value).longValue();
-        if (value instanceof String) return Long.valueOf((String) value);
+        if (value instanceof Integer) return (Integer) value;
+        if (value instanceof Long) return ((Long) value).intValue();
+        if (value instanceof String) return Integer.valueOf((String) value);
         throw new InvalidQuestionException("userId has invalid type.");
     }
+
     private static void checkHasText(String value, String message) {
         if (!org.springframework.util.StringUtils.hasText(value)) {
             throw new InvalidQuestionException(message);
@@ -63,27 +70,22 @@ public class QuestionServiceImpl implements QuestionService {
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> new QuestionNotFoundException("Question not found with id: " + id));
 
-        setIfNotBlank(updatedQuestion.getQuestion(), question::setQuestion);
+        setIfNotBlank(updatedQuestion.getQuestionText(), question::setQuestionText);
         setIfNotBlank(updatedQuestion.getType(), question::setType);
-        setIfNotBlank(updatedQuestion.getSub(), question::setSub);
+        setIfNotBlank(updatedQuestion.getSubject(), question::setSubject);
         setIfNotBlank(updatedQuestion.getLevel(), question::setLevel);
         setIfNotBlank(updatedQuestion.getMarks(), question::setMarks);
-        setIfNotNull(updatedQuestion.getOp1(), question::setOp1);
-        setIfNotNull(updatedQuestion.getOp2(), question::setOp2);
-        setIfNotNull(updatedQuestion.getOp3(), question::setOp3);
-        setIfNotNull(updatedQuestion.getOp4(), question::setOp4);
-        setIfNotNull(updatedQuestion.getAns(), question::setAns);
-        setIfNotNull(updatedQuestion.getQuestioncol(), question::setQuestioncol);
+        setIfNotBlank(updatedQuestion.getOption1(), question::setOption1);
+        setIfNotBlank(updatedQuestion.getOption2(), question::setOption2);
+        setIfNotBlank(updatedQuestion.getOption3(), question::setOption3);
+        setIfNotBlank(updatedQuestion.getOption4(), question::setOption4);
+        setIfNotBlank(updatedQuestion.getAnswer(), question::setAnswer);
 
         return questionRepository.save(question);
     }
+
     private void setIfNotBlank(String value, java.util.function.Consumer<String> setter) {
         if (value != null && !value.isBlank()) {
-            setter.accept(value);
-        }
-    }
-    private <T> void setIfNotNull(T value, java.util.function.Consumer<T> setter) {
-        if (value != null) {
             setter.accept(value);
         }
     }
@@ -105,15 +107,15 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public List<Question> getQuestionsBySubTypeLevelMarks(String sub, String type, String level, String marks) {
-        if (sub == null && type == null && level == null && marks == null) {
-            throw new InvalidQuestionException("At least one filter field (sub, type, level, marks) must be provided.");
+    public List<Question> getQuestionsBySubTypeLevelMarks(String subject, String type, String level, String marks) {
+        if (subject == null && type == null && level == null && marks == null) {
+            throw new InvalidQuestionException("At least one filter field (subject, type, level, marks) must be provided.");
         }
         Specification<Question> spec = Specification.where(null);
-        if (sub != null)   spec = spec.and((root, query, cb) -> cb.equal(root.get("sub"), sub));
-        if (type != null)  spec = spec.and((root, query, cb) -> cb.equal(root.get("type"), type));
-        if (level != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("level"), level));
-        if (marks != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("marks"), marks));
+        if (subject != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("subject"), subject));
+        if (type != null)    spec = spec.and((root, query, cb) -> cb.equal(root.get("type"), type));
+        if (level != null)   spec = spec.and((root, query, cb) -> cb.equal(root.get("level"), level));
+        if (marks != null)   spec = spec.and((root, query, cb) -> cb.equal(root.get("marks"), marks));
 
         List<Question> questions = questionRepository.findAll(spec);
         if (questions == null || questions.isEmpty()) {
