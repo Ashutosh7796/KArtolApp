@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.util.List;
 
 @RestController
@@ -58,7 +57,7 @@ public class QuestionController {
         }
     }
 
-    @DeleteMapping("delete")
+    @DeleteMapping("/delete")
     public ResponseEntity<ResponseDto<Void>> deleteQuestion(@RequestParam Integer id) {
         try {
             questionService.deleteQuestion(id);
@@ -80,13 +79,13 @@ public class QuestionController {
 
     @GetMapping("/search")
     public ResponseEntity<ResponseDto<List<Question>>> getQuestionsBySubTypeLevelMarks(
-            @RequestParam(required = false) String sub,
+            @RequestParam(required = false) String subject,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String level,
             @RequestParam(required = false) String marks
     ) {
         try {
-            List<Question> questions = questionService.getQuestionsBySubTypeLevelMarks(sub, type, level, marks);
+            List<Question> questions = questionService.getQuestionsBySubTypeLevelMarks(subject, type, level, marks);
             return ResponseEntity.ok(ResponseDto.success("Questions fetched by criteria", questions));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDto.error("Failed to fetch questions by criteria", e.getMessage()));
