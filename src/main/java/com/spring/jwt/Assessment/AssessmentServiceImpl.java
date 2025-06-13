@@ -5,7 +5,7 @@ import com.spring.jwt.exception.UserNotFoundExceptions;
 import com.spring.jwt.repository.UserRepository;
 import com.spring.jwt.Question.QuestionRepository;
 import com.spring.jwt.Question.QuestionNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -13,16 +13,23 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
+@NoArgsConstructor
 public class AssessmentServiceImpl implements AssessmentService {
 
-    @Autowired
-    private AssessmentRepository assessmentRepository;
+//    @Autowired
+    private  AssessmentRepository assessmentRepository;
 
-    @Autowired
+//    @Autowired
     private QuestionRepository questionRepository;
 
-    @Autowired
+//    @Autowired
     private UserRepository userRepository;
+
+    public AssessmentServiceImpl(AssessmentRepository assessmentRepository, QuestionRepository questionRepository, UserRepository userRepository) {
+        this.assessmentRepository = assessmentRepository;
+        this.questionRepository = questionRepository;
+        this.userRepository = userRepository;
+    }
 
     // Entity to DTO mapper
     private AssessmentDTO entityToDto(Assessment entity) {
