@@ -1,7 +1,6 @@
 package com.spring.jwt.entity;
 
-import com.spring.jwt.utils.encrypt.AttributeEncryptor;
-import com.spring.jwt.utils.encrypt.EncryptedField;
+import com.spring.jwt.utils.StringEncryptConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -32,23 +31,20 @@ public class User {
     @Column(name = "email", nullable = false, length = 250, unique = true)
     private String email;
 
-    @Column(name = "first_name", length = 512)
-    @Convert(converter = AttributeEncryptor.class)
-    @EncryptedField
+    @Convert(converter = StringEncryptConverter.class)
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
-    @Column(name = "last_name", length = 512)
-    @Convert(converter = AttributeEncryptor.class)
-    @EncryptedField
+    @Convert(converter = StringEncryptConverter.class)
+    @Column(name = "last_name", nullable = false)
     private String lastName;
 
     @Column(name = "reset_password_token")
     private String resetPasswordToken;
 
-    @Column(name = "address", length = 1024)
-    @Convert(converter = AttributeEncryptor.class)
-    @EncryptedField
-    private String Address;
+    @Convert(converter = StringEncryptConverter.class)
+    @Column(name = "address")
+    private String address;
 
     @Column(name = "mobile_number")
     private Long mobileNumber;

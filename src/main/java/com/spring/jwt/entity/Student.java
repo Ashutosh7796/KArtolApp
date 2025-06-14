@@ -24,4 +24,5 @@ public class Student {
     private String studentClass;
 
     private Integer userId;
+
 }

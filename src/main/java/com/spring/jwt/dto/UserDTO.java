@@ -6,6 +6,8 @@ import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 @Data
 @AllArgsConstructor
@@ -25,7 +27,8 @@ public class UserDTO {
     @Schema(
             description = "Address of the customer", example = "A/P Pune Main Street Block no 8"
     )
-    private String Address;
+    private String address;
+
     @Schema(
             description = "First Name of the customer", example = "John"
     )
@@ -46,12 +49,33 @@ public class UserDTO {
     )
     private String role;
 
+    private String name;
+    private String dateOfBirth;
+    private String studentcol;
+    private String studentcol1;
+    private String studentClass;
+
     public UserDTO(User user) {
         this.email = user.getEmail();
-        this.Address = user.getAddress();
+        this.address = user.getAddress();
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.mobileNumber = user.getMobileNumber();
     }
 
+    // Static method to create DTO from User entity
+    public static UserDTO fromEntity(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        UserDTO dto = new UserDTO();
+        dto.setEmail(user.getEmail());
+        dto.setMobileNumber(user.getMobileNumber());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
+        dto.setAddress(user.getAddress());
+        
+        return dto;
+    }
 }

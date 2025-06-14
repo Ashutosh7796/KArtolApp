@@ -2,12 +2,17 @@ package com.spring.jwt.jwt;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 @Data
+@Component
 public class JwtConfig {
 
     @Value("${jwt.url:/jwt/login}")
     private String url;
+
+    @Value("${jwt.refresh-url:/jwt/refresh}")
+    private String refreshUrl;
 
     @Value("${jwt.header:Authorization}")
     private String header;
@@ -27,10 +32,10 @@ public class JwtConfig {
     @Value("${jwt.secret:3979244226452948404D6251655468576D5A7134743777217A25432A462D4A61}")
     private String secret;
 
-    @Value("${jwt.issuer:autocarcare-api}")
+    @Value("${jwt.issuer:Ashutosh}")
     private String issuer;
 
-    @Value("${jwt.audience:autocarcare-clients}")
+    @Value("${jwt.audience:Ashutosh-client Side}")
     private String audience;
 
     @Value("${jwt.device-fingerprinting-enabled:true}")

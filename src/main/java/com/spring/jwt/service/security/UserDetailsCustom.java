@@ -1,6 +1,6 @@
 package com.spring.jwt.service.security;
 
-import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,18 +9,47 @@ import java.util.Collection;
 import java.util.List;
 
 @NoArgsConstructor
-@AllArgsConstructor
+@Data
 public class UserDetailsCustom implements UserDetails {
 
     private String username;
-
     private String password;
-
     private String firstName;
-
     private Integer userId;
-
+    private Integer studentId;
+    private Integer teacherId;
+    private Integer parentId;
     private List<GrantedAuthority> authorities;
+    
+    // Constructor with all fields
+    public UserDetailsCustom(
+            String username, 
+            String password, 
+            String firstName, 
+            Integer userId, 
+            Integer studentId,
+            Integer teacherId,
+            Integer parentId,
+            List<GrantedAuthority> authorities) {
+        this.username = username;
+        this.password = password;
+        this.firstName = firstName;
+        this.userId = userId;
+        this.studentId = studentId;
+        this.teacherId = teacherId;
+        this.parentId = parentId;
+        this.authorities = authorities;
+    }
+    
+    // Constructor without role-specific IDs for backward compatibility
+    public UserDetailsCustom(
+            String username, 
+            String password, 
+            String firstName, 
+            Integer userId, 
+            List<GrantedAuthority> authorities) {
+        this(username, password, firstName, userId, null, null, null, authorities);
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -44,8 +73,6 @@ public class UserDetailsCustom implements UserDetails {
     public Integer getUserId() {
         return userId;
     }
-
-
 
     @Override
     public boolean isAccountNonExpired() {

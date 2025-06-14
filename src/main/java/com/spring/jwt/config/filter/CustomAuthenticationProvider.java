@@ -33,8 +33,32 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         log.info("Start actual authentication");
+        
+        // Handle refresh token authentication
+        if (authentication instanceof JwtRefreshTokenFilter.RefreshTokenAuthentication) {
+            // If it's already authenticated, just return it
+            if (authentication.isAuthenticated()) {
+                return authentication;
+            }
+            
+            // Otherwise, validate and authenticate
+            String username = authentication.getName();
+            User user;
+            try {
+                user = userRepository.findByEmail(username);
+            } catch (Exception e) {
+                throw new BaseException(String.valueOf(HttpStatus.UNAUTHORIZED.value()), "User not found");
+            }
+            
+            if (user == null) {
+                throw new BadCredentialsException("Invalid refresh token");
+            }
+            
+            return authentication;
+        }
+        
+        // Regular username/password authentication
         final String username = authentication.getName();
-
         final String password = authentication.getCredentials().toString();
 
         User user;
@@ -76,7 +100,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return authentication.equals(UsernamePasswordAuthenticationToken.class);
+        return authentication.equals(UsernamePasswordAuthenticationToken.class) ||
+               authentication.equals(JwtRefreshTokenFilter.RefreshTokenAuthentication.class);
     }
 
 }

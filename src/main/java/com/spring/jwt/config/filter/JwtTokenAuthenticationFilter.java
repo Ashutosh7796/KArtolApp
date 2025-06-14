@@ -2,6 +2,8 @@ package com.spring.jwt.config.filter;
 
 import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
+import com.spring.jwt.service.security.UserDetailsCustom;
+import com.spring.jwt.service.security.UserDetailsServiceCustom;
 import com.spring.jwt.utils.BaseResponseDTO;
 import com.spring.jwt.utils.HelperUtils;
 import io.jsonwebtoken.Claims;
@@ -31,6 +33,7 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
 
     private final JwtConfig jwtConfig;
     private final JwtService jwtService;
+    private final UserDetailsServiceCustom userDetailsService;
     private boolean setauthreq = true;
 
     @Override
@@ -43,88 +46,52 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-
-        String requestUri = request.getRequestURI();
-
-        // Skip authentication for excluded paths
-        if (requestUri.contains("/api/jwtUnAuthorize/block") || 
-            requestUri.contains("/api/jwtUnAuthorize/Exclude")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (!setauthreq) {
-            handleAccessBlocked(response);
-            return;
-        }
-
-        String accessToken = request.getHeader(jwtConfig.getHeader());
-
-        log.debug("Processing request: {}", requestUri);
-
-        if (!ObjectUtils.isEmpty(accessToken) && accessToken.startsWith(jwtConfig.getPrefix() + " ")) {
-            accessToken = accessToken.substring((jwtConfig.getPrefix() + " ").length());
-
-            try {
-                // Generate device fingerprint if enabled
-                String deviceFingerprint = null;
-                if (jwtConfig.isDeviceFingerprintingEnabled()) {
-                    deviceFingerprint = jwtService.generateDeviceFingerprint(request);
-                    log.debug("Generated device fingerprint: {}", deviceFingerprint != null ? 
-                            deviceFingerprint.substring(0, 8) + "..." : "none");
-                }
-                
-                // Skip device fingerprint validation for refresh tokens
-                boolean isRefreshToken = jwtService.isRefreshToken(accessToken);
-                
-                // Check if token is valid (including device fingerprint check if not a refresh token)
-                boolean tokenValid = isRefreshToken ? 
-                        jwtService.isValidToken(accessToken) : 
-                        jwtService.isValidToken(accessToken, deviceFingerprint);
-
-                if (tokenValid) {
-                    Claims claims = jwtService.extractClaims(accessToken);
-                    String username = claims.getSubject();
-                    String tokenType = claims.get("type", String.class);
-                    
-                    // Refresh tokens should not grant access to protected resources
-                    if ("refresh".equals(tokenType)) {
-                        log.warn("Attempt to use refresh token for resource access: {}", requestUri);
-                        handleInvalidTokenType(response);
-                        return;
-                    }
-                    
-                    List<String> authorities = claims.get("authorities", List.class);
-
-                    if (StringUtils.hasText(username)) {
-                        UsernamePasswordAuthenticationToken auth =
-                                new UsernamePasswordAuthenticationToken(
-                                        username,
-                                        null,
-                                        authorities.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())
-                                );
-                        
-                        // Add device fingerprint to authentication details if available
-                        if (deviceFingerprint != null) {
-                            auth.setDetails(deviceFingerprint);
-                        }
-                        
-                        SecurityContextHolder.getContext().setAuthentication(auth);
-                        log.debug("User authenticated: {}", username);
-                    }
-                } else {
-                    log.warn("Invalid token for path: {}", requestUri);
-                    handleInvalidToken(response);
+        log.info("Start do filter");
+        
+        try {
+            String token = getJwtFromRequest(request);
+            
+            if (token != null) {
+                // Skip processing if it's a refresh token
+                if (jwtService.isRefreshToken(token)) {
+                    log.debug("Skipping refresh token in authentication filter");
+                    filterChain.doFilter(request, response);
                     return;
                 }
-            } catch (Exception e) {
-                log.error("Authentication error for path {}: {}", requestUri, e.getMessage());
-                handleAuthenticationException(response, e);
-                return;
+                
+                // Validate token
+                if (jwtService.isValidToken(token)) {
+                    // Extract claims
+                    Claims claims = jwtService.extractClaims(token);
+                    String username = claims.getSubject();
+                    
+                    // Load user details
+                    UserDetailsCustom userDetails = (UserDetailsCustom) userDetailsService.loadUserByUsername(username);
+                    
+                    // Create authentication token
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    
+                    // Set authentication in context
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
+            
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            log.error("Could not set user authentication in security context", e);
+            filterChain.doFilter(request, response);
         }
+        
+        log.info("End do filter");
+    }
 
-        filterChain.doFilter(request, response);
+    private String getJwtFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader(jwtConfig.getHeader());
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(jwtConfig.getPrefix())) {
+            return bearerToken.substring(jwtConfig.getPrefix().length() + 1);
+        }
+        return null;
     }
 
     private void handleAccessBlocked(HttpServletResponse response) throws IOException {

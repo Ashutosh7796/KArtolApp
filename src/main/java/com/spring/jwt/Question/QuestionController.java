@@ -1,7 +1,7 @@
 package com.spring.jwt.Question;
 
-import com.spring.jwt.dto.ResponseDto;
 import com.spring.jwt.entity.Question;
+import com.spring.jwt.utils.GenericResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,69 +17,69 @@ public class QuestionController {
     private QuestionService questionService;
 
     @PostMapping("/add")
-    public ResponseEntity<ResponseDto<Question>> createQuestion(@RequestBody Question question) {
+    public ResponseEntity<GenericResponseDto<Question>> createQuestion(@RequestBody Question question) {
         try {
             Question created = questionService.createQuestion(question);
-            return ResponseEntity.ok(ResponseDto.success("Question created successfully", created));
+            return ResponseEntity.ok(GenericResponseDto.success("Question created successfully", created));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDto.error("Failed to create question", e.getMessage()));
+            return ResponseEntity.badRequest().body(GenericResponseDto.error("Failed to create question", e.getMessage()));
         }
     }
 
     @GetMapping("/getById")
-    public ResponseEntity<ResponseDto<Question>> getQuestionById(@RequestParam Integer id) {
+    public ResponseEntity<GenericResponseDto<Question>> getQuestionById(@RequestParam Integer id) {
         try {
             Question question = questionService.getQuestionById(id);
-            return ResponseEntity.ok(ResponseDto.success("Question fetched successfully", question));
+            return ResponseEntity.ok(GenericResponseDto.success("Question fetched successfully", question));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDto.error("Failed to fetch question", e.getMessage()));
+            return ResponseEntity.badRequest().body(GenericResponseDto.error("Failed to fetch question", e.getMessage()));
         }
     }
 
     @GetMapping("/all")
-    public ResponseEntity<ResponseDto<List<Question>>> getAllQuestions() {
+    public ResponseEntity<GenericResponseDto<List<Question>>> getAllQuestions() {
         try {
             List<Question> questions = questionService.getAllQuestions();
-            return ResponseEntity.ok(ResponseDto.success("All questions fetched successfully", questions));
+            return ResponseEntity.ok(GenericResponseDto.success("All questions fetched successfully", questions));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDto.error("Failed to fetch questions", e.getMessage()));
+            return ResponseEntity.badRequest().body(GenericResponseDto.error("Failed to fetch questions", e.getMessage()));
         }
     }
 
     @PatchMapping("/update")
-    public ResponseEntity<ResponseDto<Question>> updateQuestion(
+    public ResponseEntity<GenericResponseDto<Question>> updateQuestion(
             @RequestParam Integer id,
             @RequestBody Question updatedQuestion) {
         try {
             Question updated = questionService.updateQuestion(id, updatedQuestion);
-            return ResponseEntity.ok(ResponseDto.success("Question updated successfully", updated));
+            return ResponseEntity.ok(GenericResponseDto.success("Question updated successfully", updated));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDto.error("Failed to update question", e.getMessage()));
+            return ResponseEntity.badRequest().body(GenericResponseDto.error("Failed to update question", e.getMessage()));
         }
     }
 
     @DeleteMapping("delete")
-    public ResponseEntity<ResponseDto<Void>> deleteQuestion(@RequestParam Integer id) {
+    public ResponseEntity<GenericResponseDto<Void>> deleteQuestion(@RequestParam Integer id) {
         try {
             questionService.deleteQuestion(id);
-            return ResponseEntity.ok(ResponseDto.success("Question deleted successfully", null));
+            return ResponseEntity.ok(GenericResponseDto.success("Question deleted successfully", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDto.error("Failed to delete question", e.getMessage()));
+            return ResponseEntity.badRequest().body(GenericResponseDto.error("Failed to delete question", e.getMessage()));
         }
     }
 
     @GetMapping("/user")
-    public ResponseEntity<ResponseDto<List<Question>>> getQuestionsByUserId(@RequestParam Integer userId) {
+    public ResponseEntity<GenericResponseDto<List<Question>>> getQuestionsByUserId(@RequestParam Integer userId) {
         try {
             List<Question> questions = questionService.getQuestionsByUserId(userId);
-            return ResponseEntity.ok(ResponseDto.success("Questions fetched for userId " + userId, questions));
+            return ResponseEntity.ok(GenericResponseDto.success("Questions fetched for userId " + userId, questions));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDto.error("Failed to fetch questions by userId", e.getMessage()));
+            return ResponseEntity.badRequest().body(GenericResponseDto.error("Failed to fetch questions by userId", e.getMessage()));
         }
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ResponseDto<List<Question>>> getQuestionsBySubTypeLevelMarks(
+    public ResponseEntity<GenericResponseDto<List<Question>>> getQuestionsBySubTypeLevelMarks(
             @RequestParam(required = false) String sub,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String level,
@@ -87,9 +87,9 @@ public class QuestionController {
     ) {
         try {
             List<Question> questions = questionService.getQuestionsBySubTypeLevelMarks(sub, type, level, marks);
-            return ResponseEntity.ok(ResponseDto.success("Questions fetched by criteria", questions));
+            return ResponseEntity.ok(GenericResponseDto.success("Questions fetched by criteria", questions));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDto.error("Failed to fetch questions by criteria", e.getMessage()));
+            return ResponseEntity.badRequest().body(GenericResponseDto.error("Failed to fetch questions by criteria", e.getMessage()));
         }
     }
 }

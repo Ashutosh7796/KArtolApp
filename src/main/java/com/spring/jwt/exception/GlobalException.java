@@ -34,15 +34,24 @@ import java.util.stream.Collectors;
 public class GlobalException extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(BaseException.class)
-    public ResponseEntity<BaseResponseDTO> handleBaseException(BaseException e){
+    public ResponseEntity<BaseResponseDTO> handleBaseException(BaseException e) {
         log.error("Base exception occurred: {}", e.getMessage());
+
         BaseResponseDTO response = BaseResponseDTO.builder()
                 .code(e.getCode())
                 .message(e.getMessage())
                 .build();
 
-        return ResponseEntity.ok(response);
+        HttpStatus status;
+        try {
+            status = HttpStatus.valueOf(Integer.parseInt(e.getCode()));
+        } catch (Exception ex) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
+        return new ResponseEntity<>(response, status);
     }
+
 
     @ExceptionHandler(UserNotFoundExceptions.class)
     public ResponseEntity<ErrorResponseDto> handleUserNotFoundException(UserNotFoundExceptions exception,

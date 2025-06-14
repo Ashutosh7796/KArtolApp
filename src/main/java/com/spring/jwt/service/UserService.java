@@ -2,6 +2,7 @@ package com.spring.jwt.service;
 
 import com.spring.jwt.dto.ResetPassword;
 import com.spring.jwt.dto.UserDTO;
+import com.spring.jwt.dto.UserProfileDTO;
 import com.spring.jwt.dto.UserUpdateRequest;
 import com.spring.jwt.exception.UserNotFoundExceptions;
 import com.spring.jwt.utils.BaseResponseDTO;
@@ -28,7 +29,10 @@ public interface UserService {
     Page<UserDTO> getAllUsers(int pageNo, int pageSize);
 
     UserDTO getUserById(Long id);
+    
+    UserProfileDTO getUserProfileById(Long id);
+    
+    UserProfileDTO getCurrentUserProfile();
 
     UserDTO updateUser(Long id, UserUpdateRequest request);
-
 }
