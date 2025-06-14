@@ -4,7 +4,10 @@ import com.spring.jwt.config.filter.CustomAuthenticationProvider;
 import com.spring.jwt.config.filter.JwtRefreshTokenFilter;
 import com.spring.jwt.config.filter.JwtTokenAuthenticationFilter;
 import com.spring.jwt.config.filter.JwtUsernamePasswordAuthenticationFilter;
+import com.spring.jwt.config.filter.RateLimitingFilter;
 import com.spring.jwt.config.filter.SecurityHeadersFilter;
+import com.spring.jwt.config.filter.SqlInjectionFilter;
+import com.spring.jwt.config.filter.XssFilter;
 import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
 import com.spring.jwt.repository.UserRepository;
@@ -28,9 +31,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.ForwardedHeaderFilter;
+import org.springframework.http.HttpMethod;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,6 +64,15 @@ public class AppConfig {
     
     @Autowired
     private SecurityHeadersFilter securityHeadersFilter;
+    
+    @Autowired
+    private XssFilter xssFilter;
+    
+    @Autowired
+    private SqlInjectionFilter sqlInjectionFilter;
+    
+    @Autowired
+    private RateLimitingFilter rateLimitingFilter;
     
     @Value("${app.url.frontend:http://localhost:5173}")
     private String frontendUrl;
@@ -80,15 +99,46 @@ public class AppConfig {
         return new JwtRefreshTokenFilter(authenticationManager, jwtConfig, jwtService, userDetailsService);
     }
 
+    @Bean
+    public ForwardedHeaderFilter forwardedHeaderFilter() {
+        return new ForwardedHeaderFilter();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Disable CSRF and CORS
-        http.csrf(AbstractHttpConfigurer::disable)
-                .cors(Customizer.withDefaults());
+        // Configure CSRF - use CSRF protection for state-changing operations with cookie-based tokens
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        // Set the name of the attribute the CsrfToken will be populated on
+        requestHandler.setCsrfRequestAttributeName("_csrf");
+        
+        http.csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(requestHandler)
+                .ignoringRequestMatchers(
+                    "/api/auth/**", 
+                    jwtConfig.getUrl(), 
+                    jwtConfig.getRefreshUrl()
+                )
+            );
+        
+        // Configure CORS with credentials support
+        http.cors(Customizer.withDefaults());
 
         // Set session management to stateless
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        // Configure security headers
+        http.headers(headers -> headers
+                .xssProtection(xss -> xss
+                    .headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'"))
+                .frameOptions(frame -> frame.deny())
+                .referrerPolicy(referrer -> referrer
+                    .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                .permissionsPolicy(permissions -> permissions
+                    .policy("camera=(), microphone=(), geolocation=()"))
+            );
 
         // Set permissions on endpoints
         http.authorizeHttpRequests(authorize -> authorize
@@ -98,6 +148,10 @@ public class AppConfig {
                 .requestMatchers(jwtConfig.getRefreshUrl()).permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/test/**").permitAll()
+                // Restrict HTTP methods for sensitive operations
+                .requestMatchers(HttpMethod.POST, "/api/users/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/users/**").authenticated()
                 // Protected endpoints
                 .anyRequest().authenticated());
 
@@ -106,7 +160,10 @@ public class AppConfig {
         JwtTokenAuthenticationFilter jwtTokenAuthenticationFilter = new JwtTokenAuthenticationFilter(jwtConfig, jwtService, userDetailsService());
         JwtRefreshTokenFilter jwtRefreshTokenFilter = new JwtRefreshTokenFilter(authenticationManager(http), jwtConfig, jwtService, userDetailsService());
         
-        http.addFilterBefore(securityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
+        http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(xssFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(sqlInjectionFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(securityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterAfter(jwtRefreshTokenFilter, JwtUsernamePasswordAuthenticationFilter.class)
             .addFilterAfter(jwtTokenAuthenticationFilter, JwtRefreshTokenFilter.class);
@@ -124,9 +181,9 @@ public class AppConfig {
             public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                 CorsConfiguration config = new CorsConfiguration();
                 config.setAllowedOrigins(allowedOrigins);
-                config.setAllowedMethods(Collections.singletonList("*"));
-                config.setAllowCredentials(true);
-                config.setAllowedHeaders(Collections.singletonList("*"));
+                config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                config.setAllowCredentials(true); // Important for cookies
+                config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
                 config.setExposedHeaders(Arrays.asList("Authorization"));
                 config.setMaxAge(3600L);
                 return config;

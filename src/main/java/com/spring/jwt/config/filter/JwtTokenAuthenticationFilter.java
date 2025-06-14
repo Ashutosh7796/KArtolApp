@@ -9,6 +9,7 @@ import com.spring.jwt.utils.HelperUtils;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,6 +38,11 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
     private final JwtService jwtService;
     private final UserDetailsServiceCustom userDetailsService;
     private boolean setauthreq = true;
+    
+    // Cookie name for refresh token
+    private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
+    // Cookie name for access token (if needed in the future)
+    private static final String ACCESS_TOKEN_COOKIE_NAME = "access_token";
 
     @Override
     public int getOrder() {
@@ -87,10 +95,36 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {
+        // First check Authorization header
         String bearerToken = request.getHeader(jwtConfig.getHeader());
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(jwtConfig.getPrefix())) {
             return bearerToken.substring(jwtConfig.getPrefix().length() + 1);
         }
+        
+        // If not in header, check cookies
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            // First try access token cookie
+            Optional<Cookie> accessTokenCookie = Arrays.stream(cookies)
+                .filter(cookie -> ACCESS_TOKEN_COOKIE_NAME.equals(cookie.getName()))
+                .findFirst();
+                
+            if (accessTokenCookie.isPresent()) {
+                log.debug("Found access token in cookie");
+                return accessTokenCookie.get().getValue();
+            }
+            
+            // Then try refresh token cookie
+            Optional<Cookie> refreshTokenCookie = Arrays.stream(cookies)
+                .filter(cookie -> REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName()))
+                .findFirst();
+                
+            if (refreshTokenCookie.isPresent()) {
+                log.debug("Found refresh token in cookie");
+                return refreshTokenCookie.get().getValue();
+            }
+        }
+        
         return null;
     }
 
