@@ -80,6 +80,7 @@ public class AppConfig {
         return new JwtRefreshTokenFilter(authenticationManager, jwtConfig, jwtService, userDetailsService);
     }
 
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // Disable CSRF and CORS
