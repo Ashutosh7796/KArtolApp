@@ -18,8 +18,7 @@ public class SecurityHeadersFilter implements Filter, Ordered {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
-        
-        // Add Referrer-Policy header
+
         httpResponse.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
         
         // Add Content-Security-Policy header to prevent XSS attacks
@@ -44,24 +43,21 @@ public class SecurityHeadersFilter implements Filter, Ordered {
         // Add Cache-Control header to prevent caching of sensitive information
         httpResponse.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         httpResponse.setHeader("Pragma", "no-cache");
-        
-        // Continue with the filter chain
+
         chain.doFilter(request, response);
     }
 
     @Override
     public void init(FilterConfig filterConfig) {
-        // No initialization needed
+
     }
 
     @Override
     public void destroy() {
-        // No cleanup needed
     }
     
     @Override
     public int getOrder() {
-        // High priority - run early in the filter chain
         return Ordered.HIGHEST_PRECEDENCE + 50;
     }
 } 

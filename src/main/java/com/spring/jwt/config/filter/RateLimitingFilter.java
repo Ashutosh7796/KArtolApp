@@ -79,19 +79,15 @@ public class RateLimitingFilter implements Filter, Ordered {
      */
     private boolean isRateLimitExceeded(String clientIp) {
         long now = System.currentTimeMillis();
-        
-        // Get or create counter for this IP
+
         RequestCounter counter = requestCounts.computeIfAbsent(clientIp, k -> new RequestCounter());
-        
-        // Check if window has expired and reset if needed
+
         if (now - counter.getWindowStart() > TimeUnit.SECONDS.toMillis(WINDOW_SIZE_IN_SECONDS)) {
             counter.reset(now);
         }
-        
-        // Increment request count
+
         counter.incrementCount();
-        
-        // Check if count exceeds limit
+
         return counter.getCount() > MAX_REQUESTS;
     }
     
@@ -101,7 +97,7 @@ public class RateLimitingFilter implements Filter, Ordered {
     private String getClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            // Get the first IP if multiple are present
+
             return xForwardedFor.split(",")[0].trim();
         }
         return request.getRemoteAddr();

@@ -28,17 +28,15 @@ public class XssFilter implements Filter, Ordered {
 
     @Override
     public void init(FilterConfig filterConfig) {
-        // No initialization needed
+
     }
 
     @Override
     public void destroy() {
-        // No cleanup needed
     }
     
     @Override
     public int getOrder() {
-        // Run before other filters
         return Ordered.HIGHEST_PRECEDENCE + 40;
     }
     

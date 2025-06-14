@@ -33,15 +33,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         log.info("Start actual authentication");
-        
-        // Handle refresh token authentication
+
         if (authentication instanceof JwtRefreshTokenFilter.RefreshTokenAuthentication) {
-            // If it's already authenticated, just return it
+
             if (authentication.isAuthenticated()) {
                 return authentication;
             }
-            
-            // Otherwise, validate and authenticate
+
             String username = authentication.getName();
             User user;
             try {
@@ -56,8 +54,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             
             return authentication;
         }
-        
-        // Regular username/password authentication
+
         final String username = authentication.getName();
         final String password = authentication.getCredentials().toString();
 

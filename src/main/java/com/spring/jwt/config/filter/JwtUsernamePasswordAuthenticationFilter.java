@@ -43,8 +43,7 @@ public class JwtUsernamePasswordAuthenticationFilter extends AbstractAuthenticat
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
     private final JwtConfig jwtConfig;
-    
-    // Cookie name for refresh token
+
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 
     public JwtUsernamePasswordAuthenticationFilter(AuthenticationManager manager,
@@ -61,7 +60,6 @@ public class JwtUsernamePasswordAuthenticationFilter extends AbstractAuthenticat
 
     @Override
     public int getOrder() {
-        // Use a standard value for the filter order (same as UsernamePasswordAuthenticationFilter)
         return Ordered.LOWEST_PRECEDENCE - 130;
     }
 
@@ -114,12 +112,9 @@ public class JwtUsernamePasswordAuthenticationFilter extends AbstractAuthenticat
             // Create secure HttpOnly cookie for refresh token
             Cookie refreshTokenCookie = createRefreshTokenCookie(refreshToken);
             response.addCookie(refreshTokenCookie);
-            
-            // Create response object with only access token
+
             Map<String, String> tokens = new HashMap<>();
             tokens.put("accessToken", accessToken);
-            // Don't include refresh token in response body anymore
-            // tokens.put("refreshToken", refreshToken);
             
             String json = HelperUtils.JSON_WRITER.writeValueAsString(tokens);
             response.setContentType("application/json; charset=UTF-8");
@@ -137,13 +132,11 @@ public class JwtUsernamePasswordAuthenticationFilter extends AbstractAuthenticat
     private Cookie createRefreshTokenCookie(String refreshToken) {
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true); // Only send over HTTPS
-        cookie.setPath("/"); // Make cookie available for all paths
-        
-        // Calculate max age from refresh token expiration (in seconds)
+        cookie.setSecure(true);
+        cookie.setPath("/");
+
         cookie.setMaxAge(jwtConfig.getRefreshExpiration());
-        
-        // Add SameSite attribute
+
         cookie.setAttribute("SameSite", "Strict");
         
         return cookie;

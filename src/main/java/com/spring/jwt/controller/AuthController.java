@@ -28,8 +28,7 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     private final JwtConfig jwtConfig;
-    
-    // Cookie name for refresh token
+
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
     
     /**
@@ -38,16 +37,14 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<BaseResponseDTO> logout(HttpServletRequest request, HttpServletResponse response) {
         log.info("Processing logout request");
-        
-        // Clear the refresh token cookie
+
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, "");
-        cookie.setMaxAge(0); // Expire immediately
-        cookie.setPath("/"); // Must match the path used when setting the cookie
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
         response.addCookie(cookie);
-        
-        // Clear security context
+
         SecurityContextHolder.clearContext();
         
         BaseResponseDTO responseDTO = new BaseResponseDTO();
@@ -72,7 +69,6 @@ public class AuthController {
                 .collect(Collectors.toMap(
                     Cookie::getName,
                     cookie -> {
-                        // Mask the value for security
                         String value = cookie.getValue();
                         if (value.length() > 10) {
                             return value.substring(0, 5) + "..." + value.substring(value.length() - 5);
@@ -82,8 +78,7 @@ public class AuthController {
                 ));
             
             response.put("cookies", cookieDetails);
-            
-            // Check specifically for refresh token
+
             boolean hasRefreshToken = Arrays.stream(cookies)
                 .anyMatch(cookie -> REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName()));
             
@@ -93,8 +88,7 @@ public class AuthController {
             response.put("cookies", Map.of());
             response.put("hasRefreshToken", false);
         }
-        
-        // Also check headers
+
         Map<String, String> headers = new HashMap<>();
         request.getHeaderNames().asIterator().forEachRemaining(name -> 
             headers.put(name, request.getHeader(name))

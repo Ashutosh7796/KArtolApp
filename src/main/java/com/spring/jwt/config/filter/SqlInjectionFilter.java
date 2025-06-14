@@ -25,12 +25,11 @@ public class SqlInjectionFilter implements Filter, Ordered {
 
     @Override
     public void init(FilterConfig filterConfig) {
-        // No initialization needed
+
     }
 
     @Override
     public void destroy() {
-        // No cleanup needed
     }
     
     @Override

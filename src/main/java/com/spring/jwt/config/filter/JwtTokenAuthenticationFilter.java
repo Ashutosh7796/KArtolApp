@@ -60,27 +60,22 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
             String token = getJwtFromRequest(request);
             
             if (token != null) {
-                // Skip processing if it's a refresh token
                 if (jwtService.isRefreshToken(token)) {
                     log.debug("Skipping refresh token in authentication filter");
                     filterChain.doFilter(request, response);
                     return;
                 }
-                
-                // Validate token
+
                 if (jwtService.isValidToken(token)) {
-                    // Extract claims
+
                     Claims claims = jwtService.extractClaims(token);
                     String username = claims.getSubject();
-                    
-                    // Load user details
+
                     UserDetailsCustom userDetails = (UserDetailsCustom) userDetailsService.loadUserByUsername(username);
-                    
-                    // Create authentication token
+
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
-                    
-                    // Set authentication in context
+
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
@@ -95,16 +90,14 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {
-        // First check Authorization header
+
         String bearerToken = request.getHeader(jwtConfig.getHeader());
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(jwtConfig.getPrefix())) {
             return bearerToken.substring(jwtConfig.getPrefix().length() + 1);
         }
-        
-        // If not in header, check cookies
+
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
-            // First try access token cookie
             Optional<Cookie> accessTokenCookie = Arrays.stream(cookies)
                 .filter(cookie -> ACCESS_TOKEN_COOKIE_NAME.equals(cookie.getName()))
                 .findFirst();
@@ -113,8 +106,7 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
                 log.debug("Found access token in cookie");
                 return accessTokenCookie.get().getValue();
             }
-            
-            // Then try refresh token cookie
+
             Optional<Cookie> refreshTokenCookie = Arrays.stream(cookies)
                 .filter(cookie -> REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName()))
                 .findFirst();
