@@ -156,7 +156,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             }
             
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-                return reader.lines().collect(Collectors.joining(System.lineSeparator()));
+            return reader.lines().collect(Collectors.joining(System.lineSeparator()));
             }
         } catch (Exception e) {
             log.error("Error loading email template", e);

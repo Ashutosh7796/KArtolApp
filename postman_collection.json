@@ -1,0 +1,487 @@
+{
+  "info": {
+    "_postman_id": "8e7a5b3a-0e2b-4b1c-9f5c-d8f5a9b7c6d5",
+    "name": "AutoCarCare API",
+    "description": "API collection for testing AutoCarCare application with JWT authentication and role-based user management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"user@example.com\",\n    \"password\": \"Password123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login to get JWT token"
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "email",
+                  "value": "{{email}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/user/forgot-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "forgot-password"
+              ]
+            },
+            "description": "Request password reset link"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/reset-password?token={{reset_token}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "reset-password"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{reset_token}}"
+                }
+              ]
+            },
+            "description": "Get reset password page"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"{{reset_token}}\",\n    \"password\": \"NewPassword123\",\n    \"confirmPassword\": \"NewPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/update-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "update-password"
+              ]
+            },
+            "description": "Update password with reset token"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Device Fingerprint",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/check-device-fingerprint",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "check-device-fingerprint"
+              ]
+            },
+            "description": "Check device fingerprint for current user"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication related endpoints"
+    },
+    {
+      "name": "User Registration",
+      "item": [
+        {
+          "name": "Register Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"student@example.com\",\n    \"password\": \"Password123\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Student\",\n    \"address\": \"123 Student Street, City\",\n    \"mobileNumber\": 9876543210,\n    \"role\": \"STUDENT\",\n    \"dateOfBirth\": \"2000-01-15\",\n    \"studentcol\": \"Science\",\n    \"studentcol1\": \"Grade A\",\n    \"studentClass\": \"10th\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/registerUser",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "registerUser"
+              ]
+            },
+            "description": "Register a new student user"
+          },
+          "response": []
+        },
+        {
+          "name": "Register Teacher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"teacher@example.com\",\n    \"password\": \"Password123\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Teacher\",\n    \"address\": \"456 Teacher Avenue, City\",\n    \"mobileNumber\": 9876543211,\n    \"role\": \"TEACHER\",\n    \"studentcol\": \"Mathematics\",\n    \"studentcol1\": \"PhD\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/registerUser",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "registerUser"
+              ]
+            },
+            "description": "Register a new teacher user"
+          },
+          "response": []
+        },
+        {
+          "name": "Register Parent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"parent@example.com\",\n    \"password\": \"Password123\",\n    \"firstName\": \"Robert\",\n    \"lastName\": \"Parent\",\n    \"address\": \"789 Parent Road, City\",\n    \"mobileNumber\": 9876543212,\n    \"role\": \"PARENT\",\n    \"studentcol\": \"1\",\n    \"studentcol1\": \"John Student\",\n    \"studentClass\": \"2023\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/registerUser",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "registerUser"
+              ]
+            },
+            "description": "Register a new parent user"
+          },
+          "response": []
+        }
+      ],
+      "description": "User registration endpoints"
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/getAllUsers?pageNo=0&pageSize=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "getAllUsers"
+              ],
+              "query": [
+                {
+                  "key": "pageNo",
+                  "value": "0"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all users with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/getUser/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "getUser",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Get user by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firstName\": \"Updated FirstName\",\n    \"lastName\": \"Updated LastName\",\n    \"address\": \"Updated Address, City\",\n    \"mobileNumber\": 9876543299\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/updateDetails/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "updateDetails",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Update user details"
+          },
+          "response": []
+        }
+      ],
+      "description": "User management endpoints"
+    },
+    {
+      "name": "User Profiles",
+      "item": [
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "profile"
+              ]
+            },
+            "description": "Get profile for currently authenticated user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile By ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/profile/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "profile",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Get user profile by ID with role-specific data"
+          },
+          "response": []
+        }
+      ],
+      "description": "User profile endpoints with role-specific data"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Extract JWT token from login response",
+          "if (pm.response.code === 200 && pm.info.requestName === \"Login\") {",
+          "    const responseJson = pm.response.json();",
+          "    if (responseJson) {",
+          "        pm.environment.set(\"jwt_token\", responseJson);",
+          "        console.log(\"JWT token saved to environment\");",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "email",
+      "value": "user@example.com",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "Password123",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "reset_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+} 

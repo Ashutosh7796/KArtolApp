@@ -1,9 +1,5 @@
 package com.spring.jwt.exception;
 
-import com.spring.jwt.Assessment.AssessmentNotFoundException;
-import com.spring.jwt.Assessment.DuplicateQuestionInSetException;
-import com.spring.jwt.Question.InvalidQuestionException;
-import com.spring.jwt.Question.QuestionNotFoundException;
 import com.spring.jwt.utils.BaseResponseDTO;
 import com.spring.jwt.utils.ErrorResponseDto;
 import jakarta.validation.ConstraintViolationException;
@@ -37,22 +33,29 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GlobalException extends ResponseEntityExceptionHandler {
 
-    // Custom base exception
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<BaseResponseDTO> handleBaseException(BaseException e) {
         log.error("Base exception occurred: {}", e.getMessage());
+
         BaseResponseDTO response = BaseResponseDTO.builder()
                 .code(e.getCode())
                 .message(e.getMessage())
                 .build();
 
-        return ResponseEntity.ok(response);
+        HttpStatus status;
+        try {
+            status = HttpStatus.valueOf(Integer.parseInt(e.getCode()));
+        } catch (Exception ex) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
+        return new ResponseEntity<>(response, status);
     }
 
-    // User Not Found
+
     @ExceptionHandler(UserNotFoundExceptions.class)
     public ResponseEntity<ErrorResponseDto> handleUserNotFoundException(UserNotFoundExceptions exception,
-                                                                        WebRequest webRequest) {
+                                                                             WebRequest webRequest){
         log.error("User not found: {}", exception.getMessage());
         ErrorResponseDto errorResponseDTO = new ErrorResponseDto(
                 webRequest.getDescription(false),
@@ -62,21 +65,19 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         );
         return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
     }
-
-    // Page Not Found
+    
     @ExceptionHandler(PageNotFoundException.class)
-    public ResponseEntity<ErrorResponseDto> handlePageNotFoundException(PageNotFoundException exception, WebRequest webRequest) {
-        log.error("Page not found: {}", exception.getMessage());
-        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
-                webRequest.getDescription(false),
-                HttpStatus.NOT_FOUND,
-                exception.getMessage(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(errorResponseDto, HttpStatus.NOT_FOUND);
+    public ResponseEntity<ErrorResponseDto> handlePageNotFoundException(PageNotFoundException exception, WebRequest webRequest){
+       log.error("Page not found: {}", exception.getMessage());
+       ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+               webRequest.getDescription(false),
+               HttpStatus.NOT_FOUND,
+               exception.getMessage(),
+               LocalDateTime.now()
+       );
+       return new ResponseEntity<>(errorResponseDto, HttpStatus.NOT_FOUND);
     }
 
-    // Common/validation exceptions
     @ExceptionHandler({EmptyFieldException.class, UserAlreadyExistException.class})
     public ResponseEntity<ErrorResponseDto> handleCommonExceptions(RuntimeException exception, WebRequest webRequest) {
         log.error("Validation error: {}", exception.getMessage());
@@ -89,9 +90,8 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
     }
 
-    // OTP/Email Exceptions
     @ExceptionHandler(InvalidOtpException.class)
-    public ResponseEntity<ErrorResponseDto> handleInvalidOtpException(InvalidOtpException exception, WebRequest webRequest) {
+    public ResponseEntity<ErrorResponseDto> handleInvalidOtpException(InvalidOtpException exception, WebRequest webRequest){
         log.error("Invalid OTP: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
@@ -101,9 +101,9 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         );
         return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
     }
-
+    
     @ExceptionHandler(OtpExpiredException.class)
-    public ResponseEntity<ErrorResponseDto> handleOtpExpiredException(OtpExpiredException exception, WebRequest webRequest) {
+    public ResponseEntity<ErrorResponseDto> handleOtpExpiredException(OtpExpiredException exception, WebRequest webRequest){
         log.error("OTP expired: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
@@ -115,7 +115,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(EmailNotVerifiedException.class)
-    public ResponseEntity<ErrorResponseDto> handleEmailNotVerifiedException(EmailNotVerifiedException exception, WebRequest webRequest) {
+    public ResponseEntity<ErrorResponseDto> handleEmailNotVerifiedException(EmailNotVerifiedException exception, WebRequest webRequest){
         log.error("Email not verified: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
@@ -125,8 +125,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         );
         return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
     }
-
-    // Security exceptions
+    
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponseDto> handleAuthenticationException(AuthenticationException exception, WebRequest webRequest) {
         log.error("Authentication error: {}", exception.getMessage());
@@ -138,7 +137,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         );
         return new ResponseEntity<>(errorResponseDto, HttpStatus.UNAUTHORIZED);
     }
-
+    
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponseDto> handleBadCredentialsException(BadCredentialsException exception, WebRequest webRequest) {
         log.error("Bad credentials: {}", exception.getMessage());
@@ -150,7 +149,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         );
         return new ResponseEntity<>(errorResponseDto, HttpStatus.UNAUTHORIZED);
     }
-
+    
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(AccessDeniedException exception, WebRequest webRequest) {
         log.error("Access denied: {}", exception.getMessage());
@@ -162,8 +161,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         );
         return new ResponseEntity<>(errorResponseDto, HttpStatus.FORBIDDEN);
     }
-
-    // Data access/database errors
+    
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ErrorResponseDto> handleDataAccessException(DataAccessException exception, WebRequest webRequest) {
         log.error("Database error: {}", exception.getMessage());
@@ -175,8 +173,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         );
         return new ResponseEntity<>(errorResponseDto, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    // Method argument issues
+    
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponseDto> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException exception, WebRequest request) {
         log.error("Type mismatch: {}", exception.getMessage());
@@ -186,7 +183,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         } else {
             error = exception.getName() + " has an invalid type";
         }
-
+        
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 request.getDescription(false),
                 HttpStatus.BAD_REQUEST,
@@ -195,17 +192,16 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         );
         return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
     }
-
-    // Validation (argument not valid)
+    
     @Override
     protected ResponseEntity<Object> handleMissingServletRequestParameter(
             MissingServletRequestParameterException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         log.error("Missing parameter: {}", ex.getMessage());
         String error = ex.getParameterName() + " parameter is missing";
-
+        
         Map<String, String> errors = new HashMap<>();
         errors.put(ex.getParameterName(), error);
-
+        
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
@@ -223,7 +219,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         });
         return new ResponseEntity<>(validationErrors, HttpStatus.BAD_REQUEST);
     }
-
+    
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ConstraintViolationException.class)
     public Map<String, String> handleConstraintViolation(ConstraintViolationException ex) {
@@ -235,56 +231,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
                         (existingMessage, newMessage) -> existingMessage + "; " + newMessage
                 ));
     }
-
-    // --- Assessment & Question exceptions ---
-    @ExceptionHandler(AssessmentNotFoundException.class)
-    public ResponseEntity<ErrorResponseDto> handleAssessmentNotFound(AssessmentNotFoundException ex, WebRequest webRequest) {
-        log.error("Assessment not found: {}", ex.getMessage());
-        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
-                webRequest.getDescription(false),
-                HttpStatus.NOT_FOUND,
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(errorResponseDto, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(DuplicateQuestionInSetException.class)
-    public ResponseEntity<ErrorResponseDto> handleDuplicateQuestionInSet(DuplicateQuestionInSetException ex, WebRequest webRequest) {
-        log.error("Duplicate question in set: {}", ex.getMessage());
-        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
-                webRequest.getDescription(false),
-                HttpStatus.CONFLICT,
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(errorResponseDto, HttpStatus.CONFLICT);
-    }
-
-    @ExceptionHandler(QuestionNotFoundException.class)
-    public ResponseEntity<ErrorResponseDto> handleQuestionNotFound(QuestionNotFoundException ex, WebRequest webRequest) {
-        log.error("Question not found: {}", ex.getMessage());
-        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
-                webRequest.getDescription(false),
-                HttpStatus.NOT_FOUND,
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(errorResponseDto, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(InvalidQuestionException.class)
-    public ResponseEntity<ErrorResponseDto> handleInvalidQuestion(InvalidQuestionException ex, WebRequest webRequest) {
-        log.error("Invalid question: {}", ex.getMessage());
-        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
-                webRequest.getDescription(false),
-                HttpStatus.BAD_REQUEST,
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
-    }
-
+    
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleAllUncaughtException(Exception exception, WebRequest webRequest) {
         log.error("Uncaught error occurred: ", exception);

@@ -4,13 +4,19 @@ import com.spring.jwt.dto.ResetPassword;
 import com.spring.jwt.dto.UserDTO;
 import com.spring.jwt.dto.UserUpdateRequest;
 import com.spring.jwt.entity.Role;
+import com.spring.jwt.entity.Student;
 import com.spring.jwt.entity.User;
+import com.spring.jwt.entity.Teacher;
+import com.spring.jwt.entity.Parents;
 import com.spring.jwt.exception.BaseException;
 import com.spring.jwt.exception.EmailNotVerifiedException;
 import com.spring.jwt.exception.UserNotFoundExceptions;
 import com.spring.jwt.exception.PageNotFoundException;
 import com.spring.jwt.repository.RoleRepository;
+import com.spring.jwt.repository.StudentRepository;
 import com.spring.jwt.repository.UserRepository;
+import com.spring.jwt.repository.TeacherRepository;
+import com.spring.jwt.repository.ParentsRepository;
 import com.spring.jwt.service.UserService;
 import com.spring.jwt.utils.BaseResponseDTO;
 import com.spring.jwt.utils.EmailService;
@@ -27,6 +33,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +42,13 @@ import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import com.spring.jwt.mapper.UserMapper;
+import com.spring.jwt.dto.UserProfileDTO;
+import com.spring.jwt.dto.StudentDTO;
+import com.spring.jwt.dto.TeacherDTO;
+import com.spring.jwt.dto.ParentsDTO;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +59,12 @@ public class UserServiceImpl implements UserService {
 
     private final JavaMailSender mailSender;
 
+    private final StudentRepository studentRepository;
+
+    private final TeacherRepository teacherRepository;
+
+    private final ParentsRepository parentsRepository;
+
     private final EmailVerificationRepo emailVerificationRepo;
 
     private final RoleRepository roleRepository;
@@ -52,10 +73,13 @@ public class UserServiceImpl implements UserService {
 
     private final EmailService emailService;
     
+    private final UserMapper userMapper;
+
     @Value("${app.url.password-reset}")
     private String passwordResetUrl;
 
     @Override
+    @Transactional
     public BaseResponseDTO registerAccount(UserDTO userDTO) {
         BaseResponseDTO response = new BaseResponseDTO();
 
@@ -75,13 +99,14 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
+    @Transactional
     private User insertUser(UserDTO userDTO) {
         Optional<EmailVerification> emailVerificationOpt = emailVerificationRepo.findByEmail(userDTO.getEmail());
 
-        if (emailVerificationOpt.isEmpty() ||
-                EmailVerification.STATUS_NOT_VERIFIED.equals(emailVerificationOpt.get().getStatus())) {
-            throw new EmailNotVerifiedException("Email not verified");
-        }
+//        if (emailVerificationOpt.isEmpty() ||
+//                EmailVerification.STATUS_NOT_VERIFIED.equals(emailVerificationOpt.get().getStatus())) {
+//            throw new EmailNotVerifiedException("Email not verified");
+//        }
 
         User user = new User();
         user.setEmail(userDTO.getEmail());
@@ -90,10 +115,89 @@ public class UserServiceImpl implements UserService {
         user.setLastName(userDTO.getLastName());
         user.setMobileNumber(userDTO.getMobileNumber());
         user.setAddress(userDTO.getAddress());
+
         Set<Role> roles = new HashSet<>();
-        roles.add(roleRepository.findByName(userDTO.getRole()));
+
+        Role role = roleRepository.findByName(userDTO.getRole());
+
+        if (role != null) {
+            roles.add(role);
+        } else {
+            Role defaultRole = roleRepository.findByName("USER");
+            if (defaultRole != null) {
+                roles.add(defaultRole);
+            }
+        }
+
         user.setRoles(roles);
+
+        user = userRepository.save(user);
+
+        if (role != null) {
+            switch (role.getName()) {
+                case "STUDENT":
+                    createStudentProfile(user, userDTO);
+                    break;
+                case "TEACHER":
+                    createTeacherProfile(user, userDTO);
+                    break;
+                case "PARENT":
+                    createParentProfile(user, userDTO);
+                    break;
+                default:
+                    break;
+            }
+        }
+
         return user;
+    }
+    
+    private void createStudentProfile(User user, UserDTO userDTO) {
+        Student student = new Student();
+        student.setName(userDTO.getFirstName());
+        student.setLastName(userDTO.getLastName());
+        student.setDateOfBirth(userDTO.getDateOfBirth());
+        student.setAddress(userDTO.getAddress());
+        student.setStudentcol(userDTO.getStudentcol());
+        student.setStudentcol1(userDTO.getStudentcol1());
+        student.setStudentClass(userDTO.getStudentClass());
+        student.setUserId(user.getId().intValue());
+        
+        studentRepository.save(student);
+        log.info("Created student profile for user ID: {}", user.getId());
+    }
+    
+    private void createTeacherProfile(User user, UserDTO userDTO) {
+        Teacher teacher = new Teacher();
+        teacher.setName(userDTO.getFirstName() + " " + userDTO.getLastName());
+        teacher.setSub(userDTO.getStudentcol());
+        teacher.setDeg(userDTO.getStudentcol1());
+        teacher.setStatus("Active");
+        teacher.setUserId(user.getId().intValue());
+        
+        teacherRepository.save(teacher);
+        log.info("Created teacher profile for user ID: {}", user.getId());
+    }
+    
+    private void createParentProfile(User user, UserDTO userDTO) {
+        Integer studentId = null;
+        try {
+            if (userDTO.getStudentcol() != null && !userDTO.getStudentcol().isEmpty()) {
+                studentId = Integer.parseInt(userDTO.getStudentcol());
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Invalid student ID format for parent registration: {}", userDTO.getStudentcol());
+        }
+        
+        Parents parent = new Parents();
+        parent.setParentsId(user.getId().intValue());
+        parent.setName(userDTO.getFirstName() + " " + userDTO.getLastName());
+        parent.setBatch(userDTO.getStudentClass());
+        parent.setStudentName(userDTO.getStudentcol1());
+        parent.setStudentId(studentId);
+        
+        parentsRepository.save(parent);
+        log.info("Created parent profile for user ID: {}", user.getId());
     }
 
     private void validateAccount(UserDTO userDTO) {
@@ -125,7 +229,7 @@ public class UserServiceImpl implements UserService {
 
         return new ResponseDto(HttpStatus.OK.toString(), "Email sent");
     }
-    
+
     @Override
     @Transactional
     public ResponseDto handleForgotPassword(String email, String domain) {
@@ -191,7 +295,7 @@ public class UserServiceImpl implements UserService {
 
         return new ResponseDto(HttpStatus.OK.toString(), "Password reset successful");
     }
-    
+
     @Override
     @Transactional
     public ResponseDto processPasswordUpdate(ResetPassword request) {
@@ -258,61 +362,144 @@ public class UserServiceImpl implements UserService {
     @Override
     public Page<UserDTO> getAllUsers(int pageNo, int pageSize) {
         Pageable pageable = PageRequest.of(pageNo, pageSize);
-        Page<User> userPage = userRepository.findAll(pageable);
-
-        if (userPage.isEmpty()) {
-            log.warn("No users found in the database when requesting page {}", pageNo);
-            throw new PageNotFoundException("No users found on page " + pageNo);
-        }
-
-        return userPage.map(UserDTO::new);
+        Page<User> users = userRepository.findAll(pageable);
+        
+        return users.map(user -> {
+            UserDTO userDTO = userMapper.toDTO(user);
+            return populateRoleSpecificData(user, userDTO);
+        });
     }
 
     @Override
     public UserDTO getUserById(Long id) {
-        log.debug("Fetching user with ID: {}", id);
-        return userRepository.findById(id)
-                .map(UserDTO::new)
-                .orElseThrow(() -> {
-                    log.warn("User not found with ID: {}", id);
-                    return new UserNotFoundExceptions("User not found with ID: " + id);
-                });
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundExceptions("User not found with id: " + id));
+        
+        UserDTO userDTO = userMapper.toDTO(user);
+        return populateRoleSpecificData(user, userDTO);
+    }
+    
+    /**
+     * Helper method to populate role-specific data in UserDTO
+     */
+    private UserDTO populateRoleSpecificData(User user, UserDTO userDTO) {
+
+        Set<String> roles = user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toSet());
+
+        Integer userId = user.getId().intValue();
+        
+        if (roles.contains("STUDENT")) {
+            Student student = studentRepository.findByUserId(userId);
+            if (student != null) {
+                userDTO.setRole("STUDENT");
+                userDTO.setDateOfBirth(student.getDateOfBirth());
+                userDTO.setStudentcol(student.getStudentcol());
+                userDTO.setStudentcol1(student.getStudentcol1());
+                userDTO.setStudentClass(student.getStudentClass());
+            }
+        } else if (roles.contains("TEACHER")) {
+            Teacher teacher = teacherRepository.findByUserId(userId);
+            if (teacher != null) {
+                userDTO.setRole("TEACHER");
+                userDTO.setName(teacher.getName());
+                userDTO.setStudentcol(teacher.getSub());
+                userDTO.setStudentcol1(teacher.getDeg());
+            }
+        } else if (roles.contains("PARENT")) {
+            Parents parent = parentsRepository.findById(userId).orElse(null);
+            if (parent != null) {
+                userDTO.setRole("PARENT");
+                userDTO.setName(parent.getName());
+                userDTO.setStudentcol(parent.getStudentId() != null ? parent.getStudentId().toString() : null); // Student ID
+                userDTO.setStudentcol1(parent.getStudentName());
+                userDTO.setStudentClass(parent.getBatch());
+            }
+        }
+        
+        return userDTO;
     }
 
-    @Transactional
     @Override
-    public UserDTO updateUser(Long id, UserUpdateRequest updateRequest) {
-        log.debug("Updating user with ID: {}", id);
+    public UserDTO updateUser(Long id, UserUpdateRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("User not found with ID: {}", id);
-                    return new UserNotFoundExceptions("User not found with ID: " + id);
-                });
+                .orElseThrow(() -> new UserNotFoundExceptions("User not found with id: " + id));
 
-        if (updateRequest.getFirstName() != null) user.setFirstName(updateRequest.getFirstName());
-        if (updateRequest.getLastName() != null) user.setLastName(updateRequest.getLastName());
-        if (updateRequest.getEmail() != null) {
-            User existingUser = userRepository.findByEmail(updateRequest.getEmail());
-            if (existingUser != null && !existingUser.getId().equals(user.getId())) {
-                log.warn("Email already in use: {}", updateRequest.getEmail());
-                throw new BaseException(String.valueOf(HttpStatus.BAD_REQUEST.value()), 
-                        "Email is already in use by another user");
-            }
-            user.setEmail(updateRequest.getEmail());
+        if (request.getFirstName() != null) {
+            user.setFirstName(request.getFirstName());
         }
-        if (updateRequest.getAddress() != null) user.setAddress(updateRequest.getAddress());
-        if (updateRequest.getMobileNumber() != null) {
-            Optional<User> existingUser = userRepository.findByMobileNumber(updateRequest.getMobileNumber());
-            if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
-                log.warn("Mobile number already in use: {}", updateRequest.getMobileNumber());
-                throw new BaseException(String.valueOf(HttpStatus.BAD_REQUEST.value()),
-                        "Mobile number is already in use by another user");
-            }
-            user.setMobileNumber(updateRequest.getMobileNumber());
+        if (request.getLastName() != null) {
+            user.setLastName(request.getLastName());
         }
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress());
+        }
+        if (request.getMobileNumber() != null) {
+            user.setMobileNumber(request.getMobileNumber());
+        }
+        
+        User updatedUser = userRepository.save(user);
+        return userMapper.toDTO(updatedUser);
+    }
 
-        User savedUser = userRepository.save(user);
-        log.info("User updated successfully: {}", id);
-        return new UserDTO(savedUser);
+    @Override
+    public UserProfileDTO getUserProfileById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundExceptions("User not found with id: " + id));
+        
+        return buildUserProfileDTO(user);
+    }
+    
+    @Override
+    public UserProfileDTO getCurrentUserProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new BaseException(String.valueOf(HttpStatus.UNAUTHORIZED.value()), "User not authenticated");
+        }
+        
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new UserNotFoundExceptions("User not found with email: " + email);
+        }
+        
+        return buildUserProfileDTO(user);
+    }
+    
+    private UserProfileDTO buildUserProfileDTO(User user) {
+        UserProfileDTO profileDTO = new UserProfileDTO();
+
+        profileDTO.setUser(userMapper.toDTO(user));
+
+        Set<String> roles = user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toSet());
+        profileDTO.setRoles(roles);
+
+        Integer userId = user.getId().intValue();
+        
+        if (roles.contains("STUDENT")) {
+            Student student = studentRepository.findByUserId(userId);
+            if (student != null) {
+                profileDTO.setStudentInfo(StudentDTO.fromEntity(student));
+            }
+        }
+        
+        if (roles.contains("TEACHER")) {
+            Teacher teacher = teacherRepository.findByUserId(userId);
+            if (teacher != null) {
+                profileDTO.setTeacherInfo(TeacherDTO.fromEntity(teacher));
+            }
+        }
+        
+        if (roles.contains("PARENT")) {
+            Parents parent = parentsRepository.findById(userId).orElse(null);
+            if (parent != null) {
+                profileDTO.setParentInfo(ParentsDTO.fromEntity(parent));
+            }
+        }
+        
+        return profileDTO;
     }
 }

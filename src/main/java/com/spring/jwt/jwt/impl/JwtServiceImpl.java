@@ -40,15 +40,18 @@ public class JwtServiceImpl implements JwtService {
     private static final String TOKEN_TYPE_REFRESH = "refresh";
 
     private final UserRepository userRepository;
-    private final JwtConfig jwtConfig;
+    private JwtConfig jwtConfig;
     private final UserDetailsService userDetailsService;
 
     @Autowired
-    public JwtServiceImpl(@Lazy JwtConfig jwtConfig, UserDetailsService userDetailsService,
-                          UserRepository userRepository) {
-        this.jwtConfig = jwtConfig;
+    public JwtServiceImpl(UserDetailsService userDetailsService, UserRepository userRepository) {
         this.userDetailsService = userDetailsService;
         this.userRepository = userRepository;
+    }
+    
+    @Autowired
+    public void setJwtConfig(JwtConfig jwtConfig) {
+        this.jwtConfig = jwtConfig;
     }
 
     @Override
@@ -83,12 +86,8 @@ public class JwtServiceImpl implements JwtService {
 
         log.info("Roles: {}", roles);
 
-        Integer userId = null;
+        Integer userId = userDetailsCustom.getUserId();
         String firstName = userDetailsCustom.getFirstName();
-
-        if (roles.contains("USER") || roles.contains("ADMIN")) {
-            userId = userDetailsCustom.getUserId();
-        }
         
         log.debug("Generating access token for user: {}, device: {}", 
                 userDetailsCustom.getUsername(), 
@@ -103,8 +102,22 @@ public class JwtServiceImpl implements JwtService {
                 .claim("userId", userId)
                 .claim("authorities", roles)
                 .claim("roles", roles)
-                .claim("isEnable", userDetailsCustom.isEnabled())
-                .claim(CLAIM_KEY_TOKEN_TYPE, TOKEN_TYPE_ACCESS)
+                .claim("isEnable", userDetailsCustom.isEnabled());
+        
+        // Add role-specific IDs if available
+        if (userDetailsCustom.getStudentId() != null) {
+            jwtBuilder.claim("studentId", userDetailsCustom.getStudentId());
+        }
+        
+        if (userDetailsCustom.getTeacherId() != null) {
+            jwtBuilder.claim("teacherId", userDetailsCustom.getTeacherId());
+        }
+        
+        if (userDetailsCustom.getParentId() != null) {
+            jwtBuilder.claim("parentId", userDetailsCustom.getParentId());
+        }
+        
+        jwtBuilder.claim(CLAIM_KEY_TOKEN_TYPE, TOKEN_TYPE_ACCESS)
                 .setIssuedAt(Date.from(now))
                 .setNotBefore(Date.from(notBefore))
                 .setExpiration(Date.from(now.plusSeconds(jwtConfig.getExpiration())))
@@ -130,7 +143,22 @@ public class JwtServiceImpl implements JwtService {
                 .setSubject(userDetailsCustom.getUsername())
                 .setIssuer(jwtConfig.getIssuer())
                 .setId(UUID.randomUUID().toString())
-                .claim(CLAIM_KEY_TOKEN_TYPE, TOKEN_TYPE_REFRESH)
+                .claim("userId", userDetailsCustom.getUserId());
+        
+        // Add role-specific IDs if available
+        if (userDetailsCustom.getStudentId() != null) {
+            jwtBuilder.claim("studentId", userDetailsCustom.getStudentId());
+        }
+        
+        if (userDetailsCustom.getTeacherId() != null) {
+            jwtBuilder.claim("teacherId", userDetailsCustom.getTeacherId());
+        }
+        
+        if (userDetailsCustom.getParentId() != null) {
+            jwtBuilder.claim("parentId", userDetailsCustom.getParentId());
+        }
+        
+        jwtBuilder.claim(CLAIM_KEY_TOKEN_TYPE, TOKEN_TYPE_REFRESH)
                 .setIssuedAt(Date.from(now))
                 .setNotBefore(Date.from(notBefore))
                 .setExpiration(Date.from(now.plusSeconds(jwtConfig.getRefreshExpiration())))
