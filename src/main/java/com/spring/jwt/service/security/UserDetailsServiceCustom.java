@@ -67,11 +67,9 @@ public class UserDetailsServiceCustom implements UserDetailsService {
         Integer teacherId = null;
         Integer parentId = null;
 
-        // Get basic user information
         firstName = user.getFirstName();
         userId = user.getId();
-        
-        // Get role-specific IDs
+
         if (authorities.contains(new SimpleGrantedAuthority("STUDENT"))) {
             Student student = studentRepository.findByUserId(userId);
             if (student != null) {
@@ -87,7 +85,7 @@ public class UserDetailsServiceCustom implements UserDetailsService {
         }
         
         if (authorities.contains(new SimpleGrantedAuthority("PARENT"))) {
-            // For parents, the parentId is the same as userId
+
             Parents parent = parentsRepository.findById(userId).orElse(null);
             if (parent != null) {
                 parentId = parent.getParentsId();

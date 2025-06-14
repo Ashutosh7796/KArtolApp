@@ -115,31 +115,24 @@ public class UserServiceImpl implements UserService {
         user.setLastName(userDTO.getLastName());
         user.setMobileNumber(userDTO.getMobileNumber());
         user.setAddress(userDTO.getAddress());
-        
-        // Initialize roles set
+
         Set<Role> roles = new HashSet<>();
-        
-        // Get the role from repository
+
         Role role = roleRepository.findByName(userDTO.getRole());
-        
-        // Add the role to the roles set
+
         if (role != null) {
             roles.add(role);
         } else {
-            // If role doesn't exist, add default USER role
             Role defaultRole = roleRepository.findByName("USER");
             if (defaultRole != null) {
                 roles.add(defaultRole);
             }
         }
-        
-        // Set the roles to the user
+
         user.setRoles(roles);
 
-        // Save the user first to get the ID
         user = userRepository.save(user);
-        
-        // Create role-specific entities based on user role
+
         if (role != null) {
             switch (role.getName()) {
                 case "STUDENT":
@@ -152,7 +145,6 @@ public class UserServiceImpl implements UserService {
                     createParentProfile(user, userDTO);
                     break;
                 default:
-                    // No additional profile needed for other roles
                     break;
             }
         }
@@ -178,8 +170,8 @@ public class UserServiceImpl implements UserService {
     private void createTeacherProfile(User user, UserDTO userDTO) {
         Teacher teacher = new Teacher();
         teacher.setName(userDTO.getFirstName() + " " + userDTO.getLastName());
-        teacher.setSub(userDTO.getStudentcol()); // Reusing field for subject
-        teacher.setDeg(userDTO.getStudentcol1()); // Reusing field for degree
+        teacher.setSub(userDTO.getStudentcol());
+        teacher.setDeg(userDTO.getStudentcol1());
         teacher.setStatus("Active");
         teacher.setUserId(user.getId().intValue());
         
@@ -188,7 +180,6 @@ public class UserServiceImpl implements UserService {
     }
     
     private void createParentProfile(User user, UserDTO userDTO) {
-        // If studentId is provided in the DTO, we can link the parent to a student
         Integer studentId = null;
         try {
             if (userDTO.getStudentcol() != null && !userDTO.getStudentcol().isEmpty()) {
@@ -199,10 +190,10 @@ public class UserServiceImpl implements UserService {
         }
         
         Parents parent = new Parents();
-        parent.setParentsId(user.getId().intValue()); // Using user ID as parent ID
+        parent.setParentsId(user.getId().intValue());
         parent.setName(userDTO.getFirstName() + " " + userDTO.getLastName());
-        parent.setBatch(userDTO.getStudentClass()); // Reusing field for batch
-        parent.setStudentName(userDTO.getStudentcol1()); // Reusing field for student name
+        parent.setBatch(userDTO.getStudentClass());
+        parent.setStudentName(userDTO.getStudentcol1());
         parent.setStudentId(studentId);
         
         parentsRepository.save(parent);
@@ -392,12 +383,11 @@ public class UserServiceImpl implements UserService {
      * Helper method to populate role-specific data in UserDTO
      */
     private UserDTO populateRoleSpecificData(User user, UserDTO userDTO) {
-        // Get user roles
+
         Set<String> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());
-        
-        // Add role-specific data to the DTO
+
         Integer userId = user.getId().intValue();
         
         if (roles.contains("STUDENT")) {
@@ -414,8 +404,8 @@ public class UserServiceImpl implements UserService {
             if (teacher != null) {
                 userDTO.setRole("TEACHER");
                 userDTO.setName(teacher.getName());
-                userDTO.setStudentcol(teacher.getSub());  // Subject
-                userDTO.setStudentcol1(teacher.getDeg()); // Degree
+                userDTO.setStudentcol(teacher.getSub());
+                userDTO.setStudentcol1(teacher.getDeg());
             }
         } else if (roles.contains("PARENT")) {
             Parents parent = parentsRepository.findById(userId).orElse(null);
@@ -423,8 +413,8 @@ public class UserServiceImpl implements UserService {
                 userDTO.setRole("PARENT");
                 userDTO.setName(parent.getName());
                 userDTO.setStudentcol(parent.getStudentId() != null ? parent.getStudentId().toString() : null); // Student ID
-                userDTO.setStudentcol1(parent.getStudentName()); // Student Name
-                userDTO.setStudentClass(parent.getBatch()); // Batch
+                userDTO.setStudentcol1(parent.getStudentName());
+                userDTO.setStudentClass(parent.getBatch());
             }
         }
         
@@ -436,7 +426,6 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundExceptions("User not found with id: " + id));
 
-        // Update fields
         if (request.getFirstName() != null) {
             user.setFirstName(request.getFirstName());
         }
@@ -480,17 +469,14 @@ public class UserServiceImpl implements UserService {
     
     private UserProfileDTO buildUserProfileDTO(User user) {
         UserProfileDTO profileDTO = new UserProfileDTO();
-        
-        // Set base user data
+
         profileDTO.setUser(userMapper.toDTO(user));
-        
-        // Set roles
+
         Set<String> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());
         profileDTO.setRoles(roles);
-        
-        // Add role-specific data
+
         Integer userId = user.getId().intValue();
         
         if (roles.contains("STUDENT")) {
@@ -508,7 +494,6 @@ public class UserServiceImpl implements UserService {
         }
         
         if (roles.contains("PARENT")) {
-            // For parents, we need to find by parent ID which is the same as user ID
             Parents parent = parentsRepository.findById(userId).orElse(null);
             if (parent != null) {
                 profileDTO.setParentInfo(ParentsDTO.fromEntity(parent));

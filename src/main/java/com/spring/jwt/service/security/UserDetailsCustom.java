@@ -20,8 +20,7 @@ public class UserDetailsCustom implements UserDetails {
     private Integer teacherId;
     private Integer parentId;
     private List<GrantedAuthority> authorities;
-    
-    // Constructor with all fields
+
     public UserDetailsCustom(
             String username, 
             String password, 
@@ -40,8 +39,7 @@ public class UserDetailsCustom implements UserDetails {
         this.parentId = parentId;
         this.authorities = authorities;
     }
-    
-    // Constructor without role-specific IDs for backward compatibility
+
     public UserDetailsCustom(
             String username, 
             String password, 
