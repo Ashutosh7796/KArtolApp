@@ -1,0 +1,21 @@
+package com.spring.jwt.Exam.Dto;
+
+import lombok.Data;
+
+@Data
+public class QuestionDTO {
+    private Integer questionId;
+    private String questionText;
+    private String type;
+    private String subject;
+    private String level;
+    private String marks;
+    private Integer userId;
+    private String option1;
+    private String option2;
+    private String option3;
+    private String option4;
+    // Usually, do NOT expose the answer in DTO for exam-takers!
+    // Include if needed for admin or after exam is over.
+    private String answer;
+}

@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class UserFee {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer userFeeId;
 
     private String date;
@@ -20,5 +21,7 @@ public class UserFee {
     private String remainingFees;
     private String paidFeesOnDate;
     private String type;
+    private Integer feesId;
+    private Integer userId;
 
 }
