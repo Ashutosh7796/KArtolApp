@@ -12,5 +12,6 @@ public class PaperDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Boolean isLive;
+    private String StudentClass;
     private List<QuestionDTO> questions;
 }
