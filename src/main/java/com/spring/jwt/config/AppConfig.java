@@ -77,7 +77,7 @@ public class AppConfig {
     @Value("${app.url.frontend:http://localhost:5173}")
     private String frontendUrl;
     
-    @Value("#{'${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000}'.split(',')}")
+    @Value("#{'${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://localhost:8080}'.split(',')}")
     private List<String> allowedOrigins;
 
     @Bean
@@ -152,6 +152,23 @@ public class AppConfig {
                 .requestMatchers(HttpMethod.POST, "/api/users/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/users/**").authenticated()
+                .requestMatchers("/fees").permitAll()
+                .requestMatchers("/questions").permitAll()
+                .requestMatchers("/assessments").permitAll()
+                .requestMatchers(
+                        "/api/v1/auth/**",
+                        "/v2/api-docs",
+                        "/v3/api-docs",
+                        "/v*/a*-docs/**",
+                        "/swagger-resources",
+                        "/swagger-resources/**",
+                        "/configuration/ui",
+                        "/configuration/security",
+                        "/swagger-ui/**",
+                        "/webjars/**",
+                        "/swagger-ui.html"
+                ).permitAll()
+
                 // Protected endpoints
                 .anyRequest().authenticated());
 
