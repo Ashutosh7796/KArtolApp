@@ -15,6 +15,7 @@ public class QuestionDTO {
     private String option2;
     private String option3;
     private String option4;
+    private String StudentClass;
     // Usually, do NOT expose the answer in DTO for exam-takers!
     // Include if needed for admin or after exam is over.
     private String answer;

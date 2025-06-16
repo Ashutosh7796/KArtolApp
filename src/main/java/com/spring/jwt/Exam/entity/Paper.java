@@ -20,7 +20,7 @@ public class Paper {
 
     private String title;
     private String description;
-
+    private String StudentClass;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Boolean isLive;
