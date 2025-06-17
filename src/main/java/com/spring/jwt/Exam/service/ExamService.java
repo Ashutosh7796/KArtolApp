@@ -1,0 +1,16 @@
+package com.spring.jwt.Exam.service;
+
+import com.spring.jwt.Exam.Dto.*;
+
+import java.util.List;
+
+public interface ExamService {
+    ExamSessionDTO startExam(Integer userId, Integer paperId, String studentClass);
+    ExamSessionDTO submitExamAnswers(Integer sessionId, java.util.List<UserAnswerDTO> answers);
+
+    List<ExamResultDTO> getResultsByUserId(Long userId);
+
+    List<SessionQuestionAnswerDTO> getQuestionsAndAnswersBySessionId(Integer sessionId);
+
+    List<StudentClassResultDTO> getResultsGroupedByStudentClass();
+}

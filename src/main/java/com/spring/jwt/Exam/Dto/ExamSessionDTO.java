@@ -13,5 +13,6 @@ public class ExamSessionDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer score;
+    private String StudentClass;
     private List<UserAnswerDTO> userAnswers;
 }

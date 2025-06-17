@@ -77,7 +77,7 @@ public class AppConfig {
     @Value("${app.url.frontend:http://localhost:5173}")
     private String frontendUrl;
     
-    @Value("#{'${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000}'.split(',')}")
+    @Value("#{'${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://localhost:8080}'.split(',')}")
     private List<String> allowedOrigins;
 
     @Bean
@@ -106,10 +106,8 @@ public class AppConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Configure CSRF - use CSRF protection for state-changing operations with cookie-based tokens
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-        // Set the name of the attribute the CsrfToken will be populated on
-        requestHandler.setCsrfRequestAttributeName("_csrf");
+       requestHandler.setCsrfRequestAttributeName("_csrf");
         
         http.csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -120,14 +118,11 @@ public class AppConfig {
                     jwtConfig.getRefreshUrl()
                 )
             );
-        
-        // Configure CORS with credentials support
+
         http.cors(Customizer.withDefaults());
 
-        // Set session management to stateless
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // Configure security headers
         http.headers(headers -> headers
                 .xssProtection(xss -> xss
                     .headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
@@ -140,22 +135,36 @@ public class AppConfig {
                     .policy("camera=(), microphone=(), geolocation=()"))
             );
 
-        // Set permissions on endpoints
         http.authorizeHttpRequests(authorize -> authorize
-                // Public endpoints
+
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(jwtConfig.getUrl()).permitAll()
                 .requestMatchers(jwtConfig.getRefreshUrl()).permitAll()
                 .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers("/api/test/**").permitAll()
-                // Restrict HTTP methods for sensitive operations
+                .requestMatchers("/assessments/**").permitAll()
+                .requestMatchers("/user/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/users/**").authenticated()
-                // Protected endpoints
+                .requestMatchers("/fees").permitAll()
+                .requestMatchers("/questions").permitAll()
+                .requestMatchers("/assessments").permitAll()
+                .requestMatchers(
+                        "/api/v1/auth/**",
+                        "/v2/api-docs",
+                        "/v3/api-docs",
+                        "/v*/a*-docs/**",
+                        "/swagger-resources",
+                        "/swagger-resources/**",
+                        "/configuration/ui",
+                        "/configuration/security",
+                        "/swagger-ui/**",
+                        "/webjars/**",
+                        "/swagger-ui.html"
+                ).permitAll()
+
                 .anyRequest().authenticated());
 
-        // Add JWT filters
         JwtUsernamePasswordAuthenticationFilter jwtUsernamePasswordAuthenticationFilter = new JwtUsernamePasswordAuthenticationFilter(authenticationManager(http), jwtConfig, jwtService, userRepository);
         JwtTokenAuthenticationFilter jwtTokenAuthenticationFilter = new JwtTokenAuthenticationFilter(jwtConfig, jwtService, userDetailsService());
         JwtRefreshTokenFilter jwtRefreshTokenFilter = new JwtRefreshTokenFilter(authenticationManager(http), jwtConfig, jwtService, userDetailsService());
@@ -168,7 +177,6 @@ public class AppConfig {
             .addFilterAfter(jwtRefreshTokenFilter, JwtUsernamePasswordAuthenticationFilter.class)
             .addFilterAfter(jwtTokenAuthenticationFilter, JwtRefreshTokenFilter.class);
 
-        // Set authentication provider
         http.authenticationProvider(customAuthenticationProvider);
 
         return http.build();

@@ -19,7 +19,7 @@ public class PaperQuestion {
     @ManyToOne
     @JoinColumn(name = "paper_id")
     private Paper paper;
-
+    private String StudentClass;
     @ManyToOne
     @JoinColumn(name = "question_id")
     private Question question;

@@ -26,7 +26,7 @@ public class ExamSession {
     @ManyToOne
     @JoinColumn(name = "paper_id")
     private Paper paper;
-
+    private String StudentClass;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer score;
