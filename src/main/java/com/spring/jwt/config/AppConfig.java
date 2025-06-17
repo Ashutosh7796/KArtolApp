@@ -163,6 +163,24 @@ public class AppConfig {
                         "/swagger-ui.html"
                 ).permitAll()
 
+                .requestMatchers("/fees").permitAll()
+                .requestMatchers("/questions").permitAll()
+                .requestMatchers("/assessments").permitAll()
+                .requestMatchers(
+                        "/api/v1/auth/**",
+                        "/v2/api-docs",
+                        "/v3/api-docs",
+                        "/v*/a*-docs/**",
+                        "/swagger-resources",
+                        "/swagger-resources/**",
+                        "/configuration/ui",
+                        "/configuration/security",
+                        "/swagger-ui/**",
+                        "/webjars/**",
+                        "/swagger-ui.html"
+                ).permitAll()
+
+                // Protected endpoints
                 .anyRequest().authenticated());
 
         JwtUsernamePasswordAuthenticationFilter jwtUsernamePasswordAuthenticationFilter = new JwtUsernamePasswordAuthenticationFilter(authenticationManager(http), jwtConfig, jwtService, userRepository);

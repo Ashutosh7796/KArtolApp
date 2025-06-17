@@ -36,6 +36,9 @@ public class JwtWithSpringSecurityApplication {
 
 
 
+
+
+
 		SpringApplication.run(JwtWithSpringSecurityApplication.class, args);
 		System.err.println("  *****    *******  *******       *****   *******    *****    ******   *******" );
 		System.err.println(" *     *   *      *    *         *           *      *     *   *     *     *   " );
