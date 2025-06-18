@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class PaperDTO {
+public class PaperWithQuestionsDTO {
     private Integer paperId;
     private String title;
     private String description;
@@ -13,5 +13,5 @@ public class PaperDTO {
     private LocalDateTime endTime;
     private Boolean isLive;
     private String studentClass;
-    private List<Integer> questions; // Just question IDs
+    private List<QuestionNoAnswerDTO> questions;
 }

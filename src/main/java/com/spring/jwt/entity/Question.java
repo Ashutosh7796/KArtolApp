@@ -28,7 +28,7 @@ public class Question {
     private String option2;
     private String option3;
     private String option4;
-
+    private String StudentClass;
     // Store the answer, e.g. "option1", "option2", etc. or the text itself
     private String answer;
 }

@@ -26,8 +26,9 @@ public class ExamController {
     @PostMapping("/{sessionId}/submit")
     public ExamSessionDTO submitExam(
             @PathVariable Integer sessionId,
+            @RequestParam Long userId,
             @RequestBody List<UserAnswerDTO> answers) {
-        return examService.submitExamAnswers(sessionId, answers);
+        return examService.submitExamAnswers(sessionId, userId, answers);
     }
 
     @GetMapping("/results/{userId}")
