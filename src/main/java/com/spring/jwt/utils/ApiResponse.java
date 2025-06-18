@@ -1,5 +1,6 @@
 package com.spring.jwt.utils;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -10,6 +11,10 @@ import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 
+/**
+ * Generic API response wrapper for standardized API responses
+ * @param <T> Type of the data payload
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -20,74 +25,116 @@ import java.time.LocalDateTime;
         description = "Standardized API response format"
 )
 public class ApiResponse<T> {
-    @Schema(description = "Response status code")
-    private String code;
-    
-    @Schema(description = "Response message")
+    private boolean success;
     private String message;
-    
-    @Schema(description = "Response data payload")
     private T data;
+    private HttpStatus status;
+    private int statusCode;
+    private String errorCode;
+    private String errorDetails;
     
-    @Schema(description = "Error information if any")
-    private ErrorInfo error;
-    
-    @Schema(description = "Timestamp of the response")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     @Builder.Default
+    @Schema(description = "Timestamp of the response")
     private LocalDateTime timestamp = LocalDateTime.now();
+
+    /**
+     * Constructor for complete ApiResponse
+     */
+    public ApiResponse(boolean success, String message, T data, HttpStatus status, 
+                      String errorCode, String errorDetails) {
+        this.success = success;
+        this.message = message;
+        this.data = data;
+        this.status = status;
+        this.statusCode = status != null ? status.value() : 0;
+        this.errorCode = errorCode;
+        this.errorDetails = errorDetails;
+        this.timestamp = LocalDateTime.now();
+    }
     
     /**
-     * success response with data
+     * Constructor for ApiResponse with status code as integer 
+     */
+    public ApiResponse(int statusCode, String message, T data) {
+        this.success = statusCode >= 200 && statusCode < 300;
+        this.message = message;
+        this.data = data;
+        this.statusCode = statusCode;
+        this.timestamp = LocalDateTime.now();
+    }
+
+    /**
+     * Create a success response with data
+     * @param message Success message
+     * @param data Response data
+     * @param <T> Type of data
+     * @return ApiResponse object
      */
     public static <T> ApiResponse<T> success(String message, T data) {
         return ApiResponse.<T>builder()
-                .code(String.valueOf(HttpStatus.OK.value()))
+                .success(true)
                 .message(message)
                 .data(data)
+                .status(HttpStatus.OK)
+                .statusCode(HttpStatus.OK.value())
+                .timestamp(LocalDateTime.now())
                 .build();
     }
-    
+
     /**
-     * success response without data
+     * Create a success response without data
+     * @param message Success message
+     * @param <T> Type of data
+     * @return ApiResponse object
      */
     public static <T> ApiResponse<T> success(String message) {
-        return success(message, null);
-    }
-    
-    /**
-     * Create an error response
-     */
-    public static <T> ApiResponse<T> error(HttpStatus status, String message, String errorDetails) {
-        ErrorInfo errorInfo = null;
-        if (errorDetails != null) {
-            errorInfo = new ErrorInfo(errorDetails);
-        }
-        
         return ApiResponse.<T>builder()
-                .code(String.valueOf(status.value()))
+                .success(true)
                 .message(message)
-                .error(errorInfo)
+                .status(HttpStatus.OK)
+                .statusCode(HttpStatus.OK.value())
+                .timestamp(LocalDateTime.now())
                 .build();
     }
-    
+
     /**
-     * error response with HTTP status
+     * Create an error response
+     * @param status HTTP status
+     * @param message Error message
+     * @param errorDetails Detailed error information
+     * @param <T> Type of data
+     * @return ApiResponse object
      */
-    public static <T> ApiResponse<T> error(HttpStatus status, String message) {
-        return error(status, message, null);
+    public static <T> ApiResponse<T> error(HttpStatus status, String message, String errorDetails) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .status(status)
+                .statusCode(status.value())
+                .errorDetails(errorDetails)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
-    
+
     /**
-     * error response with default status (400 BAD_REQUEST)
+     * Create an error response with error code
+     * @param status HTTP status
+     * @param message Error message
+     * @param errorCode Error code
+     * @param errorDetails Detailed error information
+     * @param <T> Type of data
+     * @return ApiResponse object
      */
-    public static <T> ApiResponse<T> error(String message, String errorDetails) {
-        return error(HttpStatus.BAD_REQUEST, message, errorDetails);
-    }
-    
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class ErrorInfo {
-        private String details;
+    public static <T> ApiResponse<T> error(HttpStatus status, String message, String errorCode, String errorDetails) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .status(status)
+                .statusCode(status.value())
+                .errorCode(errorCode)
+                .errorDetails(errorDetails)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 } 

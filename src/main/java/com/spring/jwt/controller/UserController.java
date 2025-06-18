@@ -1,6 +1,5 @@
 package com.spring.jwt.controller;
 
-
 import com.spring.jwt.dto.ResetPassword;
 import com.spring.jwt.dto.ResponseAllUsersDto;
 import com.spring.jwt.dto.UserDTO;
@@ -20,12 +19,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -34,7 +36,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -43,15 +47,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 @Tag(
-        name = "CRUD REST APIs for User in AutoCarCare",
-        description = "CRUD REST APIs in AutoCarCare to CREATE, UPDATE, FETCH AND DELETE USER Details"
+        name = "User Management API",
+        description = "APIs for user registration, profile management, and authentication operations"
 )
 @RestController
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
-@RequestMapping("/user")
+@Validated
 @Slf4j
+@CrossOrigin(origins = "${app.cors.allowed-origins}", maxAge = 3600)
 public class UserController {
 
     private final UserService userService;
@@ -63,70 +68,100 @@ public class UserController {
     private String passwordResetUrl;
 
     @Operation(
-            summary = "Create User Account REST API",
-            description = "REST API to create new user account in AutoCarCare"
+            summary = "Register a new user account",
+            description = "Creates a new user account with the provided user details",
+            tags = {"Authentication"}
     )
     @ApiResponses({
             @ApiResponse(
-                    responseCode = "200",
-                    description = "HTTP Status CREATED"
+                    responseCode = "201",
+                    description = "User account created successfully"
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Mobile Number is already registered Or Email Number is already registered",
+                    description = "Invalid input or account already exists",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponseDto.class)
                     )
             ),
             @ApiResponse(
-                    responseCode = "400",
-                    description = "Email Id Not Verified",
+                    responseCode = "500",
+                    description = "Internal server error",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponseDto.class)
                     )
             )
-    }
-    )
-
-    @PostMapping("/registerUser")
-    public ResponseEntity<BaseResponseDTO> register(@Valid @RequestBody UserDTO userDTO){
-        return ResponseEntity.ok(userService.registerAccount(userDTO));
+    })
+    @PostMapping("/register")
+    public ResponseEntity<BaseResponseDTO> registerUser(@Valid @RequestBody UserDTO userDTO) {
+        BaseResponseDTO response = userService.registerAccount(userDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @Operation(
-            summary = "Forgot Password REST API",
-            description = "REST API to Reset Password inside AutoCarCare"
+            summary = "Request password reset",
+            description = "Sends a password reset link to the user's email address",
+            tags = {"Authentication"}
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "OTP sent successfully."
+                    description = "Password reset email sent successfully"
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Email field is empty",
+                    description = "Invalid email address",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponseDto.class)
                     )
             )
-    }
-    )
-
-    @PostMapping("/forgot-password")
-    public ResponseEntity<ResponseDto> forgotPassword(HttpServletRequest request) {
-        String email = request.getParameter("email");
-        if (email == null || email.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(new ResponseDto("Unsuccessful", "Email is required"));
-        }
-
+    })
+    @PostMapping("/password/forgot")
+    public ResponseEntity<ResponseDto> requestPasswordReset(
+            @RequestParam @Email(message = "Invalid email format") @NotBlank(message = "Email is required") String email,
+            HttpServletRequest request) {
+        
         ResponseDto response = userService.handleForgotPassword(email, request.getServerName());
-
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/reset-password")
-    public ResponseEntity<String> getResetPasswordPage(@RequestParam String token) {
+    @Operation(
+            summary = "Get password reset page",
+            description = "Returns the HTML form for password reset",
+            tags = {"Authentication"}
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Password reset form returned successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid or expired token",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            schema = @Schema(type = "string")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            schema = @Schema(type = "string")
+                    )
+            )
+    })
+    @GetMapping("/password/reset")
+    public ResponseEntity<String> getResetPasswordPage(
+            @RequestParam @NotBlank(message = "Token is required") String token) {
         try {
             if (!userService.validateResetToken(token)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired token");
@@ -137,117 +172,174 @@ public class UserController {
             return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(htmlContent);
         } catch (IOException e) {
             log.error("Error loading reset password template", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error loading HTML file");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error loading password reset form");
         }
     }
 
-    @PostMapping("/update-password")
-    public ResponseEntity<ResponseDto> updatePassword(@Valid @RequestBody ResetPassword request) {
-
-        ResponseDto response = userService.processPasswordUpdate(request);
-        return ResponseEntity.ok(response);
-    }
-
-
     @Operation(
-            summary = "GetAllUsers REST API",
-            description = "REST API to Fetch All Users List inside AutoCarCare"
+            summary = "Reset password",
+            description = "Resets the user's password using the provided token and new password",
+            tags = {"Authentication"}
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "OK"
+                    description = "Password reset successful"
             ),
             @ApiResponse(
-                    responseCode = "404",
-                    description = "Not Found",
+                    responseCode = "400",
+                    description = "Invalid input, token expired, or password validation failed",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponseDto.class)
                     )
             )
+    })
+    @PostMapping("/password/reset")
+    public ResponseEntity<ResponseDto> resetPassword(@Valid @RequestBody ResetPassword request) {
+        ResponseDto response = userService.processPasswordUpdate(request);
+        return ResponseEntity.ok(response);
     }
-    )
 
-    @GetMapping("/getAllUsers")
+    @Operation(
+            summary = "Get all users",
+            description = "Returns a paginated list of all users with optional filtering",
+            tags = {"User Management"},
+            security = { @SecurityRequirement(name = "bearer-jwt") }
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Users list retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - Insufficient permissions",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            )
+    })
+    @GetMapping("getAllUsers")
     public ResponseEntity<ResponseAllUsersDto> getAllUsers(
-            @RequestParam(defaultValue= "0") int pageNo, 
-            @RequestParam(defaultValue= "10") int pageSize) {
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page number cannot be negative") int page,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size) {
         
-        Page<UserDTO> userPage = userService.getAllUsers(pageNo, pageSize);
+        Page<UserDTO> userPage = userService.getAllUsers(page, size);
 
         List<UserDTO> decryptedUsers = userPage.getContent().stream()
             .map(user -> {
                 try {
                     if (user.getFirstName() != null) {
                         user.setFirstName(encryptionUtil.decrypt(user.getFirstName()));
-                        log.debug("Decrypted firstName: {}", user.getFirstName());
                     }
                     if (user.getLastName() != null) {
                         user.setLastName(encryptionUtil.decrypt(user.getLastName()));
-                        log.debug("Decrypted lastName: {}", user.getLastName());
                     }
                     if (user.getAddress() != null) {
                         user.setAddress(encryptionUtil.decrypt(user.getAddress()));
-                        log.debug("Decrypted address: {}", user.getAddress());
                     }
                 } catch (Exception e) {
                     log.error("Error decrypting user data: {}", e.getMessage());
                 }
                 return user;
             })
-            .collect(java.util.stream.Collectors.toList());
+            .toList();
         
         ResponseAllUsersDto response = new ResponseAllUsersDto("success", decryptedUsers);
         response.setTotalPages(userPage.getTotalPages());
+        response.setTotalElements(userPage.getTotalElements());
         response.setPageSize(userPage.getSize());
+        response.setCurrentPage(userPage.getNumber());
+        response.setFirst(userPage.isFirst());
+        response.setLast(userPage.isLast());
+        
         return ResponseEntity.ok(response);
     }
 
     @Operation(
-            summary = "Get User Details REST API",
-            description = "REST API to Fetch Single User Details inside AutoCarCare"
+            summary = "Get user by ID",
+            description = "Returns user details for the specified ID",
+            tags = {"User Management"},
+            security = { @SecurityRequirement(name = "bearer-jwt") }
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "OK"
+                    description = "User details retrieved successfully"
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User Not Found",
+                    description = "User not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponseDto.class)
                     )
             )
-    }
-    )
-
-    @GetMapping("getUser/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO> getUserById(
+            @PathVariable @Min(value = 1, message = "Invalid user ID") Long id) {
         UserDTO user = userService.getUserById(id);
+        
+        try {
+            if (user.getFirstName() != null) {
+                user.setFirstName(encryptionUtil.decrypt(user.getFirstName()));
+            }
+            if (user.getLastName() != null) {
+                user.setLastName(encryptionUtil.decrypt(user.getLastName()));
+            }
+            if (user.getAddress() != null) {
+                user.setAddress(encryptionUtil.decrypt(user.getAddress()));
+            }
+        } catch (Exception e) {
+            log.error("Error decrypting user data: {}", e.getMessage());
+        }
+        
         return ResponseEntity.ok(user);
     }
 
     @Operation(
-            summary = "Get User Profile REST API",
-            description = "REST API to Fetch User Profile with role-specific data"
+            summary = "Get user profile by ID",
+            description = "Returns detailed user profile with role-specific data",
+            tags = {"User Management"},
+            security = { @SecurityRequirement(name = "bearer-jwt") }
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "OK"
+                    description = "User profile retrieved successfully"
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User Not Found",
+                    description = "User not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponseDto.class)
                     )
             )
-    }
-    )
+    })
     @GetMapping("/profile/{id}")
-    public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable Long id) {
+    public ResponseEntity<UserProfileDTO> getUserProfile(
+            @PathVariable @Min(value = 1, message = "Invalid user ID") Long id) {
         UserProfileDTO profile = userService.getUserProfileById(id);
 
         try {
@@ -271,13 +363,15 @@ public class UserController {
     }
     
     @Operation(
-            summary = "Get Current User Profile REST API",
-            description = "REST API to Fetch Current User Profile with role-specific data"
+            summary = "Get current user's profile",
+            description = "Returns the profile of the currently authenticated user",
+            tags = {"User Management"},
+            security = { @SecurityRequirement(name = "bearer-jwt") }
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "OK"
+                    description = "User profile retrieved successfully"
             ),
             @ApiResponse(
                     responseCode = "401",
@@ -286,9 +380,8 @@ public class UserController {
                             schema = @Schema(implementation = ErrorResponseDto.class)
                     )
             )
-    }
-    )
-    @GetMapping("/profile")
+    })
+    @GetMapping("/profile/me")
     public ResponseEntity<UserProfileDTO> getCurrentUserProfile() {
         UserProfileDTO profile = userService.getCurrentUserProfile();
         
@@ -313,34 +406,81 @@ public class UserController {
     }
 
     @Operation(
-            summary = "Update User Details REST API",
-            description = "REST API to Update User Details List inside AutoCarCare"
+            summary = "Update user details",
+            description = "Updates the details of an existing user",
+            tags = {"User Management"},
+            security = { @SecurityRequirement(name = "bearer-jwt") }
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "OK"
+                    description = "User details updated successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid input data",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User Not Found",
+                    description = "User not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponseDto.class)
                     )
             )
-    }
-    )
-
-    @PatchMapping("updateDetails/{id}")
+    })
+    @PatchMapping("/{id}")
     public ResponseEntity<UserDTO> updateUser(
-            @PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
-        return ResponseEntity.ok(userService.updateUser(id, request));
+            @PathVariable @Min(value = 1, message = "Invalid user ID") Long id,
+            @Valid @RequestBody UserUpdateRequest request) {
+        UserDTO updatedUser = userService.updateUser(id, request);
+        return ResponseEntity.ok(updatedUser);
     }
 
-    @GetMapping("/check-device-fingerprint")
+    @Operation(
+            summary = "Check device fingerprint",
+            description = "Compares the current device fingerprint with the stored one for security verification",
+            tags = {"Security"},
+            security = { @SecurityRequirement(name = "bearer-jwt") }
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Device fingerprint check completed"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            )
+    })
+    @GetMapping("/security/device-fingerprint")
     public ResponseEntity<Map<String, Object>> checkDeviceFingerprint(HttpServletRequest request) {
-        Map<String, Object> result = new HashMap<>();
-        
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated() || 
@@ -358,9 +498,9 @@ public class UserController {
             }
 
             String storedFingerprint = user.getDeviceFingerprint();
-
             String currentFingerprint = jwtService.generateDeviceFingerprint(request);
             
+            Map<String, Object> result = new HashMap<>();
             result.put("email", user.getEmail());
             result.put("lastLogin", user.getLastLogin());
 

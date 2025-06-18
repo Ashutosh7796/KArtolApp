@@ -1,51 +1,35 @@
 package com.spring.jwt.config;
 
-import com.spring.jwt.config.filter.CustomAuthenticationProvider;
-import com.spring.jwt.config.filter.JwtRefreshTokenFilter;
-import com.spring.jwt.config.filter.JwtTokenAuthenticationFilter;
-import com.spring.jwt.config.filter.JwtUsernamePasswordAuthenticationFilter;
-import com.spring.jwt.config.filter.RateLimitingFilter;
-import com.spring.jwt.config.filter.SecurityHeadersFilter;
-import com.spring.jwt.config.filter.SqlInjectionFilter;
-import com.spring.jwt.config.filter.XssFilter;
+import com.spring.jwt.config.filter.*;
 import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
 import com.spring.jwt.repository.UserRepository;
 import com.spring.jwt.service.security.UserDetailsServiceCustom;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.ForwardedHeaderFilter;
-import org.springframework.http.HttpMethod;
-import org.springframework.context.annotation.Lazy;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -120,11 +104,13 @@ public class AppConfig {
         http.csrf(csrf -> csrf
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             .ignoringRequestMatchers(
-                "/user/**", 
-                "/questions/add", 
-                "/questions/search", 
-                "/api/auth/**", 
-                jwtConfig.getUrl(), 
+                "/api/**",
+                "/user/**",
+                "/questions/**",
+                "/assessments/**",
+                "/fees/**",
+                "/exam/**",
+                jwtConfig.getUrl(),
                 jwtConfig.getRefreshUrl()
             )
         );
@@ -145,15 +131,14 @@ public class AppConfig {
                     .policy("camera=(), microphone=(), geolocation=()"))
             );
 
-        // Configure URL-based security
         log.debug("Configuring URL-based security rules");
         http.authorizeHttpRequests(authorize -> authorize
-                // Authentication endpoints
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/v1/users/register").permitAll()
+                .requestMatchers("/api/v1/users/password/**").permitAll()
                 .requestMatchers(jwtConfig.getUrl()).permitAll()
                 .requestMatchers(jwtConfig.getRefreshUrl()).permitAll()
-                
-                // Swagger/API docs
+
                 .requestMatchers(
                         "/v2/api-docs",
                         "/v3/api-docs",
@@ -166,32 +151,50 @@ public class AppConfig {
                         "/webjars/**",
                         "/swagger-ui.html"
                 ).permitAll()
-                
-                // Public API endpoints
+
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/user/**").permitAll()
-                .requestMatchers("/fees").permitAll()
-                
-                // Specific question endpoints that are public
+                .requestMatchers("/api/v1/users/**").permitAll()
+                .requestMatchers("/fees//**").permitAll()
+
                 .requestMatchers("/questions/add").permitAll()
                 .requestMatchers("/questions/search").permitAll()
-                
-                // All other question endpoints require authentication
+
                 .requestMatchers("/questions/**").authenticated()
-                
-                // Assessment endpoints
+
                 .requestMatchers("/assessments/**").permitAll()
-                
-                // Any other request requires authentication
+
                 .anyRequest().authenticated());
 
-        // Configure filters
+        // Create a request matcher for public URLs
+        org.springframework.security.web.util.matcher.RequestMatcher publicUrls = 
+            new org.springframework.security.web.util.matcher.OrRequestMatcher(
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/auth/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/public/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/users/register"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/users/password/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/users/**"), // Temporary for testing
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/v2/api-docs/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/v3/api-docs/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/swagger-resources/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/swagger-ui/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/configuration/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/webjars/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/swagger-ui.html"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/user/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/fees/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/assessments/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/add"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/search"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getUrl()),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getRefreshUrl())
+            );
+
         log.debug("Configuring security filters");
         JwtUsernamePasswordAuthenticationFilter jwtUsernamePasswordAuthenticationFilter = new JwtUsernamePasswordAuthenticationFilter(authenticationManager(http), jwtConfig, jwtService, userRepository);
-        JwtTokenAuthenticationFilter jwtTokenAuthenticationFilter = new JwtTokenAuthenticationFilter(jwtConfig, jwtService, userDetailsService());
+        JwtTokenAuthenticationFilter jwtTokenAuthenticationFilter = new JwtTokenAuthenticationFilter(jwtConfig, jwtService, userDetailsService(), publicUrls);
         JwtRefreshTokenFilter jwtRefreshTokenFilter = new JwtRefreshTokenFilter(authenticationManager(http), jwtConfig, jwtService, userDetailsService());
 
-        // Run JWT authentication filter first, before any Spring filters
         http.addFilterBefore(jwtTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtRefreshTokenFilter, UsernamePasswordAuthenticationFilter.class)
