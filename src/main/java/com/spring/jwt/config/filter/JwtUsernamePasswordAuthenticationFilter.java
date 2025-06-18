@@ -85,13 +85,11 @@ public class JwtUsernamePasswordAuthenticationFilter extends AbstractAuthenticat
             List<String> roles = userDetailsCustom.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toList());
-            
-            // Generate device fingerprint
+
             String deviceFingerprint = jwtService.generateDeviceFingerprint(request);
             log.debug("Generated device fingerprint: {}", 
                     deviceFingerprint != null ? deviceFingerprint.substring(0, 8) + "..." : "none");
-            
-            // Save device fingerprint to user entity
+
             try {
                 User user = userRepository.findByEmail(userDetailsCustom.getUsername());
                 if (user != null) {
@@ -102,24 +100,32 @@ public class JwtUsernamePasswordAuthenticationFilter extends AbstractAuthenticat
                 }
             } catch (Exception e) {
                 log.error("Error saving device fingerprint: {}", e.getMessage(), e);
-                // Continue even if saving fingerprint fails
             }
 
-            // Generate tokens with device fingerprint
             String accessToken = jwtService.generateToken(userDetailsCustom, deviceFingerprint);
             String refreshToken = jwtService.generateRefreshToken(userDetailsCustom, deviceFingerprint);
-            
-            // Create secure HttpOnly cookie for refresh token
+
             Cookie refreshTokenCookie = createRefreshTokenCookie(refreshToken);
             response.addCookie(refreshTokenCookie);
 
-            Map<String, String> tokens = new HashMap<>();
-            tokens.put("accessToken", accessToken);
+            Cookie accessTokenCookie = new Cookie("access_token", accessToken);
+            accessTokenCookie.setHttpOnly(false);
+            accessTokenCookie.setSecure(true);
+            accessTokenCookie.setPath("/");
+            accessTokenCookie.setMaxAge(jwtConfig.getExpiration());
+            response.addCookie(accessTokenCookie);
+
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("accessToken", accessToken);
+            responseData.put("tokenType", "Bearer");
+            responseData.put("expiresIn", jwtConfig.getExpiration());
+            responseData.put("roles", roles);
+            responseData.put("userId", userDetailsCustom.getUserId());
             
-            String json = HelperUtils.JSON_WRITER.writeValueAsString(tokens);
+            String json = HelperUtils.JSON_WRITER.writeValueAsString(responseData);
             response.setContentType("application/json; charset=UTF-8");
             response.getWriter().write(json);
-            log.info("End success authentication");
+            log.info("End successful authentication with token generation");
         } catch (BaseException ex) {
             log.error("Error during token generation: {}", ex.getMessage());
             unsuccessfulAuthentication(request, response, new BadCredentialsException(ex.getMessage()));

@@ -34,7 +34,6 @@ public class SqlInjectionFilter implements Filter, Ordered {
     
     @Override
     public int getOrder() {
-        // Run after XSS filter but before other filters
         return Ordered.HIGHEST_PRECEDENCE + 45;
     }
     
@@ -42,8 +41,7 @@ public class SqlInjectionFilter implements Filter, Ordered {
      * Request wrapper that sanitizes parameters to prevent SQL injection attacks
      */
     private static class SqlInjectionRequestWrapper extends HttpServletRequestWrapper {
-        
-        // Patterns for common SQL injection attack vectors
+
         private static final Pattern[] SQL_INJECTION_PATTERNS = {
             // Basic SQL injection patterns
             Pattern.compile("(?i)\\b(select|insert|update|delete|from|where|drop|alter|truncate|exec|union|create|table|into|procedure|schema)\\b.*?\\b(.*?)\\b"),
@@ -72,8 +70,7 @@ public class SqlInjectionFilter implements Filter, Ordered {
             // Hex encoding
             Pattern.compile("(?i)0x[0-9a-f]+")
         };
-        
-        // Cached parameters
+
         private Map<String, String[]> sanitizedParameterMap;
 
         public SqlInjectionRequestWrapper(HttpServletRequest request) {
@@ -134,8 +131,7 @@ public class SqlInjectionFilter implements Filter, Ordered {
             if (headers == null) {
                 return null;
             }
-            
-            // Sanitize each header value
+
             return new Enumeration<String>() {
                 @Override
                 public boolean hasMoreElements() {

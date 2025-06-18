@@ -30,7 +30,6 @@ public class StringEncryptConverter implements AttributeConverter<String, String
             return encryptionUtil.encrypt(attribute);
         } catch (Exception e) {
             log.error("Error encrypting data: {}", e.getMessage());
-            // In case of encryption error, store as plain text to prevent data loss
             return attribute;
         }
     }
@@ -46,7 +45,6 @@ public class StringEncryptConverter implements AttributeConverter<String, String
             return encryptionUtil.decrypt(dbData);
         } catch (Exception e) {
             log.warn("Unable to decrypt data, assuming it's plain text: {}", e.getMessage());
-            // If decryption fails, assume the data is not encrypted
             return dbData;
         }
     }

@@ -39,9 +39,9 @@ public class RateLimitingConfig {
     @Bean
     public RateLimiter apiRateLimiter() {
         RateLimiterConfig config = RateLimiterConfig.custom()
-                .limitRefreshPeriod(Duration.ofSeconds(60))
-                .limitForPeriod(100)
-                .timeoutDuration(Duration.ofSeconds(60))
+                .limitRefreshPeriod(Duration.ofSeconds(refreshPeriod))
+                .limitForPeriod(limitForPeriod)
+                .timeoutDuration(Duration.ofSeconds(timeoutDuration))
                 .build();
         
         RateLimiterRegistry registry = RateLimiterRegistry.of(config);
