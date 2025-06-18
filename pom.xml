@@ -149,6 +149,13 @@
 			<version>3.0.5</version>
 		</dependency>
 
+		<!-- Add BouncyCastle for certificate generation -->
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk18on</artifactId>
+			<version>1.77</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

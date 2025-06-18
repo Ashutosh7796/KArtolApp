@@ -20,13 +20,12 @@ public class DataMaskingUtils {
         
         int atIndex = email.indexOf('@');
         if (atIndex <= 1) {
-            return email; // Can't mask properly, return as is
+            return email;
         }
         
         String username = email.substring(0, atIndex);
         String domain = email.substring(atIndex);
-        
-        // Keep first character, mask the rest
+
         String maskedUsername = username.charAt(0) + 
                 "*".repeat(Math.min(username.length() - 1, 3)) + 
                 (username.length() > 4 ? "..." : "");
@@ -44,7 +43,7 @@ public class DataMaskingUtils {
         }
         
         if (phoneNumber.length() <= 4) {
-            return phoneNumber; // Too short to mask
+            return phoneNumber;
         }
         
         return "*".repeat(phoneNumber.length() - 4) + 
@@ -70,15 +69,11 @@ public class DataMaskingUtils {
         if (!StringUtils.hasText(address)) {
             return address;
         }
-        
-        // Simple masking - this is a basic implementation
-        // For production, a more sophisticated approach may be needed
+
         String[] parts = address.split(" ");
         if (parts.length <= 2) {
-            return address; // Too short to mask meaningfully
+            return address;
         }
-        
-        // Keep the first part (usually the street number) and the last part (usually the city/zip)
         StringBuilder masked = new StringBuilder(parts[0]);
         masked.append(" ***** ");
         masked.append(parts[parts.length - 1]);
@@ -96,7 +91,7 @@ public class DataMaskingUtils {
         }
         
         if (token.length() <= 12) {
-            return token; // Too short to mask
+            return token;
         }
         
         return token.substring(0, 8) + "...";
@@ -110,26 +105,23 @@ public class DataMaskingUtils {
         if (!StringUtils.hasText(cardNumber)) {
             return cardNumber;
         }
-        
-        // Remove any non-digit characters
+
         String digitsOnly = cardNumber.replaceAll("\\D", "");
         
         if (digitsOnly.length() < 4) {
-            return cardNumber; // Too short to mask
+            return cardNumber;
         }
         
         String lastFourDigits = digitsOnly.substring(digitsOnly.length() - 4);
         StringBuilder masked = new StringBuilder();
-        
-        // Format with spaces for readability
+
         for (int i = 0; i < digitsOnly.length() - 4; i++) {
             masked.append("*");
             if ((i + 1) % 4 == 0) {
                 masked.append(" ");
             }
         }
-        
-        // Make sure we have a space before the last 4 digits if needed
+
         if (masked.length() > 0 && masked.charAt(masked.length() - 1) != ' ') {
             masked.append(" ");
         }

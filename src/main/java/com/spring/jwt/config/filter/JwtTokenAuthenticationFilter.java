@@ -7,6 +7,8 @@ import com.spring.jwt.service.security.UserDetailsServiceCustom;
 import com.spring.jwt.utils.BaseResponseDTO;
 import com.spring.jwt.utils.HelperUtils;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -19,7 +21,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -32,72 +33,135 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
-public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implements Ordered {
+public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtConfig jwtConfig;
     private final JwtService jwtService;
     private final UserDetailsServiceCustom userDetailsService;
-    private boolean setauthreq = true;
-    
-    // Cookie name for refresh token
-    private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
-    // Cookie name for access token (if needed in the future)
-    private static final String ACCESS_TOKEN_COOKIE_NAME = "access_token";
 
-    @Override
-    public int getOrder() {
-        // Set to run after the UsernamePasswordAuthenticationFilter
-        return Ordered.LOWEST_PRECEDENCE - 120;
-    }
+    private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
+    private static final String ACCESS_TOKEN_COOKIE_NAME = "access_token";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        log.info("Start do filter");
+        String path = request.getRequestURI();
+        log.debug("JWT Filter processing request for path: {}", path);
+
+        if (isPublicEndpoint(path, request.getMethod())) {
+            log.debug("Skipping JWT authentication for public endpoint: {}", path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String token = getJwtFromRequest(request);
         
-        try {
-            String token = getJwtFromRequest(request);
-            
-            if (token != null) {
-                if (jwtService.isRefreshToken(token)) {
-                    log.debug("Skipping refresh token in authentication filter");
-                    filterChain.doFilter(request, response);
-                    return;
-                }
-
-                if (jwtService.isValidToken(token)) {
-
-                    Claims claims = jwtService.extractClaims(token);
-                    String username = claims.getSubject();
-
-                    UserDetailsCustom userDetails = (UserDetailsCustom) userDetailsService.loadUserByUsername(username);
-
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                }
-            }
-            
-            filterChain.doFilter(request, response);
-        } catch (Exception e) {
-            log.error("Could not set user authentication in security context", e);
-            filterChain.doFilter(request, response);
+        if (token == null) {
+            log.warn("No JWT token found for protected path: {}", path);
+            handleAccessDenied(response);
+            return;
         }
         
-        log.info("End do filter");
+        try {
+            if (!processToken(token)) {
+                log.warn("Invalid token for path: {}", path);
+                handleInvalidToken(response);
+                return;
+            }
+
+            filterChain.doFilter(request, response);
+            
+        } catch (ExpiredJwtException e) {
+            log.warn("Expired JWT token: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
+            handleExpiredToken(response);
+        } catch (JwtException e) {
+            log.warn("Invalid JWT token: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
+            handleInvalidToken(response);
+        } catch (Exception e) {
+            log.error("Authentication error: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
+            handleAuthenticationException(response, e);
+        }
     }
 
+    /**
+     * Process the JWT token and set authentication if valid
+     * @return true if token is valid and authentication was set, false otherwise
+     */
+    private boolean processToken(String token) {
+        if (jwtService.isValidToken(token)) {
+            Claims claims = jwtService.extractClaims(token);
+            String username = claims.getSubject();
+
+            if (jwtService.isRefreshToken(token)) {
+                log.warn("Refresh token used for API access - not allowed");
+                return false;
+            }
+            
+            if (!ObjectUtils.isEmpty(username)) {
+                log.debug("Valid token found for user: {}", username);
+
+                List<String> authorities = claims.get("authorities", List.class);
+                if (authorities == null) {
+                    authorities = claims.get("roles", List.class);
+                }
+                
+                if (authorities != null) {
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                            username,
+                            null,
+                            authorities.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())
+                    );
+
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    log.debug("Authentication set in security context for user: {}", username);
+                    return true;
+                } else {
+                    log.warn("No authorities found in token for user: {}", username);
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if the endpoint is public and doesn't require authentication
+     */
+    private boolean isPublicEndpoint(String path, String method) {
+        return (path.equals(jwtConfig.getRefreshUrl()) && "POST".equals(method)) || 
+               (path.equals(jwtConfig.getUrl()) && "POST".equals(method)) ||
+               path.startsWith("/user/") ||
+               path.equals("/fees") ||
+               path.equals("/questions/add") ||
+               path.equals("/questions/search") ||
+               path.startsWith("/api/public/") ||
+               path.startsWith("/api/auth/") ||
+               path.startsWith("/swagger-ui") ||
+               path.startsWith("/v3/api-docs") ||
+               path.startsWith("/v2/api-docs") ||
+               path.startsWith("/configuration/") ||
+               path.startsWith("/webjars/") ||
+               path.contains("swagger-ui.html");
+    }
+
+    /**
+     * Extract JWT token from request (header or cookie)
+     */
     private String getJwtFromRequest(HttpServletRequest request) {
 
         String bearerToken = request.getHeader(jwtConfig.getHeader());
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(jwtConfig.getPrefix())) {
-            return bearerToken.substring(jwtConfig.getPrefix().length() + 1);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(jwtConfig.getPrefix() + " ")) {
+            log.debug("Found token in Authorization header");
+            return bearerToken.substring((jwtConfig.getPrefix() + " ").length());
         }
 
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
+
             Optional<Cookie> accessTokenCookie = Arrays.stream(cookies)
                 .filter(cookie -> ACCESS_TOKEN_COOKIE_NAME.equals(cookie.getName()))
                 .findFirst();
@@ -106,28 +170,19 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
                 log.debug("Found access token in cookie");
                 return accessTokenCookie.get().getValue();
             }
-
-            Optional<Cookie> refreshTokenCookie = Arrays.stream(cookies)
-                .filter(cookie -> REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName()))
-                .findFirst();
-                
-            if (refreshTokenCookie.isPresent()) {
-                log.debug("Found refresh token in cookie");
-                return refreshTokenCookie.get().getValue();
-            }
         }
         
         return null;
     }
-
-    private void handleAccessBlocked(HttpServletResponse response) throws IOException {
+    
+    private void handleAccessDenied(HttpServletResponse response) throws IOException {
         BaseResponseDTO responseDTO = new BaseResponseDTO();
-        responseDTO.setCode(String.valueOf(HttpStatus.SERVICE_UNAVAILABLE.value()));
-        responseDTO.setMessage("d7324asdx8hg");
+        responseDTO.setCode(String.valueOf(HttpStatus.UNAUTHORIZED.value()));
+        responseDTO.setMessage("Access denied: Authentication required");
 
         String json = HelperUtils.JSON_WRITER.writeValueAsString(responseDTO);
 
-        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json; charset=UTF-8");
         response.getWriter().write(json);
     }
@@ -135,7 +190,7 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
     private void handleInvalidToken(HttpServletResponse response) throws IOException {
         BaseResponseDTO responseDTO = new BaseResponseDTO();
         responseDTO.setCode(String.valueOf(HttpStatus.UNAUTHORIZED.value()));
-        responseDTO.setMessage("Invalid or expired token");
+        responseDTO.setMessage("Invalid token");
 
         String json = HelperUtils.JSON_WRITER.writeValueAsString(responseDTO);
 
@@ -144,10 +199,10 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
         response.getWriter().write(json);
     }
     
-    private void handleInvalidTokenType(HttpServletResponse response) throws IOException {
+    private void handleExpiredToken(HttpServletResponse response) throws IOException {
         BaseResponseDTO responseDTO = new BaseResponseDTO();
         responseDTO.setCode(String.valueOf(HttpStatus.UNAUTHORIZED.value()));
-        responseDTO.setMessage("Invalid token type for this operation");
+        responseDTO.setMessage("Expired token");
 
         String json = HelperUtils.JSON_WRITER.writeValueAsString(responseDTO);
 
@@ -155,20 +210,16 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter implement
         response.setContentType("application/json; charset=UTF-8");
         response.getWriter().write(json);
     }
-
+    
     private void handleAuthenticationException(HttpServletResponse response, Exception e) throws IOException {
         BaseResponseDTO responseDTO = new BaseResponseDTO();
         responseDTO.setCode(String.valueOf(HttpStatus.UNAUTHORIZED.value()));
-        responseDTO.setMessage("Authentication failed");
+        responseDTO.setMessage("Authentication failed: " + e.getMessage());
 
         String json = HelperUtils.JSON_WRITER.writeValueAsString(responseDTO);
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json; charset=UTF-8");
         response.getWriter().write(json);
-    }
-
-    public void setauthreq(boolean setauthreq) {
-        this.setauthreq = setauthreq;
     }
 }

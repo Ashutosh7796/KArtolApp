@@ -2,20 +2,32 @@ package com.spring.jwt.Question;
 
 import com.spring.jwt.dto.ResponseDto;
 import com.spring.jwt.entity.Question;
+import jakarta.annotation.security.PermitAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/questions")
 public class QuestionController {
 
+    private static final Logger log = LoggerFactory.getLogger(QuestionController.class);
+
     @Autowired
     private QuestionService questionService;
 
     @PostMapping("/add")
+    @PermitAll
     public ResponseEntity<ResponseDto<Question>> createQuestion(@RequestBody Question question) {
         try {
             Question created = questionService.createQuestion(question);
@@ -26,6 +38,7 @@ public class QuestionController {
     }
 
     @GetMapping("/getById")
+    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN', 'TEACHER', 'STUDENT', 'PARENT') or isAuthenticated()")
     public ResponseEntity<ResponseDto<Question>> getQuestionById(@RequestParam Integer id) {
         try {
             Question question = questionService.getQuestionById(id);
@@ -36,16 +49,33 @@ public class QuestionController {
     }
 
     @GetMapping("/all")
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('TEACHER')")
     public ResponseEntity<ResponseDto<List<Question>>> getAllQuestions() {
         try {
+            log.info("Accessing /questions/all endpoint - requires authentication");
+
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                log.info("User '{}' authenticated with authorities: {}", 
+                    auth.getName(), 
+                    auth.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.joining(", "))
+                );
+            } else {
+                log.warn("No authentication found or user not authenticated for /questions/all");
+            }
+            
             List<Question> questions = questionService.getAllQuestions();
             return ResponseEntity.ok(ResponseDto.success("All questions fetched successfully", questions));
         } catch (Exception e) {
+            log.error("Error fetching all questions: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(ResponseDto.error("Failed to fetch questions", e.getMessage()));
         }
     }
 
     @PatchMapping("/update")
+    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('TEACHER')")
     public ResponseEntity<ResponseDto<Question>> updateQuestion(
             @RequestParam Integer id,
             @RequestBody Question updatedQuestion) {
@@ -58,6 +88,7 @@ public class QuestionController {
     }
 
     @DeleteMapping("/delete")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ResponseDto<Void>> deleteQuestion(@RequestParam Integer id) {
         try {
             questionService.deleteQuestion(id);
@@ -68,6 +99,7 @@ public class QuestionController {
     }
 
     @GetMapping("/user")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseDto<List<Question>>> getQuestionsByUserId(@RequestParam Integer userId) {
         try {
             List<Question> questions = questionService.getQuestionsByUserId(userId);
@@ -78,6 +110,7 @@ public class QuestionController {
     }
 
     @GetMapping("/search")
+    @PermitAll
     public ResponseEntity<ResponseDto<List<Question>>> getQuestionsBySubTypeLevelMarks(
             @RequestParam(required = false) String subject,
             @RequestParam(required = false) String type,
@@ -91,4 +124,5 @@ public class QuestionController {
             return ResponseEntity.badRequest().body(ResponseDto.error("Failed to fetch questions by criteria", e.getMessage()));
         }
     }
+
 }
