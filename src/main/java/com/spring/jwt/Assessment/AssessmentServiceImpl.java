@@ -1,4 +1,5 @@
 package com.spring.jwt.Assessment;
+import com.spring.jwt.Question.QuestionDTO;
 import com.spring.jwt.entity.Assessment;
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.exception.UserNotFoundExceptions;
@@ -41,10 +42,30 @@ public class AssessmentServiceImpl implements AssessmentService {
         dto.setStartTime(entity.getStartTime());
         dto.setEndTime(entity.getEndTime());
         dto.setUserId(entity.getUser() != null ? entity.getUser().getId() : null);
-        // Map questions to their IDs
-        dto.setQuestionIds(entity.getQuestions() != null ?
-                entity.getQuestions().stream().map(Question::getQuestionId).collect(Collectors.toList()) :
-                Collections.emptyList());
+
+        // Map question IDs
+        List<Question> questionEntities = entity.getQuestions() != null ? entity.getQuestions() : Collections.emptyList();
+        dto.setQuestionIds(questionEntities.stream().map(Question::getQuestionId).collect(Collectors.toList()));
+
+        // Map full questions
+        List<QuestionDTO> questionDtos = questionEntities.stream().map(q -> {
+            QuestionDTO qDto = new QuestionDTO();
+            qDto.setQuestionId(q.getQuestionId());
+            qDto.setQuestionText(q.getQuestionText());
+            qDto.setType(q.getType());
+            qDto.setSubject(q.getSubject());
+            qDto.setLevel(q.getLevel());
+            qDto.setMarks(q.getMarks());
+//            qDto.setUserId(q.getUserId());
+            qDto.setOption1(q.getOption1());
+            qDto.setOption2(q.getOption2());
+            qDto.setOption3(q.getOption3());
+            qDto.setOption4(q.getOption4());
+            qDto.setAnswer(q.getAnswer());
+            return qDto;
+        }).collect(Collectors.toList());
+        dto.setQuestions(questionDtos);
+
         return dto;
     }
 
@@ -82,51 +103,42 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     @Override
-    public List<AssessmentDTO> createAssessmentsBulk(List<AssessmentDTO> dtos) {
-        if (dtos == null || dtos.isEmpty()) {
-            throw new IllegalArgumentException("Assessment list is empty");
+    public List<AssessmentDTO> createAssessmentsBulk(AssessmentDTO dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("Assessment object is null");
         }
 
-        Integer userId = dtos.get(0).getUserId();
+        Integer userId = dto.getUserId();
         if (userId == null || !userRepository.existsById(userId.longValue())) {
             throw new UserNotFoundExceptions("UserId not found in User table: " + userId);
         }
 
-        // Gather all question IDs from all DTOs
-        Set<Integer> allQuestionIds = dtos.stream()
-                .flatMap(dto -> dto.getQuestionIds() != null ? dto.getQuestionIds().stream() : Stream.empty())
-                .collect(Collectors.toSet());
+        // Validate question IDs
+        Set<Integer> questionIds = dto.getQuestionIds() != null ? new HashSet<>(dto.getQuestionIds()) : new HashSet<>();
 
-        // Check if all questionIds exist in Question table
-        List<Question> foundQuestions = questionRepository.findAllById(allQuestionIds);
+        List<Question> foundQuestions = questionRepository.findAllById(questionIds);
         Set<Integer> foundIds = foundQuestions.stream().map(Question::getQuestionId).collect(Collectors.toSet());
 
-        List<Integer> notFound = allQuestionIds.stream()
+        List<Integer> notFound = questionIds.stream()
                 .filter(id -> !foundIds.contains(id))
                 .collect(Collectors.toList());
+
         if (!notFound.isEmpty()) {
             throw new QuestionNotFoundException("QuestionIds not found in Question table: " + notFound);
         }
 
-        // Generate a unique setNumber (starts at 1000 and increments by 1)
+        // Generate unique setNumber
         Long maxSetNumber = assessmentRepository.findMaxSetNumber();
         Long newSetNumber = (maxSetNumber == null ? 1000L : maxSetNumber + 1);
 
-        // Optionally, check for duplicate setNumber with same question set (not required if setNumber always unique)
+        // Convert to entity and save
+        Assessment entity = dtoToEntity(dto);
+        entity.setSetNumber(newSetNumber);
 
-        // Convert DTOs to entities, assigning same setNumber, user, and questions
-        List<Assessment> assessments = dtos.stream()
-                .map(dto -> {
-                    Assessment entity = dtoToEntity(dto);
-                    entity.setSetNumber(newSetNumber);
-                    return entity;
-                })
-                .collect(Collectors.toList());
+        Assessment saved = assessmentRepository.save(entity);
 
-        List<Assessment> saved = assessmentRepository.saveAll(assessments);
-        return saved.stream().map(this::entityToDto).collect(Collectors.toList());
+        return Collections.singletonList(entityToDto(saved));
     }
-
     @Override
     public AssessmentDTO getAssessmentById(Integer id) {
         return assessmentRepository.findById(id)

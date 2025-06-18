@@ -14,15 +14,15 @@ public class AssessmentController {
     @Autowired
     private AssessmentService assessmentService;
 
-    @PostMapping("/bulk")
-    public ResponseEntity<ResponseDto<List<AssessmentDTO>>> createAssessmentsBulk(
-            @RequestBody List<AssessmentDTO> dtos
+    @PostMapping("/create")
+    public ResponseEntity<ResponseDto<List<AssessmentDTO>>> createAssessment(
+            @RequestBody AssessmentDTO dto
     ) {
         try {
-            List<AssessmentDTO> result = assessmentService.createAssessmentsBulk(dtos);
-            return ResponseEntity.ok(ResponseDto.success("Assessments created successfully", result));
+            List<AssessmentDTO> result = assessmentService.createAssessmentsBulk(dto);
+            return ResponseEntity.ok(ResponseDto.success("Assessment created successfully", result));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDto.error("Failed to create assessments", e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDto.error("Failed to create assessment", e.getMessage()));
         }
     }
 

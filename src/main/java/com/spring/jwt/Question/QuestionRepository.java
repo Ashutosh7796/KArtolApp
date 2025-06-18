@@ -42,4 +42,6 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
             @Param("level") String level,
             @Param("marks") String marks
     );
+
+    boolean existsByQuestionText(String questionText);
 }

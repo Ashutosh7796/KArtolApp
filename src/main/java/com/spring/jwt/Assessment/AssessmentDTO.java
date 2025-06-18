@@ -1,6 +1,7 @@
 package com.spring.jwt.Assessment;
 
 
+import com.spring.jwt.Question.QuestionDTO;
 import lombok.*;
 import java.util.List;
 
@@ -16,5 +17,6 @@ public class AssessmentDTO {
     private String endTime;
     private Integer userId;
     private List<Integer> questionIds;
+    private List<QuestionDTO> questions;
 
 }

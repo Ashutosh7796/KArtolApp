@@ -35,6 +35,11 @@ public class QuestionServiceImpl implements QuestionService {
         checkHasText(question.getOption4(), "Option4 must not be blank.");
         checkHasText(question.getAnswer(), "Answer must not be blank.");
 
+        // Check for duplicate question
+        if (questionRepository.existsByQuestionText(question.getQuestionText())) {
+            throw new DuplicateQuestionException("Question already added: " + question.getQuestionText());
+        }
+
         return questionRepository.save(question);
     }
 
