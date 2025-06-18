@@ -158,7 +158,8 @@ public class UserController {
                             schema = @Schema(type = "string")
                     )
             )
-    })
+    }
+    )
     @GetMapping("/password/reset")
     public ResponseEntity<String> getResetPasswordPage(
             @RequestParam @NotBlank(message = "Token is required") String token) {
