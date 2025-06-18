@@ -123,7 +123,9 @@ public class AppConfig {
                 "/user/**", 
                 "/questions/add", 
                 "/questions/search", 
-                "/api/auth/**", 
+                "/api/auth/**",
+                    "/assessments/**"
+                    ,"/api/**",
                 jwtConfig.getUrl(), 
                 jwtConfig.getRefreshUrl()
             )
@@ -181,6 +183,8 @@ public class AppConfig {
                 
                 // Assessment endpoints
                 .requestMatchers("/assessments/**").permitAll()
+                .requestMatchers("/assessments/all").permitAll()
+                .requestMatchers("/api/**").permitAll()
                 
                 // Any other request requires authentication
                 .anyRequest().authenticated());

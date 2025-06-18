@@ -26,7 +26,7 @@ public class AssessmentController {
         }
     }
 
-    @GetMapping("/getById")
+    @GetMapping("/getByIdWithAns")
     public ResponseEntity<ResponseDto<AssessmentDTO>> getAssessmentById(@RequestParam Integer id) {
         try {
             AssessmentDTO dto = assessmentService.getAssessmentById(id);
@@ -35,11 +35,20 @@ public class AssessmentController {
             return ResponseEntity.badRequest().body(ResponseDto.error("Failed to fetch assessment", e.getMessage()));
         }
     }
+    @GetMapping("/getById")
+    public ResponseEntity<ResponseDto<AssessmentDtoWithoutAns>> getAssessmentByIdWithoutAns(@RequestParam Integer id) {
+        try {
+            AssessmentDtoWithoutAns dto = assessmentService.getAssessmentByIdWithoutAns(id);
+            return ResponseEntity.ok(ResponseDto.success("Assessment fetched successfully", dto));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDto.error("Failed to fetch assessment", e.getMessage()));
+        }
+    }
 
     @GetMapping("/all")
-    public ResponseEntity<ResponseDto<List<AssessmentDTO>>> getAllAssessments() {
+    public ResponseEntity<ResponseDto<List<AssessmentDtoWithoutAns>>> getAllAssessments() {
         try {
-            List<AssessmentDTO> result = assessmentService.getAllAssessments();
+            List<AssessmentDtoWithoutAns> result = assessmentService.getAllAssessments();
             return ResponseEntity.ok(ResponseDto.success("All assessments fetched successfully", result));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDto.error("Failed to fetch assessments", e.getMessage()));

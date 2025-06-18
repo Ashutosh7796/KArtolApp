@@ -1,5 +1,6 @@
 package com.spring.jwt.Assessment;
 import com.spring.jwt.Question.QuestionDTO;
+import com.spring.jwt.Question.QuestionDtoWithoutAns;
 import com.spring.jwt.entity.Assessment;
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.exception.UserNotFoundExceptions;
@@ -14,17 +15,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
-@NoArgsConstructor
 public class AssessmentServiceImpl implements AssessmentService {
 
 //    @Autowired
-    private  AssessmentRepository assessmentRepository;
+    private final AssessmentRepository assessmentRepository;
 
 //    @Autowired
-    private QuestionRepository questionRepository;
+    private final QuestionRepository questionRepository;
 
 //    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     public AssessmentServiceImpl(AssessmentRepository assessmentRepository, QuestionRepository questionRepository, UserRepository userRepository) {
         this.assessmentRepository = assessmentRepository;
@@ -68,7 +68,40 @@ public class AssessmentServiceImpl implements AssessmentService {
 
         return dto;
     }
+    private AssessmentDtoWithoutAns entityToDtoWithoutAns(Assessment entity) {
+        AssessmentDtoWithoutAns dto = new AssessmentDtoWithoutAns();
+        dto.setAssessmentId(entity.getAssessmentId());
+        dto.setSetNumber(entity.getSetNumber());
+        dto.setAssessmentDate(entity.getAssessmentDate());
+        dto.setDuration(entity.getDuration());
+        dto.setStartTime(entity.getStartTime());
+        dto.setEndTime(entity.getEndTime());
+        dto.setUserId(entity.getUser() != null ? entity.getUser().getId() : null);
 
+        // Map question IDs
+        List<Question> questionEntities = entity.getQuestions() != null ? entity.getQuestions() : Collections.emptyList();
+        dto.setQuestionIds(questionEntities.stream().map(Question::getQuestionId).collect(Collectors.toList()));
+
+        // Map full questions
+        List<QuestionDtoWithoutAns> questionDtos = questionEntities.stream().map(q -> {
+            QuestionDtoWithoutAns qDto = new QuestionDtoWithoutAns();
+            qDto.setQuestionId(q.getQuestionId());
+            qDto.setQuestionText(q.getQuestionText());
+            qDto.setType(q.getType());
+            qDto.setSubject(q.getSubject());
+            qDto.setLevel(q.getLevel());
+            qDto.setMarks(q.getMarks());
+//            qDto.setUserId(q.getUserId());
+            qDto.setOption1(q.getOption1());
+            qDto.setOption2(q.getOption2());
+            qDto.setOption3(q.getOption3());
+            qDto.setOption4(q.getOption4());
+            return qDto;
+        }).collect(Collectors.toList());
+        dto.setQuestions(questionDtos);
+
+        return dto;
+    }
     // DTO to Entity mapper
     private Assessment dtoToEntity(AssessmentDTO dto) {
         Assessment entity = new Assessment();
@@ -145,12 +178,18 @@ public class AssessmentServiceImpl implements AssessmentService {
                 .map(this::entityToDto)
                 .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + id));
     }
+    @Override
+    public AssessmentDtoWithoutAns getAssessmentByIdWithoutAns(Integer id) {
+        return assessmentRepository.findById(id)
+                .map(this::entityToDtoWithoutAns)
+                .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + id));
+    }
 
     @Override
-    public List<AssessmentDTO> getAllAssessments() {
+    public List<AssessmentDtoWithoutAns> getAllAssessments() {
         return assessmentRepository.findAll()
                 .stream()
-                .map(this::entityToDto)
+                .map(this::entityToDtoWithoutAns)
                 .collect(Collectors.toList());
     }
 

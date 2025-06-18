@@ -85,6 +85,7 @@ public class QuestionServiceImpl implements QuestionService {
         setIfNotBlank(updatedQuestion.getOption3(), question::setOption3);
         setIfNotBlank(updatedQuestion.getOption4(), question::setOption4);
         setIfNotBlank(updatedQuestion.getAnswer(), question::setAnswer);
+        setIfNotBlank(updatedQuestion.getStudentClass(), question::setStudentClass);
 
         return questionRepository.save(question);
     }

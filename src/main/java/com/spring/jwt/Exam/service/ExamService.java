@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface ExamService {
     ExamSessionDTO startExam(Integer userId, Integer paperId, String studentClass);
-    ExamSessionDTO submitExamAnswers(Integer sessionId, java.util.List<UserAnswerDTO> answers);
+    public ExamSessionDTO submitExamAnswers(Integer sessionId, Long userId, List<UserAnswerDTO> answers);
 
     List<ExamResultDTO> getResultsByUserId(Long userId);
 

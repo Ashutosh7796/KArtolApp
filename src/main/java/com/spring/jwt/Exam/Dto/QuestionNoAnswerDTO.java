@@ -1,22 +1,20 @@
-package com.spring.jwt.Question;
+package com.spring.jwt.Exam.Dto;
 
-
-import lombok.*;
+import lombok.Data;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class QuestionDTO {
+public class QuestionNoAnswerDTO {
     private Integer questionId;
     private String questionText;
     private String type;
     private String subject;
     private String level;
     private String marks;
+    private Integer userId;
     private String option1;
     private String option2;
     private String option3;
     private String option4;
-    private String answer;
-    private String StudentClass;
+    private String studentClass;
+    // NO answer field!
 }

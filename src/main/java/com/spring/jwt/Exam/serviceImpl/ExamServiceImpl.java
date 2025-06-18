@@ -61,36 +61,73 @@ public class ExamServiceImpl implements ExamService {
         return convertToDTO(saved);
     }
 
-    @Override
-    public ExamSessionDTO submitExamAnswers(Integer sessionId, List<UserAnswerDTO> answers) {
-        ExamSession session = examSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Exam session not found with ID: " + sessionId));
-        int score = 0;
-        List<UserAnswer> userAnswers = new ArrayList<>();
-        for (UserAnswerDTO dto : answers) {
-            Question question = questionRepository.findById(dto.getQuestionId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
-            UserAnswer ua = new UserAnswer();
-            ua.setExamSession(session);
-            ua.setQuestion(question);
-            ua.setSelectedOption(dto.getSelectedOption());
-            userAnswers.add(ua);
+//    @Override
+//    public ExamSessionDTO submitExamAnswers(Integer sessionId, List<UserAnswerDTO> answers) {
+//        ExamSession session = examSessionRepository.findById(sessionId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Exam session not found with ID: " + sessionId));
+//        int score = 0;
+//        List<UserAnswer> userAnswers = new ArrayList<>();
+//        for (UserAnswerDTO dto : answers) {
+//            Question question = questionRepository.findById(dto.getQuestionId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
+//            UserAnswer ua = new UserAnswer();
+//            ua.setExamSession(session);
+//            ua.setQuestion(question);
+//            ua.setSelectedOption(dto.getSelectedOption());
+//            userAnswers.add(ua);
+//
+//            if (question.getAnswer().equalsIgnoreCase(dto.getSelectedOption())) {
+//                try {
+//                    score += Integer.parseInt(question.getMarks());
+//                } catch (NumberFormatException nfe) {
+//                    // Optionally log invalid marks format
+//                }
+//            }
+//        }
+//        session.setEndTime(LocalDateTime.now());
+//        session.setScore(score);
+//        session.setUserAnswers(userAnswers);
+//        examSessionRepository.save(session);
+//        return convertToDTO(session);
+//    }
+@Override
+public ExamSessionDTO submitExamAnswers(Integer sessionId, Long userId, List<UserAnswerDTO> answers) {
+    ExamSession session = examSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new ResourceNotFoundException("Exam session not found with ID: " + sessionId));
 
-            if (question.getAnswer().equalsIgnoreCase(dto.getSelectedOption())) {
-                try {
-                    score += Integer.parseInt(question.getMarks());
-                } catch (NumberFormatException nfe) {
-                    // Optionally log invalid marks format
-                }
-            }
-        }
-        session.setEndTime(LocalDateTime.now());
-        session.setScore(score);
-        session.setUserAnswers(userAnswers);
-        examSessionRepository.save(session);
-        return convertToDTO(session);
+    // Log a warning if the userId does not match the session owner, but continue processing
+    if (!session.getUser().getId().equals(userId)) {
+        System.out.println("Warning: User ID " + userId + " is submitting for session owned by user " + session.getUser().getId());
+        // Optionally: you could return here or throw, but you chose to process anyway
     }
 
+    int score = 0;
+    List<UserAnswer> userAnswers = new ArrayList<>();
+    for (UserAnswerDTO dto : answers) {
+        Question question = questionRepository.findById(dto.getQuestionId())
+                .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
+        UserAnswer ua = new UserAnswer();
+        ua.setExamSession(session);
+        ua.setQuestion(question);
+        ua.setSelectedOption(dto.getSelectedOption());
+        userAnswers.add(ua);
+
+        // Score calculation
+        if (question.getAnswer() != null && question.getAnswer().equalsIgnoreCase(dto.getSelectedOption())) {
+            try {
+                score += Integer.parseInt(question.getMarks());
+            } catch (NumberFormatException nfe) {
+                // Optionally log invalid marks format
+                System.out.println("Invalid marks format for question ID: " + question.getQuestionId());
+            }
+        }
+    }
+    session.setEndTime(LocalDateTime.now());
+    session.setScore(score);
+    session.setUserAnswers(userAnswers);
+    examSessionRepository.save(session);
+    return convertToDTO(session);
+}
     private ExamSessionDTO convertToDTO(ExamSession session) {
         ExamSessionDTO dto = new ExamSessionDTO();
         dto.setSessionId(session.getSessionId());
