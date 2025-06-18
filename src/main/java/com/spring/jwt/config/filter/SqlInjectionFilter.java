@@ -152,15 +152,12 @@ public class SqlInjectionFilter implements Filter, Ordered {
             if (value == null) {
                 return null;
             }
-            
-            // Apply all SQL injection patterns
+
             String sanitizedValue = value;
             for (Pattern pattern : SQL_INJECTION_PATTERNS) {
-                // Instead of removing, we'll replace with a safe placeholder
                 sanitizedValue = pattern.matcher(sanitizedValue).replaceAll("INVALID");
             }
-            
-            // Remove common SQL injection characters
+
             sanitizedValue = sanitizedValue
                 .replaceAll("'", "")
                 .replaceAll("\"", "")

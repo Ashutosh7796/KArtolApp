@@ -156,7 +156,6 @@ public class XssFilter implements Filter, Ordered {
             if (EXCLUDED_HEADERS.contains(name.toLowerCase())) {
                 return headers;
             }
-
             return new Enumeration<String>() {
                 @Override
                 public boolean hasMoreElements() {
@@ -182,7 +181,6 @@ public class XssFilter implements Filter, Ordered {
             for (Pattern pattern : XSS_PATTERNS) {
                 sanitizedValue = pattern.matcher(sanitizedValue).replaceAll("");
             }
-
             sanitizedValue = sanitizedValue
                     .replaceAll("<", "&lt;")
                     .replaceAll(">", "&gt;")
