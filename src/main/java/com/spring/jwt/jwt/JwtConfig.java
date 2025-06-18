@@ -26,7 +26,7 @@ public class JwtConfig {
     @Value("${jwt.refresh-expiration:#{7*24*60*60}}")
     private int refreshExpiration;
 
-    @Value("${jwt.not-before:#{30}}")
+    @Value("${jwt.not-before:#{1}}")
     private int notBefore;
 
     @Value("${jwt.secret:3979244226452948404D6251655468576D5A7134743777217A25432A462D4A61}")

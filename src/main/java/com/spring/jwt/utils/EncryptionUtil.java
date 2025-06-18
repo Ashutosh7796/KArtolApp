@@ -21,11 +21,9 @@ public class EncryptionUtil {
     public EncryptionUtil(
             @Value("${app.encryption.secret-key:defaultSecretKey12345678901234567890}") String primaryKey,
             @Value("${app.encryption.legacy-keys:}") String legacyKeysStr) {
-        
-        // Ensure primary key is exactly 32 bytes (256 bits) for AES-256
+
         this.primaryKey = normalizeKey(primaryKey);
-        
-        // Add any legacy keys
+
         if (legacyKeysStr != null && !legacyKeysStr.isEmpty()) {
             String[] keys = legacyKeysStr.split(",");
             for (String key : keys) {
@@ -34,8 +32,7 @@ public class EncryptionUtil {
                 }
             }
         }
-        
-        // Add a default legacy key for backward compatibility
+
         legacyKeys.add(normalizeKey("secure-encryption-key-123456789012"));
         legacyKeys.add(normalizeKey("secure-field-encryption-key-456"));
         legacyKeys.add(normalizeKey("fieldEncryptionKey123"));
@@ -54,8 +51,7 @@ public class EncryptionUtil {
         if (data == null || data.isEmpty()) {
             return data;
         }
-        
-        // If it already looks encrypted, return as is
+
         if (isLikelyEncrypted(data)) {
             return data;
         }
@@ -76,19 +72,14 @@ public class EncryptionUtil {
         if (encryptedData == null || encryptedData.isEmpty()) {
             return encryptedData;
         }
-        
-        // Always attempt decryption regardless of whether it looks encrypted
-        // This is safer for our use case where we need to ensure data is decrypted
-        
-        // Try with primary key first
+
         Exception lastException = null;
         try {
             return decryptWithKey(encryptedData, primaryKey);
         } catch (Exception e) {
             lastException = e;
         }
-        
-        // If that fails, try with legacy keys
+
         for (String legacyKey : legacyKeys) {
             try {
                 return decryptWithKey(encryptedData, legacyKey);
@@ -96,9 +87,7 @@ public class EncryptionUtil {
                 lastException = e;
             }
         }
-        
-        // If all decryption attempts fail, return the original data
-        // This is safer than throwing an exception, especially during migration
+
         return encryptedData;
     }
     
@@ -117,12 +106,10 @@ public class EncryptionUtil {
      * This is a heuristic - not 100% accurate but helpful to avoid double encryption
      */
     private boolean isLikelyEncrypted(String data) {
-        // Most encrypted strings are longer than the original
         if (data.length() < 10) {
             return false;
         }
-        
-        // Most encrypted strings are Base64 encoded
+
         return BASE64_PATTERN.matcher(data).matches();
     }
 } 

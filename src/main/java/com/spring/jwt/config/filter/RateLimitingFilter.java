@@ -18,10 +18,8 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RateLimitingFilter implements Filter, Ordered {
 
-    // HTTP status code for Too Many Requests (429)
     private static final int STATUS_TOO_MANY_REQUESTS = 429;
-    
-    // Cache to store request counts per IP
+
     private final Map<String, RequestCounter> requestCounts = new ConcurrentHashMap<>();
     
     @Value("${app.rate-limiting.enabled:true}")
@@ -44,43 +42,37 @@ public class RateLimitingFilter implements Filter, Ordered {
         
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
-        
-        // Skip rate limiting for non-sensitive endpoints
+
         String path = httpRequest.getRequestURI();
         if (isPublicEndpoint(path)) {
             chain.doFilter(request, response);
             return;
         }
-        
-        // Get client IP
+
         String clientIp = getClientIp(httpRequest);
-        
-        // Check if the request exceeds the rate limit
+
         if (isRateLimitExceeded(clientIp)) {
-            // Return 429 Too Many Requests
             httpResponse.setStatus(STATUS_TOO_MANY_REQUESTS);
             httpResponse.setContentType("application/json");
             httpResponse.getWriter().write("{\"error\":\"Rate limit exceeded. Please try again later.\"}");
             return;
         }
-        
-        // Continue with the filter chain
+
         chain.doFilter(request, response);
     }
 
     @Override
     public void init(FilterConfig filterConfig) {
-        // No initialization needed
+
     }
 
     @Override
     public void destroy() {
-        // No cleanup needed
+
     }
     
     @Override
     public int getOrder() {
-        // Run before other security filters
         return Ordered.HIGHEST_PRECEDENCE + 30;
     }
     

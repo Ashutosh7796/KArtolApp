@@ -13,7 +13,6 @@ import com.spring.jwt.jwt.JwtService;
 import com.spring.jwt.repository.UserRepository;
 import com.spring.jwt.service.security.UserDetailsServiceCustom;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +22,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -41,6 +41,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.ForwardedHeaderFilter;
 import org.springframework.http.HttpMethod;
+import org.springframework.context.annotation.Lazy;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,35 +50,42 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(
+    securedEnabled = true,
+    jsr250Enabled = true,
+    prePostEnabled = true
+)
+@Slf4j
 public class AppConfig {
 
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
+    @Lazy
     private JwtService jwtService;
-    
+
     @Autowired
     private JwtConfig jwtConfig;
-    
+
     @Autowired
     private CustomAuthenticationProvider customAuthenticationProvider;
-    
+
     @Autowired
     private SecurityHeadersFilter securityHeadersFilter;
-    
+
     @Autowired
     private XssFilter xssFilter;
-    
+
     @Autowired
     private SqlInjectionFilter sqlInjectionFilter;
-    
+
     @Autowired
     private RateLimitingFilter rateLimitingFilter;
-    
+
     @Value("${app.url.frontend:http://localhost:5173}")
     private String frontendUrl;
-    
+
     @Value("#{'${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://localhost:8080}'.split(',')}")
     private List<String> allowedOrigins;
 
@@ -106,18 +115,19 @@ public class AppConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-       requestHandler.setCsrfRequestAttributeName("_csrf");
+        log.debug("Configuring security filter chain");
         
         http.csrf(csrf -> csrf
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .csrfTokenRequestHandler(requestHandler)
-                .ignoringRequestMatchers(
-                    "/api/auth/**", 
-                    jwtConfig.getUrl(), 
-                    jwtConfig.getRefreshUrl()
-                )
-            );
+            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            .ignoringRequestMatchers(
+                "/user/**", 
+                "/questions/add", 
+                "/questions/search", 
+                "/api/auth/**", 
+                jwtConfig.getUrl(), 
+                jwtConfig.getRefreshUrl()
+            )
+        );
 
         http.cors(Customizer.withDefaults());
 
@@ -135,68 +145,64 @@ public class AppConfig {
                     .policy("camera=(), microphone=(), geolocation=()"))
             );
 
+        // Configure URL-based security
+        log.debug("Configuring URL-based security rules");
         http.authorizeHttpRequests(authorize -> authorize
-
+                // Authentication endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(jwtConfig.getUrl()).permitAll()
                 .requestMatchers(jwtConfig.getRefreshUrl()).permitAll()
+                
+                // Swagger/API docs
+                .requestMatchers(
+                        "/v2/api-docs",
+                        "/v3/api-docs",
+                        "/v*/a*-docs/**",
+                        "/swagger-resources",
+                        "/swagger-resources/**",
+                        "/configuration/ui",
+                        "/configuration/security",
+                        "/swagger-ui/**",
+                        "/webjars/**",
+                        "/swagger-ui.html"
+                ).permitAll()
+                
+                // Public API endpoints
                 .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers("/assessments/**").permitAll()
                 .requestMatchers("/user/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/users/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/users/**").authenticated()
                 .requestMatchers("/fees").permitAll()
-                .requestMatchers("/questions").permitAll()
-                .requestMatchers("/assessments").permitAll()
-                .requestMatchers(
-                        "/api/v1/auth/**",
-                        "/v2/api-docs",
-                        "/v3/api-docs",
-                        "/v*/a*-docs/**",
-                        "/swagger-resources",
-                        "/swagger-resources/**",
-                        "/configuration/ui",
-                        "/configuration/security",
-                        "/swagger-ui/**",
-                        "/webjars/**",
-                        "/swagger-ui.html"
-                ).permitAll()
-
-                .requestMatchers("/fees").permitAll()
-                .requestMatchers("/questions").permitAll()
-                .requestMatchers("/assessments").permitAll()
-                .requestMatchers(
-                        "/api/v1/auth/**",
-                        "/v2/api-docs",
-                        "/v3/api-docs",
-                        "/v*/a*-docs/**",
-                        "/swagger-resources",
-                        "/swagger-resources/**",
-                        "/configuration/ui",
-                        "/configuration/security",
-                        "/swagger-ui/**",
-                        "/webjars/**",
-                        "/swagger-ui.html"
-                ).permitAll()
-
-                // Protected endpoints
+                
+                // Specific question endpoints that are public
+                .requestMatchers("/questions/add").permitAll()
+                .requestMatchers("/questions/search").permitAll()
+                
+                // All other question endpoints require authentication
+                .requestMatchers("/questions/**").authenticated()
+                
+                // Assessment endpoints
+                .requestMatchers("/assessments/**").permitAll()
+                
+                // Any other request requires authentication
                 .anyRequest().authenticated());
 
+        // Configure filters
+        log.debug("Configuring security filters");
         JwtUsernamePasswordAuthenticationFilter jwtUsernamePasswordAuthenticationFilter = new JwtUsernamePasswordAuthenticationFilter(authenticationManager(http), jwtConfig, jwtService, userRepository);
         JwtTokenAuthenticationFilter jwtTokenAuthenticationFilter = new JwtTokenAuthenticationFilter(jwtConfig, jwtService, userDetailsService());
         JwtRefreshTokenFilter jwtRefreshTokenFilter = new JwtRefreshTokenFilter(authenticationManager(http), jwtConfig, jwtService, userDetailsService());
-        
-        http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(xssFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(sqlInjectionFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(securityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(jwtUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterAfter(jwtRefreshTokenFilter, JwtUsernamePasswordAuthenticationFilter.class)
-            .addFilterAfter(jwtTokenAuthenticationFilter, JwtRefreshTokenFilter.class);
+
+        // Run JWT authentication filter first, before any Spring filters
+        http.addFilterBefore(jwtTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtRefreshTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(xssFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(sqlInjectionFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(securityHeadersFilter, UsernamePasswordAuthenticationFilter.class);
 
         http.authenticationProvider(customAuthenticationProvider);
-
+        
+        log.debug("Security configuration completed");
         return http.build();
     }
 
@@ -221,7 +227,7 @@ public class AppConfig {
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder builder = http.getSharedObject(AuthenticationManagerBuilder.class);
         builder.userDetailsService(userDetailsService())
-               .passwordEncoder(passwordEncoder());
+                .passwordEncoder(passwordEncoder());
         return builder.build();
     }
 }

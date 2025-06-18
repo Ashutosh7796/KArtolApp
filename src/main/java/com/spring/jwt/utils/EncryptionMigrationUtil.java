@@ -38,20 +38,17 @@ public class EncryptionMigrationUtil implements ApplicationRunner {
         
         for (User user : users) {
             boolean updated = false;
-            
-            // Check and encrypt firstName if needed
+
             if (user.getFirstName() != null && !isLikelyEncrypted(user.getFirstName())) {
                 user.setFirstName(encryptionUtil.encrypt(user.getFirstName()));
                 updated = true;
             }
-            
-            // Check and encrypt lastName if needed
+
             if (user.getLastName() != null && !isLikelyEncrypted(user.getLastName())) {
                 user.setLastName(encryptionUtil.encrypt(user.getLastName()));
                 updated = true;
             }
-            
-            // Check and encrypt address if needed
+
             if (user.getAddress() != null && !isLikelyEncrypted(user.getAddress())) {
                 user.setAddress(encryptionUtil.encrypt(user.getAddress()));
                 updated = true;

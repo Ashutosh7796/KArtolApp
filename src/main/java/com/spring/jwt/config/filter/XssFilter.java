@@ -89,7 +89,6 @@ public class XssFilter implements Filter, Ordered {
                 Pattern.compile("<form(.*?)>(.*?)</form>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL)
         };
 
-        // Cached parameters
         private Map<String, String[]> sanitizedParameterMap;
 
         public XssRequestWrapper(HttpServletRequest request) {
@@ -158,7 +157,6 @@ public class XssFilter implements Filter, Ordered {
                 return headers;
             }
 
-            // Sanitize each header value
             return new Enumeration<String>() {
                 @Override
                 public boolean hasMoreElements() {
