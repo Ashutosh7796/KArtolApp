@@ -1,228 +1,274 @@
 package com.spring.jwt.Assessment;
-import com.spring.jwt.Question.QuestionDTO;
-import com.spring.jwt.Question.QuestionDtoWithoutAns;
+
+import com.spring.jwt.Question.QuestionNotFoundException;
+import com.spring.jwt.Question.QuestionRepository;
 import com.spring.jwt.entity.Assessment;
+import com.spring.jwt.entity.AssessmentQuestion;
 import com.spring.jwt.entity.Question;
+import com.spring.jwt.entity.User;
 import com.spring.jwt.exception.UserNotFoundExceptions;
 import com.spring.jwt.repository.UserRepository;
-import com.spring.jwt.Question.QuestionRepository;
-import com.spring.jwt.Question.QuestionNotFoundException;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.criteria.Predicate;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class AssessmentServiceImpl implements AssessmentService {
 
-//    @Autowired
     private final AssessmentRepository assessmentRepository;
-
-//    @Autowired
     private final QuestionRepository questionRepository;
-
-//    @Autowired
     private final UserRepository userRepository;
+    private final AssessmentMapper assessmentMapper;
 
-    public AssessmentServiceImpl(AssessmentRepository assessmentRepository, QuestionRepository questionRepository, UserRepository userRepository) {
-        this.assessmentRepository = assessmentRepository;
-        this.questionRepository = questionRepository;
-        this.userRepository = userRepository;
-    }
+    @Override
+    public AssessmentDTO createAssessment(AssessmentDTO assessmentDTO) {
+        if (assessmentDTO == null) {
+            throw new IllegalArgumentException("Assessment data cannot be null");
+        }
 
-    // Entity to DTO mapper
-    private AssessmentDTO entityToDto(Assessment entity) {
-        AssessmentDTO dto = new AssessmentDTO();
-        dto.setAssessmentId(entity.getAssessmentId());
-        dto.setSetNumber(entity.getSetNumber());
-        dto.setAssessmentDate(entity.getAssessmentDate());
-        dto.setDuration(entity.getDuration());
-        dto.setStartTime(entity.getStartTime());
-        dto.setEndTime(entity.getEndTime());
-        dto.setUserId(entity.getUser() != null ? entity.getUser().getId() : null);
+        if (assessmentDTO.getUserId() == null) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+        User user = userRepository.findById(assessmentDTO.getUserId().longValue())
+                .orElseThrow(() -> new UserNotFoundExceptions("User not found with id: " + assessmentDTO.getUserId()));
 
-        // Map question IDs
-        List<Question> questionEntities = entity.getQuestions() != null ? entity.getQuestions() : Collections.emptyList();
-        dto.setQuestionIds(questionEntities.stream().map(Question::getQuestionId).collect(Collectors.toList()));
+        Assessment assessment = assessmentMapper.toEntity(assessmentDTO);
+        assessment.setUser(user);
 
-        // Map full questions
-        List<QuestionDTO> questionDtos = questionEntities.stream().map(q -> {
-            QuestionDTO qDto = new QuestionDTO();
-            qDto.setQuestionId(q.getQuestionId());
-            qDto.setQuestionText(q.getQuestionText());
-            qDto.setType(q.getType());
-            qDto.setSubject(q.getSubject());
-            qDto.setLevel(q.getLevel());
-            qDto.setMarks(q.getMarks());
-//            qDto.setUserId(q.getUserId());
-            qDto.setOption1(q.getOption1());
-            qDto.setOption2(q.getOption2());
-            qDto.setOption3(q.getOption3());
-            qDto.setOption4(q.getOption4());
-            qDto.setAnswer(q.getAnswer());
-            return qDto;
-        }).collect(Collectors.toList());
-        dto.setQuestions(questionDtos);
+        if (assessmentDTO.getQuestionIds() != null && !assessmentDTO.getQuestionIds().isEmpty()) {
+            List<Question> questions = questionRepository.findAllById(assessmentDTO.getQuestionIds());
 
-        return dto;
-    }
-    private AssessmentDtoWithoutAns entityToDtoWithoutAns(Assessment entity) {
-        AssessmentDtoWithoutAns dto = new AssessmentDtoWithoutAns();
-        dto.setAssessmentId(entity.getAssessmentId());
-        dto.setSetNumber(entity.getSetNumber());
-        dto.setAssessmentDate(entity.getAssessmentDate());
-        dto.setDuration(entity.getDuration());
-        dto.setStartTime(entity.getStartTime());
-        dto.setEndTime(entity.getEndTime());
-        dto.setUserId(entity.getUser() != null ? entity.getUser().getId() : null);
-
-        // Map question IDs
-        List<Question> questionEntities = entity.getQuestions() != null ? entity.getQuestions() : Collections.emptyList();
-        dto.setQuestionIds(questionEntities.stream().map(Question::getQuestionId).collect(Collectors.toList()));
-
-        // Map full questions
-        List<QuestionDtoWithoutAns> questionDtos = questionEntities.stream().map(q -> {
-            QuestionDtoWithoutAns qDto = new QuestionDtoWithoutAns();
-            qDto.setQuestionId(q.getQuestionId());
-            qDto.setQuestionText(q.getQuestionText());
-            qDto.setType(q.getType());
-            qDto.setSubject(q.getSubject());
-            qDto.setLevel(q.getLevel());
-            qDto.setMarks(q.getMarks());
-//            qDto.setUserId(q.getUserId());
-            qDto.setOption1(q.getOption1());
-            qDto.setOption2(q.getOption2());
-            qDto.setOption3(q.getOption3());
-            qDto.setOption4(q.getOption4());
-            return qDto;
-        }).collect(Collectors.toList());
-        dto.setQuestions(questionDtos);
-
-        return dto;
-    }
-    // DTO to Entity mapper
-    private Assessment dtoToEntity(AssessmentDTO dto) {
-        Assessment entity = new Assessment();
-        entity.setAssessmentId(dto.getAssessmentId());
-        entity.setSetNumber(dto.getSetNumber());
-        entity.setAssessmentDate(dto.getAssessmentDate());
-        entity.setDuration(dto.getDuration());
-        entity.setStartTime(dto.getStartTime());
-        entity.setEndTime(dto.getEndTime());
-        // Set user
-        entity.setUser(
-                dto.getUserId() != null
-                        ? userRepository.findById(dto.getUserId().longValue())
-                        .orElseThrow(() -> new UserNotFoundExceptions("UserId not found: " + dto.getUserId()))
-                        : null
-        );
-        // Set question list
-        if (dto.getQuestionIds() != null && !dto.getQuestionIds().isEmpty()) {
-            List<Question> questions = questionRepository.findAllById(dto.getQuestionIds());
-            if (questions.size() != dto.getQuestionIds().size()) {
-                Set<Integer> foundIds = questions.stream().map(Question::getQuestionId).collect(Collectors.toSet());
-                List<Integer> notFound = dto.getQuestionIds().stream()
+            if (questions.size() != assessmentDTO.getQuestionIds().size()) {
+                Set<Integer> foundIds = questions.stream()
+                        .map(Question::getQuestionId)
+                        .collect(Collectors.toSet());
+                
+                List<Integer> notFound = assessmentDTO.getQuestionIds().stream()
                         .filter(id -> !foundIds.contains(id))
                         .collect(Collectors.toList());
-                throw new QuestionNotFoundException("QuestionIds not found: " + notFound);
+                
+                throw new QuestionNotFoundException("Questions not found with ids: " + notFound);
             }
-            entity.setQuestions(questions);
-        } else {
-            entity.setQuestions(Collections.emptyList());
-        }
-        return entity;
-    }
-
-    @Override
-    public List<AssessmentDTO> createAssessmentsBulk(AssessmentDTO dto) {
-        if (dto == null) {
-            throw new IllegalArgumentException("Assessment object is null");
-        }
-
-        Integer userId = dto.getUserId();
-        if (userId == null || !userRepository.existsById(userId.longValue())) {
-            throw new UserNotFoundExceptions("UserId not found in User table: " + userId);
-        }
-
-        // Validate question IDs
-        Set<Integer> questionIds = dto.getQuestionIds() != null ? new HashSet<>(dto.getQuestionIds()) : new HashSet<>();
-
-        List<Question> foundQuestions = questionRepository.findAllById(questionIds);
-        Set<Integer> foundIds = foundQuestions.stream().map(Question::getQuestionId).collect(Collectors.toSet());
-
-        List<Integer> notFound = questionIds.stream()
-                .filter(id -> !foundIds.contains(id))
-                .collect(Collectors.toList());
-
-        if (!notFound.isEmpty()) {
-            throw new QuestionNotFoundException("QuestionIds not found in Question table: " + notFound);
-        }
-
-        // Generate unique setNumber
-        Long maxSetNumber = assessmentRepository.findMaxSetNumber();
-        Long newSetNumber = (maxSetNumber == null ? 1000L : maxSetNumber + 1);
-
-        // Convert to entity and save
-        Assessment entity = dtoToEntity(dto);
-        entity.setSetNumber(newSetNumber);
-
-        Assessment saved = assessmentRepository.save(entity);
-
-        return Collections.singletonList(entityToDto(saved));
-    }
-    @Override
-    public AssessmentDTO getAssessmentById(Integer id) {
-        return assessmentRepository.findById(id)
-                .map(this::entityToDto)
-                .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + id));
-    }
-    @Override
-    public AssessmentDtoWithoutAns getAssessmentByIdWithoutAns(Integer id) {
-        return assessmentRepository.findById(id)
-                .map(this::entityToDtoWithoutAns)
-                .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + id));
-    }
-
-    @Override
-    public List<AssessmentDtoWithoutAns> getAllAssessments() {
-        return assessmentRepository.findAll()
-                .stream()
-                .map(this::entityToDtoWithoutAns)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public AssessmentDTO updateAssessment(Integer id, AssessmentDTO dto) {
-        Assessment assessment = assessmentRepository.findById(id)
-                .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + id));
-        // Only update mutable fields
-        assessment.setAssessmentDate(dto.getAssessmentDate());
-        assessment.setDuration(dto.getDuration());
-        assessment.setStartTime(dto.getStartTime());
-        assessment.setEndTime(dto.getEndTime());
-        // Update questions if provided
-        if (dto.getQuestionIds() != null && !dto.getQuestionIds().isEmpty()) {
-            List<Question> questions = questionRepository.findAllById(dto.getQuestionIds());
-            if (questions.size() != dto.getQuestionIds().size()) {
-                Set<Integer> foundIds = questions.stream().map(Question::getQuestionId).collect(Collectors.toSet());
-                List<Integer> notFound = dto.getQuestionIds().stream()
-                        .filter(qid -> !foundIds.contains(qid))
-                        .collect(Collectors.toList());
-                throw new QuestionNotFoundException("QuestionIds not found: " + notFound);
-            }
+            
             assessment.setQuestions(questions);
         }
+
+        if (assessment.getSetNumber() == null) {
+            Long maxSetNumber = assessmentRepository.findMaxSetNumber();
+            Long newSetNumber = (maxSetNumber == null ? 1000L : maxSetNumber + 1);
+            assessment.setSetNumber(newSetNumber);
+        }
+
         Assessment saved = assessmentRepository.save(assessment);
-        return entityToDto(saved);
+
+        return assessmentMapper.toDto(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AssessmentDTO getAssessmentById(Integer id) {
+        return assessmentRepository.findById(id)
+                .map(assessmentMapper::toDto)
+                .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AssessmentDTO> getAllAssessments(Pageable pageable) {
+        return assessmentRepository.findAll(pageable)
+                .map(assessmentMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AssessmentDTO> getAllAssessments() {
+        return assessmentRepository.findAll().stream()
+                .map(assessmentMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public AssessmentDTO updateAssessment(Integer id, AssessmentDTO assessmentDTO) {
+        Assessment assessment = assessmentRepository.findById(id)
+                .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + id));
+
+        if (assessmentDTO.getTitle() != null) {
+            assessment.setTitle(assessmentDTO.getTitle());
+        }
+        if (assessmentDTO.getSubject() != null) {
+            assessment.setSubject(assessmentDTO.getSubject());
+        }
+        if (assessmentDTO.getDescription() != null) {
+            assessment.setDescription(assessmentDTO.getDescription());
+        }
+        if (assessmentDTO.getAssessmentDate() != null) {
+            assessment.setAssessmentDate(assessmentDTO.getAssessmentDate());
+        }
+        if (assessmentDTO.getDuration() != null) {
+            assessment.setDuration(assessmentDTO.getDuration());
+        }
+        if (assessmentDTO.getStartTime() != null) {
+            assessment.setStartTime(assessmentDTO.getStartTime());
+        }
+        if (assessmentDTO.getEndTime() != null) {
+            assessment.setEndTime(assessmentDTO.getEndTime());
+        }
+        if (assessmentDTO.getIsActive() != null) {
+            assessment.setIsActive(assessmentDTO.getIsActive());
+        }
+
+        if (assessmentDTO.getQuestionIds() != null && !assessmentDTO.getQuestionIds().isEmpty()) {
+            List<Question> questions = questionRepository.findAllById(assessmentDTO.getQuestionIds());
+
+            if (questions.size() != assessmentDTO.getQuestionIds().size()) {
+                Set<Integer> foundIds = questions.stream()
+                        .map(Question::getQuestionId)
+                        .collect(Collectors.toSet());
+                
+                List<Integer> notFound = assessmentDTO.getQuestionIds().stream()
+                        .filter(qid -> !foundIds.contains(qid))
+                        .collect(Collectors.toList());
+                
+                throw new QuestionNotFoundException("Questions not found with ids: " + notFound);
+            }
+            
+            assessment.setQuestions(questions);
+        }
+
+        Assessment saved = assessmentRepository.save(assessment);
+        return assessmentMapper.toDto(saved);
     }
 
     @Override
     public void deleteAssessment(Integer id) {
-        if (!assessmentRepository.existsById(id)) {
-            throw new AssessmentNotFoundException("Assessment not found with id: " + id);
+        Assessment assessment = assessmentRepository.findById(id)
+                .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + id));
+        
+        assessmentRepository.delete(assessment);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AssessmentDTO> getAssessmentsByUserId(Integer userId, Pageable pageable) {
+        if (!userRepository.existsById(userId.longValue())) {
+            throw new UserNotFoundExceptions("User not found with id: " + userId);
         }
-        assessmentRepository.deleteById(id);
+        
+        return assessmentRepository.findByUserId(userId.longValue(), pageable)
+                .map(assessmentMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AssessmentDTO> getAssessmentsByUserId(Integer userId) {
+        if (!userRepository.existsById(userId.longValue())) {
+            throw new UserNotFoundExceptions("User not found with id: " + userId);
+        }
+        
+        return assessmentRepository.findByUserId(userId.longValue()).stream()
+                .map(assessmentMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AssessmentDTO> searchAssessments(Map<String, String> filters, Pageable pageable) {
+        Specification<Assessment> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            if (filters.containsKey("title")) {
+                predicates.add(criteriaBuilder.like(
+                    criteriaBuilder.lower(root.get("title")), 
+                    "%" + filters.get("title").toLowerCase() + "%"
+                ));
+            }
+            
+            if (filters.containsKey("subject")) {
+                predicates.add(criteriaBuilder.equal(
+                    criteriaBuilder.lower(root.get("subject")), 
+                    filters.get("subject").toLowerCase()
+                ));
+            }
+            
+            if (filters.containsKey("createdBy")) {
+                predicates.add(criteriaBuilder.equal(
+                    root.get("user").get("id"), 
+                    Long.parseLong(filters.get("createdBy"))
+                ));
+            }
+            
+            if (filters.containsKey("isActive")) {
+                predicates.add(criteriaBuilder.equal(
+                    root.get("isActive"), 
+                    Boolean.parseBoolean(filters.get("isActive"))
+                ));
+            }
+            
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+        
+        return assessmentRepository.findAll(spec, pageable)
+                .map(assessmentMapper::toDto);
+    }
+
+    @Override
+    public AssessmentDTO addQuestionToAssessment(Integer assessmentId, AssessmentDTO.AssessmentQuestionDTO questionDTO) {
+
+        Assessment assessment = assessmentRepository.findById(assessmentId)
+                .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + assessmentId));
+
+        Question question = questionRepository.findById(questionDTO.getQuestionId())
+                .orElseThrow(() -> new QuestionNotFoundException("Question not found with id: " + questionDTO.getQuestionId()));
+
+        boolean questionExists = assessment.getQuestions().stream()
+                .anyMatch(q -> q.getQuestionId().equals(questionDTO.getQuestionId()));
+        
+        if (questionExists) {
+            throw new DuplicateQuestionInSetException("Question already exists in the assessment: " + questionDTO.getQuestionId());
+        }
+
+        assessment.getQuestions().add(question);
+
+        if (questionDTO.getPoints() != null || questionDTO.getOrderNumber() != null) {
+            AssessmentQuestion assessmentQuestion = new AssessmentQuestion();
+            assessmentQuestion.setAssessment(assessment);
+            assessmentQuestion.setQuestion(question);
+            
+            if (questionDTO.getPoints() != null) {
+                assessmentQuestion.setPoints(questionDTO.getPoints());
+            }
+            
+            if (questionDTO.getOrderNumber() != null) {
+                assessmentQuestion.setOrderNumber(questionDTO.getOrderNumber());
+            }
+
+        }
+        
+        Assessment savedAssessment = assessmentRepository.save(assessment);
+        return assessmentMapper.toDto(savedAssessment);
+    }
+
+    @Override
+    public AssessmentDTO removeQuestionFromAssessment(Integer assessmentId, Integer questionId) {
+        Assessment assessment = assessmentRepository.findById(assessmentId)
+                .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + assessmentId));
+
+        boolean questionExists = assessment.getQuestions().removeIf(q -> q.getQuestionId().equals(questionId));
+        
+        if (!questionExists) {
+            throw new QuestionNotFoundException("Question not found in the assessment: " + questionId);
+        }
+
+        Assessment savedAssessment = assessmentRepository.save(assessment);
+        return assessmentMapper.toDto(savedAssessment);
     }
 }

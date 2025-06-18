@@ -1,0 +1,742 @@
+{
+	"info": {
+		"_postman_id": "b8e7a5b3-0e2b-4b1c-9f5c-d8f5a9b7c6d5",
+		"name": "KArtolApp API Testing",
+		"description": "A comprehensive collection for testing KArtolApp API including authentication, questions, assessments, and more",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"jwt_token\", jsonData.data.accessToken);",
+									"pm.environment.set(\"refresh_token\", jsonData.data.refreshToken);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin@example.com\",\n    \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login to get JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"jwt_token\", jsonData.data.accessToken);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Get new access token using refresh token"
+					},
+					"response": []
+				},
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"newuser@example.com\",\n    \"email\": \"newuser@example.com\",\n    \"password\": \"Password123\",\n    \"firstName\": \"New\",\n    \"lastName\": \"User\",\n    \"mobileNumber\": \"9876543210\",\n    \"role\": \"STUDENT\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/user/registerUser",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"registerUser"
+							]
+						},
+						"description": "Register a new user"
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/user/forgot-password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"forgot-password"
+							]
+						},
+						"description": "Request password reset"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication related endpoints"
+		},
+		{
+			"name": "Questions",
+			"item": [
+				{
+					"name": "Add Question",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"questionText\": \"What is the capital of France?\",\n    \"type\": \"MCQ\",\n    \"subject\": \"Geography\",\n    \"level\": \"Medium\",\n    \"marks\": \"5\",\n    \"userId\": 1,\n    \"option1\": \"Paris\",\n    \"option2\": \"London\",\n    \"option3\": \"Berlin\",\n    \"option4\": \"Rome\",\n    \"answer\": \"Paris\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/questions/add",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"questions",
+								"add"
+							]
+						},
+						"description": "Add a new question"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Question by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/questions/getById?id=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"questions",
+								"getById"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Get question by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Questions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/questions/search?subject=Geography&type=MCQ&level=Medium&marks=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"questions",
+								"search"
+							],
+							"query": [
+								{
+									"key": "subject",
+									"value": "Geography"
+								},
+								{
+									"key": "type",
+									"value": "MCQ"
+								},
+								{
+									"key": "level",
+									"value": "Medium"
+								},
+								{
+									"key": "marks",
+									"value": "5"
+								}
+							]
+						},
+						"description": "Search questions by criteria"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Question",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"questionText\": \"What is the capital of France? (Updated)\",\n    \"type\": \"MCQ\",\n    \"subject\": \"Geography\",\n    \"level\": \"Medium\",\n    \"marks\": \"5\",\n    \"userId\": 1,\n    \"option1\": \"Paris\",\n    \"option2\": \"London\",\n    \"option3\": \"Berlin\",\n    \"option4\": \"Rome\",\n    \"answer\": \"Paris\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/questions/update/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"questions",
+								"update",
+								"1"
+							]
+						},
+						"description": "Update an existing question"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Question",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/questions/delete/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"questions",
+								"delete",
+								"1"
+							]
+						},
+						"description": "Delete a question"
+					},
+					"response": []
+				}
+			],
+			"description": "Question management endpoints"
+		},
+		{
+			"name": "Assessments",
+			"item": [
+				{
+					"name": "Create Assessment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Geography Test\",\n    \"description\": \"Test on world geography\",\n    \"subject\": \"Geography\",\n    \"totalMarks\": 50,\n    \"userId\": 1,\n    \"questions\": [1, 2, 3, 4, 5]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/assessments/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"assessments",
+								"create"
+							]
+						},
+						"description": "Create a new assessment"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Assessment by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/assessments/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"assessments",
+								"1"
+							]
+						},
+						"description": "Get assessment by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Question to Assessment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"questionId\": 6\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/assessments/1/questions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"assessments",
+								"1",
+								"questions"
+							]
+						},
+						"description": "Add a question to an assessment"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Assessment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/assessments/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"assessments",
+								"1"
+							]
+						},
+						"description": "Delete an assessment"
+					},
+					"response": []
+				}
+			],
+			"description": "Assessment management endpoints"
+		},
+		{
+			"name": "Exams",
+			"item": [
+				{
+					"name": "Start Exam Session",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paperId\": 1,\n    \"userId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/exam/start-session",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"exam",
+								"start-session"
+							]
+						},
+						"description": "Start a new exam session"
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Answer",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sessionId\": 1,\n    \"questionId\": 1,\n    \"answer\": \"Paris\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/exam/submit-answer",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"exam",
+								"submit-answer"
+							]
+						},
+						"description": "Submit an answer for a question in an exam session"
+					},
+					"response": []
+				},
+				{
+					"name": "Complete Exam",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/exam/complete/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"exam",
+								"complete",
+								"1"
+							]
+						},
+						"description": "Complete an exam session"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Exam Results",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/exam/results/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"exam",
+								"results",
+								"1"
+							]
+						},
+						"description": "Get the results of a completed exam"
+					},
+					"response": []
+				}
+			],
+			"description": "Exam-related endpoints"
+		},
+		{
+			"name": "CSRF Protection Tests",
+			"item": [
+				{
+					"name": "Get CSRF Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Extract CSRF token from cookies",
+									"var csrf_token = pm.cookies.get('XSRF-TOKEN');",
+									"if (csrf_token) {",
+									"    pm.environment.set(\"csrf_token\", csrf_token);",
+									"    console.log(\"CSRF Token set: \" + csrf_token);",
+									"} else {",
+									"    console.log(\"No CSRF token found in cookies\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}",
+							"host": [
+								"{{base_url}}"
+							]
+						},
+						"description": "Get CSRF token by making a GET request to any endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Assessment with CSRF",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-XSRF-TOKEN",
+								"value": "{{csrf_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Geography Test with CSRF\",\n    \"description\": \"Test on world geography with CSRF token\",\n    \"subject\": \"Geography\",\n    \"totalMarks\": 50,\n    \"userId\": 1,\n    \"questions\": [1, 2, 3, 4, 5]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/assessments/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"assessments",
+								"create"
+							]
+						},
+						"description": "Create a new assessment with CSRF token"
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for CSRF protection"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+} 

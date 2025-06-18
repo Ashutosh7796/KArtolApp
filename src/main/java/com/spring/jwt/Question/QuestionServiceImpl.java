@@ -2,131 +2,196 @@ package com.spring.jwt.Question;
 
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.repository.UserRepository;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.validation.annotation.Validated;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
+@Validated
+@Slf4j
+@RequiredArgsConstructor
 public class QuestionServiceImpl implements QuestionService {
 
-    @Autowired
-    private QuestionRepository questionRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    private final QuestionRepository questionRepository;
+    private final UserRepository userRepository;
+    private final QuestionMapper questionMapper;
 
     @Override
-    public Question createQuestion(Question question) {
-        Integer userId = requireNonNullElseThrow(question.getUserId(), "userId must be provided.");
+    @Transactional
+    public QuestionDTO createQuestion(@Valid QuestionDTO questionDTO) {
+        log.debug("Creating question: {}", questionDTO);
+
+        Integer userId = questionDTO.getUserId();
         if (!userRepository.existsById(Long.valueOf(userId))) {
+            log.error("User with ID {} does not exist", userId);
             throw new InvalidQuestionException("User with userId " + userId + " does not exist.");
         }
-        checkHasText(question.getSubject(), "Subject must not be blank.");
-        checkHasText(question.getType(), "Type must not be blank.");
-        checkHasText(question.getLevel(), "Level must not be blank.");
-        checkHasText(question.getMarks(), "Marks must not be blank.");
-        checkHasText(question.getQuestionText(), "Question text must not be blank.");
 
-        // Option fields checks (optional)
-        checkHasText(question.getOption1(), "Option1 must not be blank.");
-        checkHasText(question.getOption2(), "Option2 must not be blank.");
-        checkHasText(question.getOption3(), "Option3 must not be blank.");
-        checkHasText(question.getOption4(), "Option4 must not be blank.");
-        checkHasText(question.getAnswer(), "Answer must not be blank.");
+        Question question = questionMapper.toEntity(questionDTO);
 
-        // Check for duplicate question
-        if (questionRepository.existsByQuestionText(question.getQuestionText())) {
-            throw new DuplicateQuestionException("Question already added: " + question.getQuestionText());
-        }
+        Question savedQuestion = questionRepository.save(question);
+        log.info("Created question with ID: {}", savedQuestion.getQuestionId());
 
-        return questionRepository.save(question);
-    }
-
-    private static Integer requireNonNullElseThrow(Object value, String message) {
-        if (value == null) {
-            throw new InvalidQuestionException(message);
-        }
-        if (value instanceof Integer) return (Integer) value;
-        if (value instanceof Long) return ((Long) value).intValue();
-        if (value instanceof String) return Integer.valueOf((String) value);
-        throw new InvalidQuestionException("userId has invalid type.");
-    }
-
-    private static void checkHasText(String value, String message) {
-        if (!org.springframework.util.StringUtils.hasText(value)) {
-            throw new InvalidQuestionException(message);
-        }
+        return questionMapper.toDto(savedQuestion);
     }
 
     @Override
-    public Question getQuestionById(Integer id) {
-        return questionRepository.findById(id)
-                .orElseThrow(() -> new QuestionNotFoundException("Question not found with id: " + id));
-    }
-
-    @Override
-    public List<Question> getAllQuestions() {
-        return questionRepository.findAll();
-    }
-
-    @Override
-    public Question updateQuestion(Integer id, Question updatedQuestion) {
+    @Transactional(readOnly = true)
+    public QuestionDTO getQuestionById(Integer id) {
+        log.debug("Getting question by ID: {}", id);
+        
         Question question = questionRepository.findById(id)
-                .orElseThrow(() -> new QuestionNotFoundException("Question not found with id: " + id));
-
-        setIfNotBlank(updatedQuestion.getQuestionText(), question::setQuestionText);
-        setIfNotBlank(updatedQuestion.getType(), question::setType);
-        setIfNotBlank(updatedQuestion.getSubject(), question::setSubject);
-        setIfNotBlank(updatedQuestion.getLevel(), question::setLevel);
-        setIfNotBlank(updatedQuestion.getMarks(), question::setMarks);
-        setIfNotBlank(updatedQuestion.getOption1(), question::setOption1);
-        setIfNotBlank(updatedQuestion.getOption2(), question::setOption2);
-        setIfNotBlank(updatedQuestion.getOption3(), question::setOption3);
-        setIfNotBlank(updatedQuestion.getOption4(), question::setOption4);
-        setIfNotBlank(updatedQuestion.getAnswer(), question::setAnswer);
-        setIfNotBlank(updatedQuestion.getStudentClass(), question::setStudentClass);
-
-        return questionRepository.save(question);
-    }
-
-    private void setIfNotBlank(String value, java.util.function.Consumer<String> setter) {
-        if (value != null && !value.isBlank()) {
-            setter.accept(value);
-        }
+                .orElseThrow(() -> {
+                    log.error("Question with ID {} not found", id);
+                    return new QuestionNotFoundException("Question not found with id: " + id);
+                });
+                
+        return questionMapper.toDto(question);
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<QuestionDTO> getAllQuestions(Pageable pageable) {
+        log.debug("Getting all questions with pagination: {}", pageable);
+        
+        Page<Question> questionPage = questionRepository.findAll(pageable);
+        return questionPage.map(questionMapper::toDto);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<QuestionDTO> getAllQuestions() {
+        log.debug("Getting all questions without pagination");
+        
+        List<Question> questions = questionRepository.findAll();
+        return questionMapper.toDtoList(questions);
+    }
+
+    @Override
+    @Transactional
+    public QuestionDTO updateQuestion(Integer id, QuestionDTO questionDTO) {
+        log.debug("Updating question with ID: {}", id);
+        
+        Question question = questionRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Question with ID {} not found for update", id);
+                    return new QuestionNotFoundException("Question not found with id: " + id);
+                });
+
+        questionMapper.updateEntityFromDto(questionDTO, question);
+
+        Question updatedQuestion = questionRepository.save(question);
+        log.info("Updated question with ID: {}", updatedQuestion.getQuestionId());
+        
+        return questionMapper.toDto(updatedQuestion);
+    }
+
+    @Override
+    @Transactional
     public void deleteQuestion(Integer id) {
-        Question question = questionRepository.findById(id)
-                .orElseThrow(() -> new QuestionNotFoundException("Question not found with id: " + id));
-        questionRepository.delete(question);
+        log.debug("Deleting question with ID: {}", id);
+        
+        if (!questionRepository.existsById(id)) {
+            log.error("Question with ID {} not found for deletion", id);
+            throw new QuestionNotFoundException("Question not found with id: " + id);
+        }
+        
+        questionRepository.deleteById(id);
+        log.info("Deleted question with ID: {}", id);
     }
 
     @Override
-    public List<Question> getQuestionsByUserId(Integer userId) {
+    @Transactional(readOnly = true)
+    public Page<QuestionDTO> getQuestionsByUserId(Integer userId, Pageable pageable) {
+        log.debug("Getting questions by user ID: {} with pagination: {}", userId, pageable);
+        
+        Page<Question> questionPage = questionRepository.findByUserId(userId, pageable);
+        if (questionPage.isEmpty()) {
+            log.warn("No questions found for user ID: {}", userId);
+        }
+        
+        return questionPage.map(questionMapper::toDto);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<QuestionDTO> getQuestionsByUserId(Integer userId) {
+        log.debug("Getting questions by user ID: {} without pagination", userId);
+        
         List<Question> questions = questionRepository.findByUserId(userId);
-        if (questions == null || questions.isEmpty()) {
+        if (questions.isEmpty()) {
+            log.warn("No questions found for user ID: {}", userId);
             throw new QuestionNotFoundException("No questions found for userId: " + userId);
         }
-        return questions;
+        
+        return questionMapper.toDtoList(questions);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<QuestionDTO> searchQuestions(Map<String, String> filters, Pageable pageable) {
+        log.debug("Searching questions with filters: {} and pagination: {}", filters, pageable);
+        
+        Specification<Question> spec = buildSpecificationFromFilters(filters);
+        Page<Question> questionPage = questionRepository.findAll(spec, pageable);
+        
+        return questionPage.map(questionMapper::toDto);
     }
 
     @Override
-    public List<Question> getQuestionsBySubTypeLevelMarks(String subject, String type, String level, String marks) {
+    @Transactional(readOnly = true)
+    public List<QuestionDTO> getQuestionsBySubTypeLevelMarks(String subject, String type, String level, String marks) {
+        log.debug("Getting questions by subject: {}, type: {}, level: {}, marks: {}", subject, type, level, marks);
+        
         if (subject == null && type == null && level == null && marks == null) {
+            log.error("At least one filter field must be provided");
             throw new InvalidQuestionException("At least one filter field (subject, type, level, marks) must be provided.");
         }
-        Specification<Question> spec = Specification.where(null);
-        if (subject != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("subject"), subject));
-        if (type != null)    spec = spec.and((root, query, cb) -> cb.equal(root.get("type"), type));
-        if (level != null)   spec = spec.and((root, query, cb) -> cb.equal(root.get("level"), level));
-        if (marks != null)   spec = spec.and((root, query, cb) -> cb.equal(root.get("marks"), marks));
-
+        
+        Map<String, String> filters = new HashMap<>();
+        if (StringUtils.hasText(subject)) filters.put("subject", subject);
+        if (StringUtils.hasText(type)) filters.put("type", type);
+        if (StringUtils.hasText(level)) filters.put("level", level);
+        if (StringUtils.hasText(marks)) filters.put("marks", marks);
+        
+        Specification<Question> spec = buildSpecificationFromFilters(filters);
         List<Question> questions = questionRepository.findAll(spec);
-        if (questions == null || questions.isEmpty()) {
+        
+        if (questions.isEmpty()) {
+            log.warn("No questions found for the given criteria");
             throw new QuestionNotFoundException("No questions found for the given criteria.");
         }
-        return questions;
+        
+        return questionMapper.toDtoList(questions);
+    }
+    
+    /**
+     * Build a JPA Specification from a map of filters
+     */
+    private Specification<Question> buildSpecificationFromFilters(Map<String, String> filters) {
+        Specification<Question> spec = Specification.where(null);
+        
+        for (Map.Entry<String, String> entry : filters.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            
+            if (StringUtils.hasText(value)) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get(key), value));
+            }
+        }
+        return spec;
     }
 }

@@ -22,8 +22,7 @@ public class UserMapper {
         try {
             UserDTO dto = new UserDTO();
             dto.setEmail(user.getEmail());
-            
-            // Handle potentially encrypted fields
+
             if (user.getFirstName() != null) {
                 String decrypted = ensureDecrypted(user.getFirstName());
                 dto.setFirstName(decrypted);
@@ -84,7 +83,6 @@ public class UserMapper {
         }
         
         try {
-            // Force decrypt regardless of whether it looks encrypted or not
             String decrypted = encryptionUtil.decrypt(value);
             log.debug("Decryption result: {} chars -> {} chars", value.length(), decrypted.length());
             return decrypted;

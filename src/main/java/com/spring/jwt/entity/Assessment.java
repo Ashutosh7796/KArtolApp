@@ -2,6 +2,7 @@ package com.spring.jwt.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -17,6 +18,21 @@ public class Assessment {
 
     @Column(name = "set_number")
     private Long setNumber;
+    
+    @Column(name = "title", nullable = false, length = 100)
+    private String title;
+    
+    @Column(name = "description", length = 500)
+    private String description;
+    
+    @Column(name = "subject", nullable = false)
+    private String subject;
+    
+    @Column(name = "total_marks")
+    private Integer totalMarks;
+    
+    @Column(name = "pass_marks")
+    private Integer passMarks;
 
     @Column(name = "assessment_date")
     private String assessmentDate;
@@ -24,6 +40,29 @@ public class Assessment {
     private String duration;
     private String startTime;
     private String endTime;
+    
+    @Column(name = "is_active")
+    private Boolean isActive;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (isActive == null) {
+            isActive = true;
+        }
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

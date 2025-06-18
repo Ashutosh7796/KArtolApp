@@ -1,8 +1,8 @@
 package com.spring.jwt.config.filter;
 
+
 import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
-import com.spring.jwt.service.security.UserDetailsCustom;
 import com.spring.jwt.service.security.UserDetailsServiceCustom;
 import com.spring.jwt.utils.BaseResponseDTO;
 import com.spring.jwt.utils.HelperUtils;
@@ -16,11 +16,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -38,9 +38,12 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
     private final JwtConfig jwtConfig;
     private final JwtService jwtService;
     private final UserDetailsServiceCustom userDetailsService;
+    private final RequestMatcher publicUrls;
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
     private static final String ACCESS_TOKEN_COOKIE_NAME = "access_token";
+    
+    private boolean setauthreq = true;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -49,12 +52,22 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         log.debug("JWT Filter processing request for path: {}", path);
 
-        if (isPublicEndpoint(path, request.getMethod())) {
-            log.debug("Skipping JWT authentication for public endpoint: {}", path);
+        if (path.contains("/api/jwtUnAuthorize/block") || path.contains("/api/jwtUnAuthorize/Exclude")) {
             filterChain.doFilter(request, response);
             return;
         }
+        
+        if (!setauthreq) {
+            handleAccessBlocked(response);
+            return;
+        }
 
+        if (publicUrls.matches(request)) {
+            log.debug("Skipping JWT filter for public URL: {}", path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         String token = getJwtFromRequest(request);
         
         if (token == null) {
@@ -66,7 +79,7 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
         try {
             if (!processToken(token)) {
                 log.warn("Invalid token for path: {}", path);
-                handleInvalidToken(response);
+                handleInvalidToken(response, "Invalid token");
                 return;
             }
 
@@ -79,7 +92,7 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
         } catch (JwtException e) {
             log.warn("Invalid JWT token: {}", e.getMessage());
             SecurityContextHolder.clearContext();
-            handleInvalidToken(response);
+            handleInvalidToken(response, "Invalid token: " + e.getMessage());
         } catch (Exception e) {
             log.error("Authentication error: {}", e.getMessage());
             SecurityContextHolder.clearContext();
@@ -129,32 +142,9 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Check if the endpoint is public and doesn't require authentication
-     */
-    private boolean isPublicEndpoint(String path, String method) {
-        return (path.equals(jwtConfig.getRefreshUrl()) && "POST".equals(method)) || 
-               (path.equals(jwtConfig.getUrl()) && "POST".equals(method)) ||
-               path.startsWith("/user/") ||
-               path.equals("/fees") ||
-               path.equals("/questions/add") ||
-               path.equals("/questions/search") ||
-               path.startsWith("/api/public/") ||
-               path.startsWith("/api/auth/") ||
-               path.startsWith("/swagger-ui") ||
-               path.startsWith("/v3/api-docs") ||
-               path.startsWith("/v2/api-docs") ||
-               path.startsWith("/configuration/") ||
-               path.startsWith("/webjars/") ||
-                path.startsWith("/assessments/") ||
-                path.startsWith("/api/") ||
-               path.contains("swagger-ui.html");
-    }
-
-    /**
      * Extract JWT token from request (header or cookie)
      */
     private String getJwtFromRequest(HttpServletRequest request) {
-
         String bearerToken = request.getHeader(jwtConfig.getHeader());
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(jwtConfig.getPrefix() + " ")) {
             log.debug("Found token in Authorization header");
@@ -163,7 +153,6 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
 
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
-
             Optional<Cookie> accessTokenCookie = Arrays.stream(cookies)
                 .filter(cookie -> ACCESS_TOKEN_COOKIE_NAME.equals(cookie.getName()))
                 .findFirst();
@@ -173,8 +162,19 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
                 return accessTokenCookie.get().getValue();
             }
         }
-        
         return null;
+    }
+    
+    private void handleAccessBlocked(HttpServletResponse response) throws IOException {
+        BaseResponseDTO responseDTO = new BaseResponseDTO();
+        responseDTO.setCode(String.valueOf(HttpStatus.SERVICE_UNAVAILABLE.value()));
+        responseDTO.setMessage("d7324asdx8hg");
+
+        String json = HelperUtils.JSON_WRITER.writeValueAsString(responseDTO);
+
+        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        response.setContentType("application/json; charset=UTF-8");
+        response.getWriter().write(json);
     }
     
     private void handleAccessDenied(HttpServletResponse response) throws IOException {
@@ -189,10 +189,10 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
         response.getWriter().write(json);
     }
     
-    private void handleInvalidToken(HttpServletResponse response) throws IOException {
+    private void handleInvalidToken(HttpServletResponse response, String message) throws IOException {
         BaseResponseDTO responseDTO = new BaseResponseDTO();
         responseDTO.setCode(String.valueOf(HttpStatus.UNAUTHORIZED.value()));
-        responseDTO.setMessage("Invalid token");
+        responseDTO.setMessage(message);
 
         String json = HelperUtils.JSON_WRITER.writeValueAsString(responseDTO);
 
@@ -223,5 +223,9 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json; charset=UTF-8");
         response.getWriter().write(json);
+    }
+    
+    public void setauthreq(boolean setauthreq) {
+        this.setauthreq = setauthreq;
     }
 }

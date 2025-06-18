@@ -14,7 +14,6 @@ public class ExamController {
     @Autowired
     private ExamService examService;
 
-    // Start exam session
     @PostMapping("/start")
     public ExamSessionDTO startExam(
             @RequestParam Integer userId,

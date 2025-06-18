@@ -9,5 +9,5 @@ public class ExamResultDTO {
     private String paperTitle;
     private Integer score;
     private String studentClass;
-    private String status; // e.g., "Submitted" or "In Progress"
+    private String status;
 }
