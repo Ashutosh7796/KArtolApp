@@ -37,7 +37,7 @@
 							"raw": "{\n    \"username\": \"admin@example.com\",\n    \"password\": \"Password123\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/auth/login",
+							"raw": "{{base_url}}/jwt/login",
 							"host": [
 								"{{base_url}}"
 							],
@@ -78,7 +78,7 @@
 							"raw": "{\n    \"refreshToken\": \"{{refresh_token}}\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/api/auth/refresh",
+							"raw": "{{base_url}}/jwt/refresh",
 							"host": [
 								"{{base_url}}"
 							],

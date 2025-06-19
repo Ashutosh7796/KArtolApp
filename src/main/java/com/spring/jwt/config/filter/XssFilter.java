@@ -48,16 +48,19 @@ public class XssFilter implements Filter, Ordered {
     }
 
     @Override
-    public void init(FilterConfig filterConfig) {
+    public void init(FilterConfig filterConfig)
+    {
 
     }
 
     @Override
-    public void destroy() {
+    public void destroy()
+    {
     }
 
     @Override
-    public int getOrder() {
+    public int getOrder()
+    {
         return Ordered.HIGHEST_PRECEDENCE + 40;
     }
 
@@ -78,14 +81,10 @@ public class XssFilter implements Filter, Ordered {
                 Pattern.compile("behavior\\s*:\\s*url\\(.*?\\)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL),
                 Pattern.compile("<.*?\\s+.*?\\s*=.*?>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL),
                 Pattern.compile("eval\\((.*?)\\)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL),
-
                 Pattern.compile("alert\\((.*?)\\)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL),
-
                 Pattern.compile("document\\.write\\((.*?)\\)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL),
                 Pattern.compile("document\\.cookie", Pattern.CASE_INSENSITIVE),
-
                 Pattern.compile("<iframe(.*?)>(.*?)</iframe>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL),
-
                 Pattern.compile("<form(.*?)>(.*?)</form>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL)
         };
 
