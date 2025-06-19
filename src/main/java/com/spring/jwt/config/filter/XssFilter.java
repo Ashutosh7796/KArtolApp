@@ -167,7 +167,6 @@ public class XssFilter implements Filter, Ordered {
                 }
             };
         }
-
         /**
          * Sanitizes the given value to prevent XSS attacks
          */
