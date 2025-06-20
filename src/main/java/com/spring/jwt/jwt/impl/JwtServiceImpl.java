@@ -1,6 +1,5 @@
 package com.spring.jwt.jwt.impl;
 
-import com.spring.jwt.entity.User;
 import com.spring.jwt.exception.BaseException;
 import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
@@ -80,8 +79,7 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String generateToken(UserDetailsCustom userDetailsCustom, String deviceFingerprint) {
         Instant now = Instant.now();
-        // Use a shorter notBefore period for access tokens to improve user experience
-        Instant notBefore = now.plusSeconds(1); // Just 1 second instead of jwtConfig.getNotBefore()
+        Instant notBefore = now.plusSeconds(1);
 
         List<String> roles = userDetailsCustom.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -106,8 +104,7 @@ public class JwtServiceImpl implements JwtService {
                 .claim("authorities", roles)
                 .claim("roles", roles)
                 .claim("isEnable", userDetailsCustom.isEnabled());
-        
-        // Add role-specific IDs if available
+
         if (userDetailsCustom.getStudentId() != null) {
             jwtBuilder.claim("studentId", userDetailsCustom.getStudentId());
         }
@@ -136,8 +133,7 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String generateRefreshToken(UserDetailsCustom userDetailsCustom, String deviceFingerprint) {
         Instant now = Instant.now();
-        // Use a shorter notBefore period for refresh tokens to improve user experience
-        Instant notBefore = now.plusSeconds(1); // Just 1 second instead of jwtConfig.getNotBefore()
+        Instant notBefore = now.plusSeconds(1);
         
         log.debug("Generating refresh token for user: {}, device: {}", 
                 userDetailsCustom.getUsername(), 
@@ -154,8 +150,7 @@ public class JwtServiceImpl implements JwtService {
                 .claim("userId", userDetailsCustom.getUserId())
                 .claim("roles", roles)
                 .claim("authorities", roles);
-        
-        // Add role-specific IDs if available
+
         if (userDetailsCustom.getStudentId() != null) {
             jwtBuilder.claim("studentId", userDetailsCustom.getStudentId());
         }
@@ -252,7 +247,6 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public boolean isValidToken(String token, String deviceFingerprint) {
         try {
-            // First check if token is blacklisted
             if (isBlacklisted(token)) {
                 log.warn("Token is blacklisted");
                 return false;
@@ -273,8 +267,7 @@ public class JwtServiceImpl implements JwtService {
             }
 
             Claims claims = extractAllClaims(token);
-            
-            // Check if token is not yet valid (before notBefore time)
+
             Date nbf = claims.getNotBefore();
             if (nbf != null && nbf.after(new Date())) {
                 log.debug("Token not yet valid. Current time: {}, Not before: {}", 
@@ -342,7 +335,6 @@ public class JwtServiceImpl implements JwtService {
             Date expiration = claims.getExpiration();
             
             if (tokenId != null && expiration != null) {
-                // Add to blacklist until token expiration
                 tokenBlacklistService.blacklistToken(tokenId, expiration.toInstant());
                 log.debug("Token blacklisted: {}", tokenId);
             }
