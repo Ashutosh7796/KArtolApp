@@ -59,4 +59,5 @@ public class PaperController {
         List<PaperDTO> livePapers = paperService.getLivePapers();
         return ResponseEntity.ok(livePapers);
     }
+
 }
