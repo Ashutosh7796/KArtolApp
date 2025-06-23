@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -193,5 +194,65 @@ public class QuestionServiceImpl implements QuestionService {
             }
         }
         return spec;
+    }
+
+    @Override
+    @Transactional
+    public List<QuestionDTO> createQuestionsBulk(@Valid BulkQuestionDTO bulkDTO) {
+        log.debug("Bulk creating questions for subject: {}, userId: {}, class: {}",
+                bulkDTO.getSubject(), bulkDTO.getUserId(), bulkDTO.getStudentClass());
+
+        // Check if user exists
+        if (!userRepository.existsById(Long.valueOf(bulkDTO.getUserId()))) {
+            log.error("User with ID {} does not exist", bulkDTO.getUserId());
+            throw new InvalidQuestionException("User with userId " + bulkDTO.getUserId() + " does not exist.");
+        }
+
+        // Check if questions list is empty
+        if (bulkDTO.getQuestions() == null || bulkDTO.getQuestions().isEmpty()) {
+            log.error("No questions provided in bulk request");
+            throw new InvalidQuestionException("At least one question is required.");
+        }
+
+        // Validate each question for essential fields (example: questionText, type, level, option1, option2, answer)
+        for (SingleQuestionDTO single : bulkDTO.getQuestions()) {
+            if (isBlank(single.getQuestionText()) ||
+                    isBlank(single.getType()) ||
+                    isBlank(single.getLevel()) ||
+                    isBlank(single.getMarks()) ||
+                    isBlank(single.getOption1()) ||
+                    isBlank(single.getOption2()) ||
+                    isBlank(single.getAnswer())) {
+                log.error("A question is missing required fields: {}", single);
+                throw new InvalidQuestionException("All questions must have questionText, type, level, marks, option1, option2, and answer.");
+            }
+        }
+
+        List<QuestionDTO> createdQuestions = new ArrayList<>();
+        for (SingleQuestionDTO single : bulkDTO.getQuestions()) {
+            QuestionDTO dto = new QuestionDTO();
+            dto.setSubject(bulkDTO.getSubject());
+            dto.setUserId(bulkDTO.getUserId());
+            dto.setStudentClass(bulkDTO.getStudentClass());
+            dto.setQuestionText(single.getQuestionText());
+            dto.setType(single.getType());
+            dto.setLevel(single.getLevel());
+            dto.setMarks(single.getMarks());
+            dto.setOption1(single.getOption1());
+            dto.setOption2(single.getOption2());
+            dto.setOption3(single.getOption3());
+            dto.setOption4(single.getOption4());
+            dto.setAnswer(single.getAnswer());
+
+            Question question = questionMapper.toEntity(dto);
+            Question saved = questionRepository.save(question);
+            createdQuestions.add(questionMapper.toDto(saved));
+        }
+        return createdQuestions;
+    }
+
+    // Utility method to check for blank strings
+    private boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
     }
 }

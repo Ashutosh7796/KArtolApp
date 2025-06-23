@@ -87,4 +87,6 @@ public interface QuestionService {
      * @return list of question DTOs matching the criteria
      */
     List<QuestionDTO> getQuestionsBySubTypeLevelMarks(String subject, String type, String level, String marks);
+
+    public List<QuestionDTO> createQuestionsBulk(@Valid BulkQuestionDTO bulkDTO);
 }

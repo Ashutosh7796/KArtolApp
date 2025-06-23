@@ -67,5 +67,6 @@ public class QuestionDTO {
     @NotBlank(message = "Answer is required")
     @Schema(description = "Correct answer to the question", example = "Paris", required = true)
     private String answer;
+
     private String StudentClass;
 }

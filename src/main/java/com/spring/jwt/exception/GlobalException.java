@@ -263,4 +263,13 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         );
         return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(InvalidPaginationParameterException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidPagination(InvalidPaginationParameterException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("error", "Invalid pagination parameters");
+        error.put("message", ex.getMessage());
+        error.put("status", HttpStatus.BAD_REQUEST.value());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
 }

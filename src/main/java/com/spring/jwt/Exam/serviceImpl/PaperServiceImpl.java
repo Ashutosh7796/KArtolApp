@@ -6,9 +6,15 @@ import com.spring.jwt.Exam.entity.PaperQuestion;
 import com.spring.jwt.Exam.repository.PaperRepository;
 import com.spring.jwt.Exam.service.PaperService;
 import com.spring.jwt.Question.QuestionRepository;
+import com.spring.jwt.dto.PageResponseDto;
 import com.spring.jwt.entity.Question;
+import com.spring.jwt.exception.InvalidPaginationParameterException;
 import com.spring.jwt.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -144,11 +150,34 @@ public class PaperServiceImpl implements PaperService {
     }
 
     @Override
-    public List<PaperDTO> getAllPapers() {
-        return paperRepository.findAll().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+    public PageResponseDto<PaperDTO> getAllPapers(int page, int size) {
+        try {
+            if (page < 0 || size <= 0) {
+                throw new IllegalArgumentException("Page number must be >= 0 and size > 0");
+            }
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+            Page<Paper> paperPage = paperRepository.findAll(pageable);
+
+            List<PaperDTO> paperDTOs = paperPage.getContent().stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+
+            return new PageResponseDto<>(
+                    paperDTOs,
+                    paperPage.getNumber(),
+                    paperPage.getSize(),
+                    paperPage.getTotalElements(),
+                    paperPage.getTotalPages()
+            );
+        } catch (IllegalArgumentException e) {
+            throw new InvalidPaginationParameterException(e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch paginated papers", e);
+        }
     }
+
+
 
     @Override
     public PaperDTO updatePaper(Integer id, PaperDTO paperDTO) {
