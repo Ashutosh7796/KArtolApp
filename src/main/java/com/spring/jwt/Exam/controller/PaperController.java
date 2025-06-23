@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/api/papers")
 public class PaperController {
@@ -29,9 +30,6 @@ public class PaperController {
         return paperService.getPaper(id);
     }
 
-    // Get all Papers
-
-
     // Update Paper
     @PutMapping("/{id}")
     public PaperDTO updatePaper(@PathVariable Integer id, @RequestBody PaperDTO paperDTO) {
@@ -48,11 +46,18 @@ public class PaperController {
     public PaperWithQuestionsDTO getPaperWithQuestions(@PathVariable Integer id) {
         return paperService.getPaperWithQuestions(id);
     }
+
     @GetMapping("/papers")
     public ResponseEntity<PageResponseDto<PaperDTO>> getAllPapers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(paperService.getAllPapers(page, size));
+    }
+
+    @GetMapping("/papers/live")
+    public ResponseEntity<List<PaperDTO>> getLivePapers() {
+        List<PaperDTO> livePapers = paperService.getLivePapers();
+        return ResponseEntity.ok(livePapers);
     }
 
 }

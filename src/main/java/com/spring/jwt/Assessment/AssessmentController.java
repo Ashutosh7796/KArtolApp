@@ -30,7 +30,7 @@ import java.util.Map;
 //
 //////////////////////////////////////////////////////////////////////////////////
 @RestController
-@RequestMapping("/assessments")
+@RequestMapping("/api/assessments")
 @Tag(name = "Assessment Management", description = "APIs for managing assessments")
 @Validated
 @RequiredArgsConstructor
@@ -80,19 +80,19 @@ public class AssessmentController {
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size", example = "10")
             @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Sort field", example = "id")
+            @Parameter(description = "Sort field", example = "assessmentId,title,assessmentDate,subject,")
             @RequestParam(defaultValue = "id") String sortBy,
             @Parameter(description = "Sort direction (asc or desc)", example = "asc")
             @RequestParam(defaultValue = "asc") String direction
     ) {
         try {
             Sort sort = direction.equalsIgnoreCase("asc") ?
-                Sort.by(sortBy).ascending() : 
+                Sort.by(sortBy).ascending() :
                 Sort.by(sortBy).descending();
-            
+
             Pageable pageable = PageRequest.of(page, size, sort);
             Page<AssessmentDTO> result = assessmentService.getAllAssessments(pageable);
-            
+
             return ResponseEntity.ok(ApiResponse.success("All assessments fetched successfully", result));
         } catch (Exception e) {
             return ResponseEntity.badRequest()

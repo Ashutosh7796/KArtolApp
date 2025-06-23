@@ -207,4 +207,21 @@ public class PaperServiceImpl implements PaperService {
                 .orElseThrow(() -> new ResourceNotFoundException("Paper not found with id: " + paperId));
         return toDTO01(paper);
     }
+
+    @Override
+    public List<PaperDTO> getLivePapers() {
+        try {
+            List<Paper> livePapers = paperRepository.findByIsLiveTrue();
+            if (livePapers == null || livePapers.isEmpty()) {
+                throw new ResourceNotFoundException("No live papers found.");
+            }
+            return livePapers.stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        } catch (ResourceNotFoundException e) {
+            throw e; // Your global exception handler can convert this to a 404 response
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch live papers.", e);
+        }
+    }
 }
