@@ -13,4 +13,8 @@ public interface ExamService {
     List<SessionQuestionAnswerDTO> getQuestionsAndAnswersBySessionId(Integer sessionId);
 
     List<StudentClassResultDTO> getResultsGroupedByStudentClass();
+
+    List<ExamSessionDTO> getAllExamSessions();
+
+    ExamSessionDTO getLastExamSessionByUserId(Long userId);
 }
