@@ -160,10 +160,10 @@ public class AppConfig {
                 .requestMatchers("/questions/add").permitAll()
                 .requestMatchers("/questions/search").permitAll()
 
-                .requestMatchers("/questions/**").authenticated()
+                .requestMatchers("/questions/**").permitAll()
 
                 .requestMatchers("/assessments/**").permitAll()
-                .requestMatchers("/api/papers/**").permitAll()
+                .requestMatchers("/api/**").permitAll()
 
                 .anyRequest().authenticated());
 
@@ -185,9 +185,9 @@ public class AppConfig {
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/user/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/fees/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/assessments/**"),
-                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/add"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/search"),
-                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/papers/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getUrl()),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getRefreshUrl())
             );
