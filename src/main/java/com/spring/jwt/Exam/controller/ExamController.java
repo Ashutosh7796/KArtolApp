@@ -3,6 +3,7 @@ package com.spring.jwt.Exam.controller;
 import com.spring.jwt.Exam.Dto.*;
 import com.spring.jwt.Exam.service.ExamService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,5 +45,17 @@ public class ExamController {
     @GetMapping("/results/student-classes")
     public List<StudentClassResultDTO> getAllStudentClassResults() {
         return examService.getResultsGroupedByStudentClass();
+    }
+
+    @GetMapping("/sessions")
+    public ResponseEntity<List<ExamSessionDTO>> getAllExamSessions() {
+        List<ExamSessionDTO> sessions = examService.getAllExamSessions();
+        return ResponseEntity.ok(sessions);
+    }
+
+    @GetMapping("/session/last/{userId}")
+    public ResponseEntity<ExamSessionDTO> getLastSessionByUserId(@PathVariable Long userId) {
+        ExamSessionDTO session = examService.getLastExamSessionByUserId(userId);
+        return ResponseEntity.ok(session);
     }
 }

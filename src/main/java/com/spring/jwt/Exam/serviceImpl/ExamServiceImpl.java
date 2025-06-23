@@ -222,4 +222,24 @@ public ExamSessionDTO submitExamAnswers(Integer sessionId, Long userId, List<Use
             return dto;
         }).collect(Collectors.toList());
     }
+
+    @Override
+    public List<ExamSessionDTO> getAllExamSessions() {
+        try {
+            List<ExamSession> sessions = examSessionRepository.findAll();
+            return sessions.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        } catch (Exception ex) {
+            // You could use your own custom exception type if you want
+            throw new RuntimeException("Failed to fetch all exam sessions", ex);
+        }
+    }
+
+    @Override
+    public ExamSessionDTO getLastExamSessionByUserId(Long userId) {
+        ExamSession session = examSessionRepository.findTopByUser_IdOrderBySessionIdDesc(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("No exam session found for user: " + userId));
+        return convertToDTO(session);
+    }
 }
