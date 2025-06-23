@@ -71,6 +71,30 @@ public class QuestionController {
         }
     }
 
+    @Operation(
+            summary = "Create multiple questions in bulk",
+            description = "Creates multiple questions with shared subject, userId, and studentClass. Returns a list of created questions."
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Questions created successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PostMapping("/add/bulk")
+    @PermitAll
+    public ResponseEntity<ApiResponse<List<QuestionDTO>>> createQuestionsBulk(
+            @Parameter(description = "Bulk question details", required = true)
+            @Valid @RequestBody BulkQuestionDTO bulkDTO) {
+        try {
+            List<QuestionDTO> created = questionService.createQuestionsBulk(bulkDTO);
+            return ResponseEntity.ok(ApiResponse.success("Questions created successfully", created));
+        } catch (Exception e) {
+            log.error("Failed to create questions: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to create questions", e.getMessage())
+            );
+        }
+    }
     @Operation(summary = "Get a question by ID", description = "Retrieves a question by its unique identifier")
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Question found"),

@@ -3,7 +3,9 @@ package com.spring.jwt.Exam.controller;
 import com.spring.jwt.Exam.Dto.PaperDTO;
 import com.spring.jwt.Exam.Dto.PaperWithQuestionsDTO;
 import com.spring.jwt.Exam.service.PaperService;
+import com.spring.jwt.dto.PageResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,10 +30,7 @@ public class PaperController {
     }
 
     // Get all Papers
-    @GetMapping
-    public List<PaperDTO> getAllPapers() {
-        return paperService.getAllPapers();
-    }
+
 
     // Update Paper
     @PutMapping("/{id}")
@@ -49,4 +48,11 @@ public class PaperController {
     public PaperWithQuestionsDTO getPaperWithQuestions(@PathVariable Integer id) {
         return paperService.getPaperWithQuestions(id);
     }
+    @GetMapping("/papers")
+    public ResponseEntity<PageResponseDto<PaperDTO>> getAllPapers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(paperService.getAllPapers(page, size));
+    }
+
 }
