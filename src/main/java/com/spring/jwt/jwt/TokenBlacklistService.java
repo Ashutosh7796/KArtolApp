@@ -21,11 +21,9 @@ public class TokenBlacklistService {
     
     @Autowired(required = false)
     private SecurityAuditLogger securityAuditLogger;
-    
-    // Store blacklisted tokens with their expiration time and metadata
+
     private final Map<String, TokenInfo> blacklistedTokens = new ConcurrentHashMap<>();
-    
-    // Statistics
+
     private final AtomicInteger totalBlacklistedTokens = new AtomicInteger(0);
     private final AtomicInteger blacklistHits = new AtomicInteger(0);
     
@@ -42,8 +40,7 @@ public class TokenBlacklistService {
         TokenInfo tokenInfo = new TokenInfo(expirationTime, username, reason, Instant.now());
         blacklistedTokens.put(tokenId, tokenInfo);
         totalBlacklistedTokens.incrementAndGet();
-        
-        // Audit logging
+
         if (securityAuditLogger != null) {
             securityAuditLogger.logTokenEvent("BLACKLIST", username, maskTokenId(tokenId), true);
         }
@@ -68,16 +65,13 @@ public class TokenBlacklistService {
         if (result) {
             blacklistHits.incrementAndGet();
             TokenInfo info = blacklistedTokens.get(tokenId);
-            
-            // Upgrade the token info to include reuse attempts
+
             if (info != null) {
                 info.incrementReuseAttempts();
-                
-                // Log reuse attempts as potential security threats
+
                 log.warn("Attempted reuse of blacklisted token ID: {}, user: {}, blacklisted at: {}, reuse attempts: {}",
                     maskTokenId(tokenId), info.getUsername(), info.getBlacklistedAt(), info.getReuseAttempts());
-                    
-                // Audit logging for token reuse
+
                 if (securityAuditLogger != null && info.getReuseAttempts() > 1) {
                     securityAuditLogger.logTokenEvent("REUSE_ATTEMPT", info.getUsername(), maskTokenId(tokenId), false);
                 }
@@ -89,7 +83,7 @@ public class TokenBlacklistService {
     /**
      * Clean up expired tokens from the blacklist every hour
      */
-    @Scheduled(fixedRate = 3600000) // Run every hour
+    @Scheduled(fixedRate = 3600000)
     public void cleanupBlacklist() {
         log.debug("Cleaning up token blacklist");
         Instant now = Instant.now();

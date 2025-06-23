@@ -47,6 +47,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+///////////////////////////////////////////////////////////////////////////////////
+//
+//      File Name    : UserController
+//      Description  : Used to perform user operation
+//      Author       : Ashutosh Shedge
+//      Date         : 28/04/2025
+//
+//////////////////////////////////////////////////////////////////////////////////
 @Tag(
         name = "User Management API",
         description = "APIs for user registration, profile management, and authentication operations"
@@ -67,6 +75,14 @@ public class UserController {
     @Value("${app.url.password-reset}")
     private String passwordResetUrl;
 
+///////////////////////////////////////////////////////////////////////////////////
+//
+//      File Name    : UserController
+//      Description  : Used to create user
+//      Author       : Ashutosh Shedge
+//      Date         : 28/04/2025
+//
+//////////////////////////////////////////////////////////////////////////////////
     @Operation(
             summary = "Register a new user account",
             description = "Creates a new user account with the provided user details",
@@ -97,6 +113,16 @@ public class UserController {
         BaseResponseDTO response = userService.registerAccount(userDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+
+////////////////////////////////////////////////////////////////////////////////////
+//
+//      File Name    : UserController
+//      Description  : Used to reset password
+//      Author       : Ashutosh Shedge
+//      Date         : 28/04/2025
+//
+//////////////////////////////////////////////////////////////////////////////////
 
     @Operation(
             summary = "Request password reset",
@@ -160,6 +186,7 @@ public class UserController {
             )
     }
     )
+
     @GetMapping("/password/reset")
     public ResponseEntity<String> getResetPasswordPage(
             @RequestParam @NotBlank(message = "Token is required") String token) {
@@ -201,6 +228,15 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+
+///////////////////////////////////////////////////////////////////////////////////
+//
+//      File Name    : UserController
+//      Description  : Used to get all users
+//      Author       : Ashutosh Shedge
+//      Date         : 28/04/2025
+//
+//////////////////////////////////////////////////////////////////////////////////
     @Operation(
             summary = "Get all users",
             description = "Returns a paginated list of all users with optional filtering",

@@ -32,6 +32,14 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+/////////////////////////////////////////////////////////////////////////////////////
+//
+//      File Name    : QuestionsController
+//      Description  : to perform Questions CRUD Operations
+//      Author       : Ashutosh Shedge
+//      Date         : 28/04/2025
+//
+//////////////////////////////////////////////////////////////////////////////////
 @RestController
 @RequestMapping("/questions")
 @Tag(name = "Question Management", description = "APIs for managing questions")

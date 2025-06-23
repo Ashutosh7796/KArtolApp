@@ -2,7 +2,6 @@ package com.spring.jwt.config.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spring.jwt.dto.RefreshTokenRequest;
-import com.spring.jwt.exception.BaseException;
 import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
 import com.spring.jwt.service.security.UserDetailsCustom;
@@ -22,11 +21,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.util.StringUtils;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Enumeration;
