@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Date;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -14,11 +17,12 @@ public class StudentAttendance {
     @Id
     private Integer studentAttendanceId;
 
-    private String date;
+    private Date date;
     private String sub;
     private String name;
     private String mark;
     private Boolean attendance;
     private Integer userId;
     private Integer teacherId;
+    private String studentClass;
 }
