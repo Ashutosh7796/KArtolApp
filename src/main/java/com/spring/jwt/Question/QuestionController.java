@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 //
 //////////////////////////////////////////////////////////////////////////////////
 @RestController
-@RequestMapping("/questions")
+@RequestMapping("/api/v1/questions")
 @Tag(name = "Question Management", description = "APIs for managing questions")
 @Validated
 @RequiredArgsConstructor
@@ -102,7 +102,8 @@ public class QuestionController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @GetMapping("/getById")
-    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN', 'TEACHER', 'STUDENT', 'PARENT') or isAuthenticated()")
+//    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN', 'TEACHER', 'STUDENT', 'PARENT') or isAuthenticated()")
+    @PermitAll
     public ResponseEntity<ApiResponse<QuestionDTO>> getQuestionById(
             @Parameter(description = "Question ID", required = true, example = "1")
             @RequestParam @Min(1) Integer id) {
@@ -121,7 +122,8 @@ public class QuestionController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('TEACHER')")
+//    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('TEACHER')")
+    @PermitAll
     public ResponseEntity<ApiResponse<Page<QuestionDTO>>> getAllQuestions(
             @Parameter(description = "Page number (0-based)", example = "0")
             @RequestParam(defaultValue = "0") int page,
@@ -162,7 +164,8 @@ public class QuestionController {
     }
 
     @PatchMapping("/update")
-    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('TEACHER')")
+//    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('TEACHER')")
+    @PermitAll
     public ResponseEntity<ApiResponse<QuestionDTO>> updateQuestion(
             @Parameter(description = "Question ID to update", required = true, example = "1")
             @RequestParam @Min(1) Integer id,
@@ -183,7 +186,8 @@ public class QuestionController {
     }
 
     @DeleteMapping("/delete")
-    @PreAuthorize("hasAuthority('ADMIN')")
+//    @PreAuthorize("hasAuthority('ADMIN')")
+    @PermitAll
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(
             @Parameter(description = "Question ID to delete", required = true, example = "1")
             @RequestParam @Min(1) Integer id) {
@@ -202,7 +206,8 @@ public class QuestionController {
     }
 
     @GetMapping("/user")
-    @PreAuthorize("isAuthenticated()")
+//    @PreAuthorize("isAuthenticated()")
+    @PermitAll
     public ResponseEntity<ApiResponse<Page<QuestionDTO>>> getQuestionsByUserId(
             @Parameter(description = "User ID", required = true, example = "1")
             @RequestParam @Min(1) Integer userId,

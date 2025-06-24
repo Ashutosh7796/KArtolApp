@@ -30,7 +30,7 @@ import java.util.Map;
 //
 //////////////////////////////////////////////////////////////////////////////////
 @RestController
-@RequestMapping("/api/assessments")
+@RequestMapping("/api/v1/assessments")
 @Tag(name = "Assessment Management", description = "APIs for managing assessments")
 @Validated
 @RequiredArgsConstructor
