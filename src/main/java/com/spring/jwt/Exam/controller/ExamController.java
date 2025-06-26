@@ -16,7 +16,7 @@ public class ExamController {
     private ExamService examService;
 
     @PostMapping("/start")
-    public ExamSessionDTO startExam(
+    public PaperWithQuestionsDTOn startExam(
             @RequestParam Integer userId,
             @RequestParam Integer paperId,
             @RequestParam String studentClass) {

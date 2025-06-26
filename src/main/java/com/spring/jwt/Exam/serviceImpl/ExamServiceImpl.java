@@ -33,8 +33,10 @@ public class ExamServiceImpl implements ExamService {
     @Autowired
     private PaperQuestionRepository paperQuestionRepository;
 
+
+
     @Override
-    public ExamSessionDTO startExam(Integer userId, Integer paperId, String studentClass) {
+    public PaperWithQuestionsDTOn startExam(Integer userId, Integer paperId, String studentClass) {
         User user = userRepository.findById(Long.valueOf(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
         Paper paper = paperRepository.findById(paperId)
@@ -57,39 +59,73 @@ public class ExamServiceImpl implements ExamService {
         session.setStartTime(now);
         session.setScore(0);
         session.setUserAnswers(new ArrayList<>());
-        ExamSession saved = examSessionRepository.save(session);
-        return convertToDTO(saved);
+        ExamSession savedSession = examSessionRepository.save(session); // Save and get the sessionId
+
+        // Map Paper and its Questions to DTO
+        PaperWithQuestionsDTOn dto = new PaperWithQuestionsDTOn();
+        dto.setSessionId(savedSession.getSessionId()); // Set sessionId here!
+        dto.setPaperId(paper.getPaperId());
+        dto.setTitle(paper.getTitle());
+        dto.setDescription(paper.getDescription());
+        dto.setStartTime(paper.getStartTime());
+        dto.setEndTime(paper.getEndTime());
+        dto.setIsLive(paper.getIsLive());
+        dto.setStudentClass(studentClass);
+
+        List<QuestionNoAnswerDTO> questionDTOs = paper.getPaperQuestions().stream()
+                .map(PaperQuestion::getQuestion)
+                .map(this::convertToQuestionNoAnswerDTO)
+                .collect(Collectors.toList());
+        dto.setQuestions(questionDTOs);
+        return dto;
+    }
+    // Updated conversion method for Question to QuestionNoAnswerDTO
+    private QuestionNoAnswerDTO convertToQuestionNoAnswerDTO(Question question) {
+        QuestionNoAnswerDTO dto = new QuestionNoAnswerDTO();
+        dto.setQuestionId(question.getQuestionId());
+        dto.setQuestionText(question.getQuestionText());
+        dto.setType(question.getType());
+        dto.setSubject(question.getSubject());
+        dto.setLevel(question.getLevel());
+        dto.setMarks(question.getMarks());
+        dto.setUserId(question.getUserId());
+        dto.setOption1(question.getOption1());
+        dto.setOption2(question.getOption2());
+        dto.setOption3(question.getOption3());
+        dto.setOption4(question.getOption4());
+        dto.setStudentClass(question.getStudentClass());
+        return dto;
     }
 
 //    @Override
-//    public ExamSessionDTO submitExamAnswers(Integer sessionId, List<UserAnswerDTO> answers) {
-//        ExamSession session = examSessionRepository.findById(sessionId)
-//                .orElseThrow(() -> new ResourceNotFoundException("Exam session not found with ID: " + sessionId));
-//        int score = 0;
-//        List<UserAnswer> userAnswers = new ArrayList<>();
-//        for (UserAnswerDTO dto : answers) {
-//            Question question = questionRepository.findById(dto.getQuestionId())
-//                    .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
-//            UserAnswer ua = new UserAnswer();
-//            ua.setExamSession(session);
-//            ua.setQuestion(question);
-//            ua.setSelectedOption(dto.getSelectedOption());
-//            userAnswers.add(ua);
+//    public ExamSessionDTO startExam(Integer userId, Integer paperId, String studentClass) {
+//        User user = userRepository.findById(Long.valueOf(userId))
+//                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+//        Paper paper = paperRepository.findById(paperId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Paper not found with ID: " + paperId));
 //
-//            if (question.getAnswer().equalsIgnoreCase(dto.getSelectedOption())) {
-//                try {
-//                    score += Integer.parseInt(question.getMarks());
-//                } catch (NumberFormatException nfe) {
-//                    // Optionally log invalid marks format
-//                }
+//        LocalDateTime now = LocalDateTime.now();
+//        // Check exam time window
+//        if (paper.getStartTime() != null && paper.getEndTime() != null) {
+//            if (now.isBefore(paper.getStartTime()) || now.isAfter(paper.getEndTime())) {
+//                throw new ExamTimeWindowException(
+//                        "Exam can only be started between " + paper.getStartTime() + " and " + paper.getEndTime()
+//                );
 //            }
 //        }
-//        session.setEndTime(LocalDateTime.now());
-//        session.setScore(score);
-//        session.setUserAnswers(userAnswers);
-//        examSessionRepository.save(session);
-//        return convertToDTO(session);
+//
+//        ExamSession session = new ExamSession();
+//        session.setUser(user);
+//        session.setPaper(paper);
+//        session.setStudentClass(studentClass);
+//        session.setStartTime(now);
+//        session.setScore(0);
+//        session.setUserAnswers(new ArrayList<>());
+//        ExamSession saved = examSessionRepository.save(session);
+//        return convertToDTO(saved);
 //    }
+
+
 @Override
 public ExamSessionDTO submitExamAnswers(Integer sessionId, Long userId, List<UserAnswerDTO> answers) {
     ExamSession session = examSessionRepository.findById(sessionId)

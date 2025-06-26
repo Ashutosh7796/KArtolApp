@@ -5,7 +5,9 @@ import com.spring.jwt.Exam.Dto.*;
 import java.util.List;
 
 public interface ExamService {
-    ExamSessionDTO startExam(Integer userId, Integer paperId, String studentClass);
+//    ExamSessionDTO startExam(Integer userId, Integer paperId, String studentClass);
+PaperWithQuestionsDTOn startExam(Integer userId, Integer paperId, String studentClass);
+
     public ExamSessionDTO submitExamAnswers(Integer sessionId, Long userId, List<UserAnswerDTO> answers);
 
     List<ExamResultDTO> getResultsByUserId(Long userId);
