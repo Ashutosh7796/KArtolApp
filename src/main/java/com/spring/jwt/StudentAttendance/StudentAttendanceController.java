@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -128,7 +129,7 @@ public class StudentAttendanceController {
     @GetMapping("/date")
     @PermitAll
     @Operation(summary = "Get attendance by date", description = "Fetches attendance records for a given date")
-    public ResponseEntity<ApiResponse<List<StudentAttendanceDTO>>> getByDate(@RequestParam Date date) {
+    public ResponseEntity<ApiResponse<List<StudentAttendanceDTO>>> getByDate(@RequestParam LocalDate date) {
         try {
             List<StudentAttendanceDTO> list = studentAttendanceService.getByDate(date);
             return ResponseEntity.ok(ApiResponse.success("Attendance fetched for date", list));
@@ -181,7 +182,7 @@ public class StudentAttendanceController {
     @PermitAll
     @Operation(summary = "Search attendance", description = "Search attendance records by date, class, and teacher")
     public ResponseEntity<ApiResponse<List<StudentAttendanceDTO>>> getByDateAndStudentClassAndTeacherId(
-            @RequestParam Date date,
+            @RequestParam LocalDate date,
             @RequestParam String studentClass,
             @RequestParam Integer teacherId) {
         try {
@@ -190,6 +191,20 @@ public class StudentAttendanceController {
         } catch (Exception e) {
             log.error("Failed to search attendance: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to search attendance", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/score")
+    @PermitAll
+    @Operation(summary = "Get Attendance Scores", description = "Returns total, weekly, monthly, and yearly attendance scores")
+    public ResponseEntity<ApiResponse<AttendanceScoreDto>> getAttendanceScores(@RequestParam Integer userId) {
+        try {
+            AttendanceScoreDto scores = studentAttendanceService.getAttendanceScores(userId);
+            return ResponseEntity.ok(ApiResponse.success("Attendance scores fetched successfully", scores));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(
+                    ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to fetch scores", e.getMessage())
+            );
         }
     }
 }

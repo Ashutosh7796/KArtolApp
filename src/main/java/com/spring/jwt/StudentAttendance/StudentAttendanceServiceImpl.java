@@ -8,6 +8,9 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -147,7 +150,7 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
     }
 
     @Override
-    public List<StudentAttendanceDTO> getByDate(Date date) {
+    public List<StudentAttendanceDTO> getByDate(LocalDate date) {
         if (date == null ) {
             throw new IllegalArgumentException("date is required and cannot be empty");
         }
@@ -199,7 +202,7 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
     }
 
     @Override
-    public List<StudentAttendanceDTO> getByDateAndStudentClassAndTeacherId(Date date, String studentClass, Integer teacherId) {
+    public List<StudentAttendanceDTO> getByDateAndStudentClassAndTeacherId(LocalDate date, String studentClass, Integer teacherId) {
         if (teacherId == null || !teacherRepository.existsById(teacherId)) {
             throw new ResourceNotFoundException("Teacher not found with ID: " + teacherId);
         }
@@ -219,5 +222,34 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
         }
     }
 
+    @Override
+    public AttendanceScoreDto getAttendanceScores(Integer userId) {
+        LocalDate today = LocalDate.now();
+
+        LocalDate weekAgo = today.minusDays(7);
+        LocalDate monthAgo = today.minusMonths(1);
+        LocalDate yearAgo = today.minusYears(1);
+
+        // Fetch attendance records
+        List<StudentAttendance> all = Optional.ofNullable(repository.findByUserId(userId)).orElse(Collections.emptyList());
+        List<StudentAttendance> weekly = Optional.ofNullable(repository.findByUserIdAndDateBetween(userId, weekAgo, today)).orElse(Collections.emptyList());
+        List<StudentAttendance> monthly = Optional.ofNullable(repository.findByUserIdAndDateBetween(userId, monthAgo, today)).orElse(Collections.emptyList());
+        List<StudentAttendance> yearly = Optional.ofNullable(repository.findByUserIdAndDateBetween(userId, yearAgo, today)).orElse(Collections.emptyList());
+
+        return new AttendanceScoreDto(
+                calculateAttendancePercentage(all),
+                calculateAttendancePercentage(weekly),
+                calculateAttendancePercentage(monthly),
+                calculateAttendancePercentage(yearly)
+        );
+    }
+
+    private int calculateAttendancePercentage(List<StudentAttendance> records) {
+        if (records == null || records.isEmpty()) return 0;
+        long presentCount = records.stream()
+                .filter(StudentAttendance::getAttendance)
+                .count();
+        return (int) ((presentCount * 100) / records.size());
+    }
 
 }

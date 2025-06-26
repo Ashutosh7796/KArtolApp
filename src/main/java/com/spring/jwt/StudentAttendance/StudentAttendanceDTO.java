@@ -3,15 +3,17 @@ package com.spring.jwt.StudentAttendance;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Data
 public class StudentAttendanceDTO {
     private Integer studentAttendanceId;
 
-    @NotBlank(message = "Date is mandatory")
-    private Date date;
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDate date;
 
     @NotBlank(message = "Subject is mandatory")
     private String sub;

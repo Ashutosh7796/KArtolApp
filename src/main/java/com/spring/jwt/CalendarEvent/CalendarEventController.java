@@ -1,6 +1,7 @@
 package com.spring.jwt.CalendarEvent;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,4 +44,10 @@ public class CalendarEventController {
             @RequestParam int month) {
         return calendarEventService.getEventsByMonth(year, month);
     }
+
+    @GetMapping("/calendar/upcoming")
+    public ResponseEntity<UpcomingCalendarResponse> getUpcomingEventsAndExams() {
+        return ResponseEntity.ok(calendarEventService.getUpcomingEventsAndExams());
+    }
+
 }

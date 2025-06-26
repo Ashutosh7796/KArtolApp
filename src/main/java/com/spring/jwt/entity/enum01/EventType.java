@@ -5,5 +5,6 @@ public enum EventType {
     HOLIDAY,
     MEETING,
     REMINDER,
-    OTHER
+    OTHER,
+    EVENT
 }

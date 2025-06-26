@@ -22,7 +22,7 @@ public class CalendarEvent {
     private LocalDateTime endDateTime;    // When event ends
 
     @Enumerated(EnumType.STRING)
-    private EventType eventType;          // EXAM, HOLIDAY, MEETING, OTHER
+    private EventType eventType;          // EXAM, HOLIDAY, MEETING, OTHER,EVENT
 
     private String colorCode;             // For UI highlighting (optional, e.g., "#FF0000")
 
