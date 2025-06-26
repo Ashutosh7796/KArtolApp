@@ -11,4 +11,6 @@ public interface CalendarEventService {
     void deleteEvent(Long id);
 
     List<CalendarEventDTO> getEventsByMonth(int year, int month);
+
+    UpcomingCalendarResponse getUpcomingEventsAndExams();
 }

@@ -2,11 +2,13 @@ package com.spring.jwt.CalendarEvent;
 
 
 import com.spring.jwt.entity.CalendarEvent;
+import com.spring.jwt.entity.enum01.EventType;
 import com.spring.jwt.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,10 +56,31 @@ public class CalendarEventServiceImpl implements CalendarEventService {
 
     @Override
     public CalendarEventDTO createEvent(CalendarEventDTO dto) {
+        // Convert DTO to entity
         CalendarEvent entity = toEntity(dto);
         entity.setId(null);
+
+        // Auto-set color for HOLIDAY
+        if (entity.getEventType() == EventType.HOLIDAY) {
+            entity.setColorCode("Red");
+        }
+
+        // Prevent creating an EXAM on a public holiday
+        if (entity.getEventType() == EventType.EXAM) {
+            List<CalendarEvent> publicHolidays = calendarEventRepository
+                    .findByStartDateTimeBetweenAndIsPublicHolidayTrue(
+                            entity.getStartDateTime().toLocalDate().atStartOfDay(),
+                            entity.getStartDateTime().toLocalDate().atTime(LocalTime.MAX)
+                    );
+
+            if (!publicHolidays.isEmpty()) {
+                throw new IllegalArgumentException("Cannot schedule an EXAM on a public holiday.");
+            }
+        }
+
         return toDTO(calendarEventRepository.save(entity));
     }
+
 
     @Override
     public CalendarEventDTO getEvent(Long id) {
@@ -119,4 +142,24 @@ public class CalendarEventServiceImpl implements CalendarEventService {
 
         return events.stream().map(this::toDTO).collect(Collectors.toList());
     }
+
+    @Override
+    public UpcomingCalendarResponse getUpcomingEventsAndExams() {
+        LocalDateTime now = LocalDateTime.now();
+
+        List<CalendarEvent> upcoming = calendarEventRepository.findByStartDateTimeAfter(now);
+
+        List<CalendarEventDTO> exams = upcoming.stream()
+                .filter(e -> e.getEventType() == EventType.EXAM)
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+
+        List<CalendarEventDTO> events = upcoming.stream()
+                .filter(e -> e.getEventType() == EventType.EVENT)
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+
+        return new UpcomingCalendarResponse(exams, events);
+    }
+
 }

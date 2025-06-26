@@ -3,12 +3,13 @@ package com.spring.jwt.StudentAttendance;
 
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
 @Data
 public class CreateStudentAttendanceDTO {
-    private Date date;
+    private LocalDate date;
     private String sub;
     private String name;
     private String mark;
