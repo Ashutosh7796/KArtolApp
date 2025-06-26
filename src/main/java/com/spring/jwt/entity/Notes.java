@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -24,5 +25,5 @@ public class Notes {
     private String Note1;
     private String Note2;
     private Integer teacherId;
-    private Date createdDate;
+    private LocalDate createdDate;
 }
