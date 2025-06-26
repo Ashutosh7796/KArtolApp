@@ -1,5 +1,6 @@
 package com.spring.jwt.entity;
 
+import com.spring.jwt.Exam.entity.Paper;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,4 +32,7 @@ public class Question {
     private String StudentClass;
     // Store the answer, e.g. "option1", "option2", etc. or the text itself
     private String answer;
+    @ManyToOne
+    @JoinColumn(name = "paper_id")
+    private Paper paper;
 }

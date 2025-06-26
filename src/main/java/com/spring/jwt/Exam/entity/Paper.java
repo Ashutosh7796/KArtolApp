@@ -1,6 +1,7 @@
 package com.spring.jwt.Exam.entity;
 
 
+import com.spring.jwt.entity.Question;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,4 +28,15 @@ public class Paper {
 
     @OneToMany(mappedBy = "paper", cascade = CascadeType.ALL)
     private List<PaperQuestion> paperQuestions;
+
+    @OneToMany(mappedBy = "paper", fetch = FetchType.LAZY) // or EAGER as needed
+    private List<Question> questions;
+
+    public List<Question> getQuestions() {
+        return questions;
+    }
+
+    public void setQuestions(List<Question> questions) {
+        this.questions = questions;
+    }
 }
