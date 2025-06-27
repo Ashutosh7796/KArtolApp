@@ -1,5 +1,6 @@
 package com.spring.jwt.exception;
 
+import com.spring.jwt.dto.ResponseDto;
 import com.spring.jwt.utils.BaseResponseDTO;
 import com.spring.jwt.utils.ErrorResponseDto;
 import jakarta.validation.ConstraintViolationException;
@@ -293,4 +294,15 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         body.put("message", ex.getMessage());
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
+
+
+    @ExceptionHandler(PaperFetchException.class)
+    public ResponseEntity<ResponseDto> handlePaperFetchException(PaperFetchException ex) {
+        return new ResponseEntity<>(new ResponseDto("Error", null, ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+//    @ExceptionHandler(InvalidPaginationParameterException.class)
+//    public ResponseEntity<ResponseDto> handleInvalidPageParam(InvalidPaginationParameterException ex) {
+//        return new ResponseEntity<>(new ResponseDto("Invalid pagination", null, ex.getMessage()), HttpStatus.BAD_REQUEST);
+//    }
 }
