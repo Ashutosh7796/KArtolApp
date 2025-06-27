@@ -70,7 +70,7 @@ public class AppConfig {
     @Value("${app.url.frontend:http://localhost:5173}")
     private String frontendUrl;
 
-    @Value("#{'${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://localhost:8080}'.split(',')}")
+    @Value("#{'${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://localhost:8080,http://localhost:5173/}'.split(',')}")
     private List<String> allowedOrigins;
 
     @Bean

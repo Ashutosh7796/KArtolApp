@@ -9,8 +9,10 @@ import com.spring.jwt.Question.QuestionRepository;
 import com.spring.jwt.dto.PageResponseDto;
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.exception.InvalidPaginationParameterException;
+import com.spring.jwt.exception.PaperFetchException;
 import com.spring.jwt.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +21,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+
 
 @Service
 public class PaperServiceImpl implements PaperService {
@@ -151,32 +155,24 @@ public class PaperServiceImpl implements PaperService {
 
     @Override
     public PageResponseDto<PaperDTO> getAllPapers(int page, int size) {
-        try {
-            if (page < 0 || size <= 0) {
-                throw new IllegalArgumentException("Page number must be >= 0 and size > 0");
-            }
-
-            Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-            Page<Paper> paperPage = paperRepository.findAll(pageable);
-
-            List<PaperDTO> paperDTOs = paperPage.getContent().stream()
-                    .map(this::toDTO)
-                    .collect(Collectors.toList());
-
-            return new PageResponseDto<>(
-                    paperDTOs,
-                    paperPage.getNumber(),
-                    paperPage.getSize(),
-                    paperPage.getTotalElements(),
-                    paperPage.getTotalPages()
-            );
-        } catch (IllegalArgumentException e) {
-            throw new InvalidPaginationParameterException(e.getMessage());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch paginated papers", e);
+        if (page < 0 || size <= 0) {
+            throw new InvalidPaginationParameterException("Page number must be >= 0 and size > 0");
         }
-    }
+        Pageable pageable = PageRequest.of(page, size, Sort.by("paperId").descending());
+        Page<Paper> paperPage = paperRepository.findAll(pageable);
 
+        List<PaperDTO> paperDTOs = paperPage.getContent().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+
+        return new PageResponseDto<>(
+                paperDTOs,
+                paperPage.getNumber(),
+                paperPage.getSize(),
+                paperPage.getTotalElements(),
+                paperPage.getTotalPages()
+        );
+    }
 
 
     @Override

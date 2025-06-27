@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/calendar-events")
+@RequestMapping("/api/v1/calendar-events")
 @Tag(name = "Calendar Events", description = "APIs for managing calendar events like exams and holidays")
 public class CalendarEventController {
 
