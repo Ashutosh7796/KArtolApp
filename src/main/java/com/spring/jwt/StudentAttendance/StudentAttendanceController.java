@@ -207,4 +207,30 @@ public class StudentAttendanceController {
             );
         }
     }
+
+
+
+    @GetMapping("/attendance")
+    @PermitAll
+    @Operation(
+            summary = "Get Attendance Records",
+            description = "Returns all attendance records matching the given date, subject, teacher, and student class"
+    )
+    public ResponseEntity<ApiResponse<List<StudentAttendanceDTO>>> getAttendance(
+            @RequestParam LocalDate date,
+            @RequestParam String sub,
+            @RequestParam Integer teacherId,
+            @RequestParam String studentClass
+    ) {
+        try {
+            List<StudentAttendanceDTO> results = studentAttendanceService.getByDateSubTeacherIdStudentClass(
+                    date, sub, teacherId, studentClass
+            );
+            return ResponseEntity.ok(ApiResponse.success("Attendance records fetched successfully", results));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(
+                    ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to fetch attendance", e.getMessage())
+            );
+        }
+    }
 }
