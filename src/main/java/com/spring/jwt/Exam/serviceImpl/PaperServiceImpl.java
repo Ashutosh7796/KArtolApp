@@ -8,6 +8,7 @@ import com.spring.jwt.Exam.service.PaperService;
 import com.spring.jwt.Question.QuestionRepository;
 import com.spring.jwt.dto.PageResponseDto;
 import com.spring.jwt.entity.Question;
+import com.spring.jwt.Question.QuestionDTO;
 import com.spring.jwt.exception.InvalidPaginationParameterException;
 import com.spring.jwt.exception.PaperFetchException;
 import com.spring.jwt.exception.ResourceNotFoundException;
@@ -137,6 +138,18 @@ public class PaperServiceImpl implements PaperService {
         return dto;
     }
 
+    public PaperWithQuestionsWithAnsDTO toPaperWithQuestionsDTO(Paper paper, List<QuestionDTO> questionDTOs) {
+        return PaperWithQuestionsWithAnsDTO.builder()
+                .paperId(paper.getPaperId())
+                .title(paper.getTitle())
+                .description(paper.getDescription())
+                .startTime(paper.getStartTime())
+                .endTime(paper.getEndTime())
+                .isLive(paper.getIsLive())
+                .studentClass(paper.getStudentClass())
+                .questions(questionDTOs)
+                .build();
+    }
 
     @Override
     public PaperDTO createPaper(PaperDTO paperDTO) {
