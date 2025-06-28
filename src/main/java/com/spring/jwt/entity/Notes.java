@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.Date;
-
 @Entity
 @Data
 @NoArgsConstructor
@@ -17,13 +16,19 @@ public class Notes {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long NotesId;
-    private String StudentClass;
+    private Long notesId;
+
+    private String studentClass;
     private String sub;
     private String chapter;
     private String topic;
-    private String Note1;
-    private String Note2;
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String note1;
+
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String note2;
     private Integer teacherId;
     private LocalDate createdDate;
 }

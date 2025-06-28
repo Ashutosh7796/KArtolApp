@@ -3,6 +3,7 @@ package com.spring.jwt.CalendarEvent;
 
 import com.spring.jwt.entity.CalendarEvent;
 import com.spring.jwt.entity.enum01.EventType;
+import com.spring.jwt.exception.ExamOnHolidayException;
 import com.spring.jwt.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -56,16 +57,8 @@ public class CalendarEventServiceImpl implements CalendarEventService {
 
     @Override
     public CalendarEventDTO createEvent(CalendarEventDTO dto) {
-        // Convert DTO to entity
         CalendarEvent entity = toEntity(dto);
         entity.setId(null);
-
-        // Auto-set color for HOLIDAY
-        if (entity.getEventType() == EventType.HOLIDAY) {
-            entity.setColorCode("Red");
-        }
-
-        // Prevent creating an EXAM on a public holiday
         if (entity.getEventType() == EventType.EXAM) {
             List<CalendarEvent> publicHolidays = calendarEventRepository
                     .findByStartDateTimeBetweenAndIsPublicHolidayTrue(
@@ -74,12 +67,13 @@ public class CalendarEventServiceImpl implements CalendarEventService {
                     );
 
             if (!publicHolidays.isEmpty()) {
-                throw new IllegalArgumentException("Cannot schedule an EXAM on a public holiday.");
+                throw new ExamOnHolidayException("Cannot schedule an EXAM on a public holiday.");
             }
         }
 
         return toDTO(calendarEventRepository.save(entity));
     }
+
 
 
     @Override
