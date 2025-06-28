@@ -1,7 +1,9 @@
 package com.spring.jwt.StudentAttendance;
 
+import com.spring.jwt.entity.Student;
 import com.spring.jwt.entity.StudentAttendance;
 import com.spring.jwt.exception.ResourceNotFoundException;
+import com.spring.jwt.repository.StudentRepository;
 import com.spring.jwt.repository.TeacherRepository;
 import com.spring.jwt.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -10,10 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +24,8 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
     private UserRepository userRepository;
     @Autowired
     private TeacherRepository teacherRepository;
+    @Autowired
+    private StudentRepository studentRepository;
 
     private StudentAttendanceDTO toDTO(StudentAttendance entity) {
         StudentAttendanceDTO dto = new StudentAttendanceDTO();
@@ -67,26 +68,69 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
 
     @Override
     @Transactional
-    public void createBatchAttendance(CreateStudentAttendanceDTO batchDto) {
+    public List<StudentAttendance> createBatchAttendance(CreateStudentAttendanceDTO batchDto) {
         if (!teacherRepository.existsById(batchDto.getTeacherId())) {
             throw new ResourceNotFoundException("Teacher not found with ID: " + batchDto.getTeacherId());
         }
+
+        List<StudentAttendance> resultList = new ArrayList<>();
+
         for (SingleAttendanceDTO entry : batchDto.getAttendanceList()) {
             if (!userRepository.existsById(Long.valueOf(entry.getUserId()))) {
                 throw new ResourceNotFoundException("User not found with ID: " + entry.getUserId());
             }
-            StudentAttendance entity = new StudentAttendance();
-            entity.setDate(batchDto.getDate());
-            entity.setSub(batchDto.getSub());
-            entity.setName(batchDto.getName());
-            entity.setMark(batchDto.getMark());
-            entity.setTeacherId(batchDto.getTeacherId());
-            entity.setUserId(entry.getUserId());
-            entity.setAttendance(entry.getAttendance());
-            entity.setStudentClass(entity.getStudentClass());
-            repository.save(entity);
+
+            Optional<StudentAttendance> existingOpt = repository.findByDateAndSubAndUserIdAndTeacherId(
+                    batchDto.getDate(), batchDto.getSub(), Long.valueOf(entry.getUserId()), batchDto.getTeacherId()
+            );
+
+            StudentAttendance entity;
+            if (existingOpt.isPresent()) {
+                // Update existing
+                entity = existingOpt.get();
+                entity.setAttendance(entry.getAttendance());
+                entity.setName(batchDto.getName());
+                entity.setMark(batchDto.getMark());
+                entity.setStudentClass(batchDto.getStudentClass());
+            } else {
+                // Insert new
+                entity = new StudentAttendance();
+                entity.setDate(batchDto.getDate());
+                entity.setSub(batchDto.getSub());
+                entity.setName(batchDto.getName());
+                entity.setMark(batchDto.getMark());
+                entity.setTeacherId(batchDto.getTeacherId());
+                entity.setUserId(entry.getUserId());
+                entity.setAttendance(entry.getAttendance());
+                entity.setStudentClass(batchDto.getStudentClass());
+            }
+
+            resultList.add(repository.save(entity));
         }
+        return resultList;
     }
+//    @Override
+//    @Transactional
+//    public void createBatchAttendance(CreateStudentAttendanceDTO batchDto) {
+//        if (!teacherRepository.existsById(batchDto.getTeacherId())) {
+//            throw new ResourceNotFoundException("Teacher not found with ID: " + batchDto.getTeacherId());
+//        }
+//        for (SingleAttendanceDTO entry : batchDto.getAttendanceList()) {
+//            if (!userRepository.existsById(Long.valueOf(entry.getUserId()))) {
+//                throw new ResourceNotFoundException("User not found with ID: " + entry.getUserId());
+//            }
+//            StudentAttendance entity = new StudentAttendance();
+//            entity.setDate(batchDto.getDate());
+//            entity.setSub(batchDto.getSub());
+//            entity.setName(batchDto.getName());
+//            entity.setMark(batchDto.getMark());
+//            entity.setTeacherId(batchDto.getTeacherId());
+//            entity.setUserId(entry.getUserId());
+//            entity.setAttendance(entry.getAttendance());
+//            entity.setStudentClass(entity.getStudentClass());
+//            repository.save(entity);
+//        }
+//    }
 
 
 
@@ -244,12 +288,53 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
         );
     }
 
+
+
     private int calculateAttendancePercentage(List<StudentAttendance> records) {
         if (records == null || records.isEmpty()) return 0;
         long presentCount = records.stream()
                 .filter(StudentAttendance::getAttendance)
                 .count();
         return (int) ((presentCount * 100) / records.size());
+    }
+
+
+    public List<StudentAttendanceDTO> getByDateSubTeacherIdStudentClass(
+            LocalDate date, String sub, Integer teacherId, String studentClass) {
+        if (date == null) throw new IllegalArgumentException("date is required");
+        if (sub == null || sub.trim().isEmpty()) throw new IllegalArgumentException("sub is required");
+        if (teacherId == null || !teacherRepository.existsById(teacherId)) {
+            throw new ResourceNotFoundException("Teacher not found with ID: " + teacherId);
+        }
+        if (studentClass == null || studentClass.trim().isEmpty()) throw new IllegalArgumentException("studentClass is required");
+
+        List<StudentAttendance> attendances = repository.findByDateAndSubAndTeacherIdAndStudentClass(
+                date, sub, teacherId, studentClass
+        );
+
+        // If attendance records found, return as usual
+        if (!attendances.isEmpty()) {
+            return attendances.stream().map(this::toDTO).collect(Collectors.toList());
+        }
+
+        // If not found: fetch all students for the class
+        List<Student> students = studentRepository.findByStudentClass(studentClass);
+
+        // Return DTOs with only student info (other attendance fields can be null or default)
+        List<StudentAttendanceDTO> dtos = new ArrayList<>();
+        for (Student student : students) {
+            StudentAttendanceDTO dto = new StudentAttendanceDTO();
+            dto.setUserId(student.getUserId());
+            dto.setStudentClass(studentClass);
+            dto.setName(student.getName());
+            dto.setAttendance(null); // Not marked yet
+            dto.setDate(date);
+            dto.setSub(sub);
+            dto.setTeacherId(teacherId);
+            // Optionally add more student fields if your DTO supports it
+            dtos.add(dto);
+        }
+        return dtos;
     }
 
 }
