@@ -87,32 +87,32 @@ public class NotesServiceImpl implements NotesService {
         notesRepository.delete(existing);
     }
 
-    private NotesDTO toDTO(Notes notes) {
-        NotesDTO dto = new NotesDTO();
-        dto.setNotesId(notes.getNotesId());
-        dto.setStudentClass(notes.getStudentClass());
-        dto.setSub(notes.getSub());
-        dto.setChapter(notes.getChapter());
-        dto.setTopic(notes.getTopic());
-        dto.setNote1(notes.getNote1());
-        dto.setNote2(notes.getNote2());
-        dto.setTeacherId(notes.getTeacherId());
-        dto.setCreatedDate(notes.getCreatedDate());
-        return dto;
+    private Notes toEntity(NotesDTO dto) {
+        Notes entity = new Notes();
+        // Don't set ID here; it will be generated
+        entity.setStudentClass(dto.getStudentClass());
+        entity.setSub(dto.getSub());
+        entity.setChapter(dto.getChapter());
+        entity.setTopic(dto.getTopic());
+        entity.setNote1(dto.getNote1());
+        entity.setNote2(dto.getNote2());
+        entity.setTeacherId(dto.getTeacherId());
+        entity.setCreatedDate(dto.getCreatedDate());
+        return entity;
     }
 
-    private Notes toEntity(NotesDTO dto) {
-        Notes notes = new Notes();
-        notes.setNotesId(dto.getNotesId());
-        notes.setStudentClass(dto.getStudentClass());
-        notes.setSub(dto.getSub());
-        notes.setChapter(dto.getChapter());
-        notes.setTopic(dto.getTopic());
-        notes.setNote1(dto.getNote1());
-        notes.setNote2(dto.getNote2());
-        notes.setTeacherId(dto.getTeacherId());
-        notes.setCreatedDate(dto.getCreatedDate());
-        return notes;
+    private NotesDTO toDTO(Notes entity) {
+        NotesDTO dto = new NotesDTO();
+        dto.setNotesId(entity.getNotesId());
+        dto.setStudentClass(entity.getStudentClass());
+        dto.setSub(entity.getSub());
+        dto.setChapter(entity.getChapter());
+        dto.setTopic(entity.getTopic());
+        dto.setNote1(entity.getNote1());
+        dto.setNote2(entity.getNote2());
+        dto.setTeacherId(entity.getTeacherId());
+        dto.setCreatedDate(entity.getCreatedDate());
+        return dto;
     }
 
     private void validateNoteDTO(NotesDTO noteDto) {

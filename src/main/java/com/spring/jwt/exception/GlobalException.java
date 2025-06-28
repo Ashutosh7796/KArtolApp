@@ -301,8 +301,15 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(new ResponseDto("Error", null, ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-//    @ExceptionHandler(InvalidPaginationParameterException.class)
-//    public ResponseEntity<ResponseDto> handleInvalidPageParam(InvalidPaginationParameterException ex) {
-//        return new ResponseEntity<>(new ResponseDto("Invalid pagination", null, ex.getMessage()), HttpStatus.BAD_REQUEST);
-//    }
+    @ExceptionHandler(ExamOnHolidayException.class)
+    public ResponseEntity<Map<String, Object>> handleExamOnHolidayException(ExamOnHolidayException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", new java.util.Date());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Invalid Event Scheduling");
+        body.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
 }
