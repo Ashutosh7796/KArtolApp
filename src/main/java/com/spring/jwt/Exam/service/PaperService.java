@@ -15,4 +15,8 @@ public interface PaperService {
     //  method for your requirement
     PaperWithQuestionsDTO getPaperWithQuestions(Integer paperId);
     List<PaperDTO> getLivePapers();
+
+
+
+
 }
