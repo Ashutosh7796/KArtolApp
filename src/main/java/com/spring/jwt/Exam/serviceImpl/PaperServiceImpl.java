@@ -218,17 +218,17 @@ public class PaperServiceImpl implements PaperService {
     }
 
     @Override
-    public List<PaperDTO> getLivePapers() {
+    public List<PaperDTO> getLivePapers(String studentClass) {
         try {
-            List<Paper> livePapers = paperRepository.findByIsLiveTrue();
+            List<Paper> livePapers = paperRepository.findByIsLiveTrueAndStudentClass(studentClass);
             if (livePapers == null || livePapers.isEmpty()) {
-                throw new ResourceNotFoundException("No live papers found.");
+                throw new ResourceNotFoundException("No live papers found for studentClass: " + studentClass);
             }
             return livePapers.stream()
                     .map(this::toDTO)
                     .collect(Collectors.toList());
         } catch (ResourceNotFoundException e) {
-            throw e; // Your global exception handler can convert this to a 404 response
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch live papers.", e);
         }

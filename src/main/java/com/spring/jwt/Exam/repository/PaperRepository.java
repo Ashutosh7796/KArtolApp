@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface PaperRepository extends JpaRepository<Paper, Integer> {
     List<Paper> findByIsLiveTrue();
+    List<Paper> findByIsLiveTrueAndStudentClass(String studentClass);
 }
