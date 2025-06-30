@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -14,10 +17,16 @@ public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer eventId;
+    @Column(name = "name")
     private String name;
-    private String date;
-    private String deception;
-    private String type;
+    @Column(name = "date")
+    private LocalDate date;
+    @Column(name = "description")
+    private String description;
+    @Column(name = "event_Type")
+    private String eventType;
+    @Column(name = "created_Date")
     private String createdDate;
-    private String eventcol;
+    @Column(name = "event_Col")
+    private String eventCol;
 }
