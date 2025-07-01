@@ -1,5 +1,6 @@
 package com.spring.jwt.Question;
 
+import com.spring.jwt.entity.enum01.QType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +11,7 @@ import lombok.NoArgsConstructor;
 public class QuestionDtoWithoutAns {
     private Integer questionId;
     private String questionText;
-    private String type;
+    private QType type;
     private String subject;
     private String level;
     private String marks;

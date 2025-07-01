@@ -1,5 +1,6 @@
 package com.spring.jwt.Question;
 
+import com.spring.jwt.entity.enum01.QType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,7 +23,7 @@ public class SingleQuestionDTO {
 
     @NotBlank
     @Schema(description = "Type of question (e.g., MCQ, Essay)", example = "MCQ")
-    private String type;
+    private QType type;
 
     @NotBlank
     @Schema(description = "Difficulty level", example = "Medium")
