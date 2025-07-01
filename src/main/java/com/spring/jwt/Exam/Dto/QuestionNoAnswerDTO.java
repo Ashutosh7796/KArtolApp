@@ -1,12 +1,13 @@
 package com.spring.jwt.Exam.Dto;
 
+import com.spring.jwt.entity.enum01.QType;
 import lombok.Data;
 
 @Data
 public class QuestionNoAnswerDTO {
     private Integer questionId;
     private String questionText;
-    private String type;
+    private QType type;
     private String subject;
     private String level;
     private String marks;

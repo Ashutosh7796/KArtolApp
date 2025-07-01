@@ -1,5 +1,6 @@
 package com.spring.jwt.Question;
 
+import com.spring.jwt.entity.enum01.QType;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -86,7 +87,7 @@ public interface QuestionService {
      * @param marks the marks to filter by (optional)
      * @return list of question DTOs matching the criteria
      */
-    List<QuestionDTO> getQuestionsBySubTypeLevelMarks(String subject, String type, String level, String marks);
+    List<QuestionDTO> getQuestionsBySubTypeLevelMarks(String subject, QType type, String level, String marks);
 
     public List<QuestionDTO> createQuestionsBulk(@Valid BulkQuestionDTO bulkDTO);
 }

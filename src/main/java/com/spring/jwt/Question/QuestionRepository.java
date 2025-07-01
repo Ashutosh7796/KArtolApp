@@ -1,6 +1,7 @@
 package com.spring.jwt.Question;
 
 import com.spring.jwt.entity.Question;
+import com.spring.jwt.entity.enum01.QType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -71,7 +72,7 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>, Jp
             "(:marks IS NULL OR q.marks = :marks)")
     Page<Question> findBySubjectTypeLevelMarks(
             @Param("subject") String subject,
-            @Param("type") String type,
+            @Param("type") QType type,
             @Param("level") String level,
             @Param("marks") String marks,
             Pageable pageable
@@ -92,7 +93,7 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>, Jp
             "(:marks IS NULL OR q.marks = :marks)")
     List<Question> findBySubjectTypeLevelMarks(
             @Param("subject") String subject,
-            @Param("type") String type,
+            @Param("type") QType type,
             @Param("level") String level,
             @Param("marks") String marks
     );
