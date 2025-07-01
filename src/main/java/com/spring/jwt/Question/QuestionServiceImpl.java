@@ -1,6 +1,7 @@
 package com.spring.jwt.Question;
 
 import com.spring.jwt.entity.Question;
+import com.spring.jwt.entity.enum01.QType;
 import com.spring.jwt.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -152,7 +153,7 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<QuestionDTO> getQuestionsBySubTypeLevelMarks(String subject, String type, String level, String marks) {
+    public List<QuestionDTO> getQuestionsBySubTypeLevelMarks(String subject, QType type, String level, String marks) {
         log.debug("Getting questions by subject: {}, type: {}, level: {}, marks: {}", subject, type, level, marks);
         
         if (subject == null && type == null && level == null && marks == null) {
@@ -162,7 +163,7 @@ public class QuestionServiceImpl implements QuestionService {
         
         Map<String, String> filters = new HashMap<>();
         if (StringUtils.hasText(subject)) filters.put("subject", subject);
-        if (StringUtils.hasText(type)) filters.put("type", type);
+        if (StringUtils.hasText(String.valueOf(type))) filters.put("type", String.valueOf(type));
         if (StringUtils.hasText(level)) filters.put("level", level);
         if (StringUtils.hasText(marks)) filters.put("marks", marks);
         
@@ -215,7 +216,7 @@ public class QuestionServiceImpl implements QuestionService {
         // Validate each question for essential fields (example: questionText, type, level, option1, option2, answer)
         for (SingleQuestionDTO single : bulkDTO.getQuestions()) {
             if (isBlank(single.getQuestionText()) ||
-                    isBlank(single.getType()) ||
+                    isBlank(String.valueOf(single.getType())) ||
                     isBlank(single.getLevel()) ||
                     isBlank(single.getMarks()) ||
                     isBlank(single.getOption1()) ||

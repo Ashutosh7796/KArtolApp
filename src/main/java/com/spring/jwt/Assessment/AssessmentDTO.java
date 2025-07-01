@@ -1,5 +1,6 @@
 package com.spring.jwt.Assessment;
 
+import com.spring.jwt.entity.enum01.QType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -119,6 +120,6 @@ public class AssessmentDTO {
         private String questionText;
         
         @Schema(description = "Question type", example = "MCQ")
-        private String questionType;
+        private QType questionType;
     }
 }

@@ -4,6 +4,7 @@ import com.spring.jwt.Question.QuestionRepository;
 import com.spring.jwt.entity.Assessment;
 import com.spring.jwt.entity.AssessmentQuestion;
 import com.spring.jwt.entity.Question;
+import com.spring.jwt.entity.enum01.QType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -56,7 +57,7 @@ public class AssessmentMapper {
                 questionDto.setQuestionId(question.getQuestionId());
                 questionDto.setAssessmentId(entity.getAssessmentId());
                 questionDto.setQuestionText(question.getQuestionText());
-                questionDto.setQuestionType(question.getType());
+                questionDto.setQuestionType(QType.valueOf(String.valueOf(question.getType())));
                 questionDto.setQuestionOrder(1);
                 questionDto.setMarks(1);
                 

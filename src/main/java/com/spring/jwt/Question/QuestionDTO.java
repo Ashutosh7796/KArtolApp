@@ -1,5 +1,6 @@
 package com.spring.jwt.Question;
 
+import com.spring.jwt.entity.enum01.QType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,7 +28,7 @@ public class QuestionDTO {
     
     @NotBlank(message = "Question type is required")
     @Schema(description = "Type of question (e.g., MCQ, Essay)", example = "MCQ", required = true)
-    private String type;
+    private QType type;
     
     @NotBlank(message = "Subject is required")
     @Schema(description = "Subject the question belongs to", example = "Geography", required = true)
