@@ -112,6 +112,7 @@ public class AppConfig {
                 "/exam/**",
                 "/events/**",
                 "/Image/**",
+                "/PaperPattern/**",
                 jwtConfig.getUrl(),
                 jwtConfig.getRefreshUrl()
             )
@@ -168,6 +169,7 @@ public class AppConfig {
                 .requestMatchers("/api/**").permitAll()
                 .requestMatchers("/events/**").permitAll()
                 .requestMatchers("/Image/**").permitAll()
+                .requestMatchers(("/PaperPattern/**")).permitAll()
 
                 .anyRequest().authenticated());
 
@@ -194,6 +196,7 @@ public class AppConfig {
                     new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/events/**"),
                     new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/Image/**"),
                     new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/PaperPattern/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getUrl()),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getRefreshUrl())
             );

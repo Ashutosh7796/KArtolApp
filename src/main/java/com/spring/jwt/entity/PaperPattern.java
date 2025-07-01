@@ -16,14 +16,20 @@ public class PaperPattern {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer paperPatternId;
+    @Column(name = "subject")
     private String subject;
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
     private QType type;
+    @Column(name = "paper_Pattern")
     private String patternName;
+    @Column(name = "no_Of_Question")
     private Integer noOfQuestion;
+    @Column(name = "required_Question")
     private Integer requiredQuestion;
+    @Column(name = "negative_Marks")
     private Integer negativeMarks;
+    @Column(name = "marks")
     private Integer marks;
     
 }

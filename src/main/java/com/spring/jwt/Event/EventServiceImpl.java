@@ -1,6 +1,5 @@
 package com.spring.jwt.Event;
 
-import com.spring.jwt.Assessment.AssessmentNotFoundException;
 import com.spring.jwt.entity.Event;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -77,13 +76,13 @@ public class EventServiceImpl implements EventService{
     @Override
     public EventDto updateEvent(Integer id, EventDto eventdto) {
         Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new AssessmentNotFoundException("Assessment not found with id: " + id));
+                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
 
         if (event.getName() != null) {
             event.setName(eventdto.getName());
         }
         if (eventdto.getType() != null) {
-            event.setEventType(event.getEventType());
+            event.setEventType(eventdto.getType());
         }
         if (eventdto.getDescription() != null) {
             event.setDescription(eventdto.getDescription());
