@@ -69,5 +69,15 @@ public class QuestionDTO {
     @Schema(description = "Correct answer to the question", example = "Paris", required = true)
     private String answer;
 
+    @NotBlank(message = "Student Class")
+    @Schema(description = "Student Class", example = "Paris", required = true)
     private String StudentClass;
+
+
+    @Schema(description = "Correct answer to hint And Sol", example = "Paris")
+    private String hintAndSol;
+
+    @NotBlank(message = "DESCRIPTIVE or not")
+    @Schema(description = "DESCRIPTIVE ture if Q is DESCRIPTIVE", example = "Paris", required = true)
+    private boolean isDescriptive;
 }

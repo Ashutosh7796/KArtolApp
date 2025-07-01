@@ -33,6 +33,8 @@ public class QuestionMapper {
                 .option3(entity.getOption3())
                 .option4(entity.getOption4())
                 .answer(entity.getAnswer())
+                .hintAndSol(entity.getHintAndSol())
+                .isDescriptive(entity.isDescriptive())
                 .build();
     }
     
@@ -57,6 +59,8 @@ public class QuestionMapper {
         entity.setOption3(dto.getOption3());
         entity.setOption4(dto.getOption4());
         entity.setAnswer(dto.getAnswer());
+        entity.setHintAndSol(dto.getHintAndSol());
+        entity.setDescriptive(dto.isDescriptive());
         
         return entity;
     }
@@ -101,6 +105,9 @@ public class QuestionMapper {
         }
         if (dto.getAnswer() != null) {
             entity.setAnswer(dto.getAnswer());
+        }
+        if (dto.getHintAndSol()!=null){
+            entity.setHintAndSol(dto.getHintAndSol());
         }
     }
     

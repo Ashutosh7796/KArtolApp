@@ -242,6 +242,8 @@ public class QuestionServiceImpl implements QuestionService {
             dto.setOption3(single.getOption3());
             dto.setOption4(single.getOption4());
             dto.setAnswer(single.getAnswer());
+            dto.setHintAndSol(single.getHintAndSol());
+            dto.setDescriptive(single.isDescriptive());
 
             Question question = questionMapper.toEntity(dto);
             Question saved = questionRepository.save(question);
