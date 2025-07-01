@@ -2,6 +2,7 @@ package com.spring.jwt.Question;
 
 import com.spring.jwt.entity.enum01.QType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Lob;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -50,6 +51,13 @@ public class SingleQuestionDTO {
 
     @NotBlank
     private String answer;
+
+    @Schema(description = "Correct answer to hint And Sol", example = "Paris")
+    private String hintAndSol;
+
+    @NotBlank(message = "DESCRIPTIVE or not")
+    @Schema(description = "DESCRIPTIVE ture if Q is DESCRIPTIVE", example = "Paris", required = true)
+    private boolean isDescriptive;
 
     // getters and setters
 }

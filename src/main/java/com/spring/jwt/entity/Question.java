@@ -34,6 +34,7 @@ public class Question {
     private String option4;
     private String StudentClass;
     private String hintAndSol;
+    private boolean isDescriptive;
 
 
     // Store the answer, e.g. "option1", "option2", etc. or the text itself
