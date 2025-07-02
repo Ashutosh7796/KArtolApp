@@ -52,4 +52,11 @@ public class PaperDTO {
     @Size(min = 1, message = "At least one question ID must be provided")
     @Schema(description = "List of question IDs included in the paper", example = "[101, 102, 103]", required = true)
     private List<@NotNull(message = "Question ID cannot be null") Integer> questions;
+
+
+    @NotNull(message = "resultDate is required")
+    @Schema(description = "resultDate of the paper", example = "2025-06-23T12:00:00", required = true)
+    private LocalDateTime resultDate;
+
+    private Integer paperPatternId;
 }

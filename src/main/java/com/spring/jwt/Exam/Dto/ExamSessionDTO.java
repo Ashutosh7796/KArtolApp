@@ -12,7 +12,9 @@ public class ExamSessionDTO {
     private Integer paperId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private Integer score;
+    private Double score;
     private String StudentClass;
+    private Double negativeCount;
+    private Double negativeScore;
     private List<UserAnswerDTO> userAnswers;
 }

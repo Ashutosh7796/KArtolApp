@@ -25,6 +25,8 @@ public class Paper {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Boolean isLive;
+    private LocalDateTime resultDate;
+    private Integer paperPatternId;
 
     @OneToMany(mappedBy = "paper", cascade = CascadeType.ALL)
     private List<PaperQuestion> paperQuestions;

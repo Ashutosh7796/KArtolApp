@@ -39,33 +39,28 @@ public class QuestionDTO {
     private String level;
     
     @NotBlank(message = "Marks are required")
-    @Pattern(regexp = "^[0-9]+(\\.[0-9]+)?$", message = "Marks must be a valid number")
     @Schema(description = "Marks assigned to the question", example = "5", required = true)
-    private String marks;
+    private Integer marks;
     
     @NotNull(message = "User ID is required")
     @Schema(description = "ID of the user who created the question", example = "1", required = true)
     private Integer userId;
     
-    @NotBlank(message = "Option 1 is required")
+
     @Size(min = 1, max = 500, message = "Option 1 must be between 1 and 500 characters")
     @Schema(description = "First option for multiple choice questions", example = "Paris", required = true)
     private String option1;
-    
-    @NotBlank(message = "Option 2 is required")
+
     @Size(min = 1, max = 500, message = "Option 2 must be between 1 and 500 characters")
     @Schema(description = "Second option for multiple choice questions", example = "London", required = true)
     private String option2;
-    
-    @Size(max = 500, message = "Option 3 must be less than 500 characters")
+
     @Schema(description = "Third option for multiple choice questions", example = "Berlin")
     private String option3;
-    
-    @Size(max = 500, message = "Option 4 must be less than 500 characters")
+
     @Schema(description = "Fourth option for multiple choice questions", example = "Rome")
     private String option4;
-    
-    @NotBlank(message = "Answer is required")
+
     @Schema(description = "Correct answer to the question", example = "Paris", required = true)
     private String answer;
 

@@ -3,6 +3,8 @@ package com.spring.jwt.Exam.serviceImpl;
 import com.spring.jwt.Exam.Dto.*;
 import com.spring.jwt.Exam.entity.*;
 import com.spring.jwt.Exam.repository.*;
+import com.spring.jwt.dto.ResponseDto;
+import com.spring.jwt.entity.PaperPattern;
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.entity.User;
 import com.spring.jwt.Question.*;
@@ -10,6 +12,8 @@ import com.spring.jwt.Exam.service.ExamService;
 import com.spring.jwt.exception.ExamTimeWindowException;
 import com.spring.jwt.exception.ResourceNotFoundException;
 import com.spring.jwt.repository.UserRepository;
+import com.spring.jwt.PaperPattern.PaperPatternRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +36,10 @@ public class ExamServiceImpl implements ExamService {
     private UserAnswerRepository userAnswerRepository;
     @Autowired
     private PaperQuestionRepository paperQuestionRepository;
+    @Autowired
+    private DescriptiveAnsRepository descriptiveAnsRepository;
+    @Autowired
+    private PaperPatternRepository paperPatternRepository;
 
 
 
@@ -57,7 +65,7 @@ public class ExamServiceImpl implements ExamService {
         session.setPaper(paper);
         session.setStudentClass(studentClass);
         session.setStartTime(now);
-        session.setScore(0);
+        session.setScore((double) 0);
         session.setUserAnswers(new ArrayList<>());
         ExamSession savedSession = examSessionRepository.save(session); // Save and get the sessionId
 
@@ -71,6 +79,7 @@ public class ExamServiceImpl implements ExamService {
         dto.setEndTime(paper.getEndTime());
         dto.setIsLive(paper.getIsLive());
         dto.setStudentClass(studentClass);
+        dto.setPaperPatternId(paper.getPaperPatternId());
 
         List<QuestionNoAnswerDTO> questionDTOs = paper.getPaperQuestions().stream()
                 .map(PaperQuestion::getQuestion)
@@ -93,6 +102,7 @@ public class ExamServiceImpl implements ExamService {
         dto.setOption2(question.getOption2());
         dto.setOption3(question.getOption3());
         dto.setOption4(question.getOption4());
+        dto.setDescriptive(question.isDescriptive());
         dto.setStudentClass(question.getStudentClass());
         return dto;
     }
@@ -126,66 +136,172 @@ public class ExamServiceImpl implements ExamService {
 //    }
 
 
-@Override
-public ExamSessionDTO submitExamAnswers(Integer sessionId, Long userId, List<UserAnswerDTO> answers) {
-    ExamSession session = examSessionRepository.findById(sessionId)
-            .orElseThrow(() -> new ResourceNotFoundException("Exam session not found with ID: " + sessionId));
+//@Override
+//public ExamSessionDTO submitExamAnswers(Integer sessionId, Long userId, List<UserAnswerDTO> answers) {
+//    ExamSession session = examSessionRepository.findById(sessionId)
+//            .orElseThrow(() -> new ResourceNotFoundException("Exam session not found with ID: " + sessionId));
+//
+//    // Log a warning if the userId does not match the session owner, but continue processing
+//    if (!session.getUser().getId().equals(userId)) {
+//        System.out.println("Warning: User ID " + userId + " is submitting for session owned by user " + session.getUser().getId());
+//        // Optionally: you could return here or throw, but you chose to process anyway
+//    }
+//
+//    Integer score = 0;
+//    List<UserAnswer> userAnswers = new ArrayList<>();
+//    for (UserAnswerDTO dto : answers) {
+//        Question question = questionRepository.findById(dto.getQuestionId())
+//                .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
+//        UserAnswer ua = new UserAnswer();
+//        ua.setExamSession(session);
+//        ua.setQuestion(question);
+//        ua.setSelectedOption(dto.getSelectedOption());
+//        userAnswers.add(ua);
+//
+//        // Score calculation
+//        if (question.getAnswer() != null && question.getAnswer().equalsIgnoreCase(dto.getSelectedOption())) {
+//            try {
+//                score += Integer.parseInt(String.valueOf(question.getMarks()));
+//            } catch (NumberFormatException nfe) {
+//                // Optionally log invalid marks format
+//                System.out.println("Invalid marks format for question ID: " + question.getQuestionId());
+//            }
+//        }
+//    }
+//    session.setEndTime(LocalDateTime.now());
+//    session.setScore(score);
+//    session.setUserAnswers(userAnswers);
+//    examSessionRepository.save(session);
+//    return convertToDTO(session);
+//}
+//    private ExamSessionDTO convertToDTO(ExamSession session) {
+//        ExamSessionDTO dto = new ExamSessionDTO();
+//        dto.setSessionId(session.getSessionId());
+//        dto.setUserId(session.getUser().getId());
+//        dto.setPaperId(session.getPaper().getPaperId());
+//        dto.setStartTime(session.getStartTime());
+//        dto.setEndTime(session.getEndTime());
+//        dto.setScore(session.getScore());
+//        dto.setStudentClass(session.getStudentClass());
+//        dto.setUserAnswers(
+//                session.getUserAnswers() != null ?
+//                        session.getUserAnswers().stream().map(ua -> {
+//                            UserAnswerDTO uadto = new UserAnswerDTO();
+//                            uadto.setId(ua.getId());
+//                            uadto.setSessionId(session.getSessionId());
+//                            uadto.setQuestionId(ua.getQuestion().getQuestionId());
+//                            uadto.setSelectedOption(ua.getSelectedOption());
+//                            return uadto;
+//                        }).collect(Collectors.toList()) : new ArrayList<>()
+//        );
+//        return dto;
+//    }
 
-    // Log a warning if the userId does not match the session owner, but continue processing
-    if (!session.getUser().getId().equals(userId)) {
-        System.out.println("Warning: User ID " + userId + " is submitting for session owned by user " + session.getUser().getId());
-        // Optionally: you could return here or throw, but you chose to process anyway
-    }
-
-    int score = 0;
-    List<UserAnswer> userAnswers = new ArrayList<>();
-    for (UserAnswerDTO dto : answers) {
-        Question question = questionRepository.findById(dto.getQuestionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
-        UserAnswer ua = new UserAnswer();
-        ua.setExamSession(session);
-        ua.setQuestion(question);
-        ua.setSelectedOption(dto.getSelectedOption());
-        userAnswers.add(ua);
-
-        // Score calculation
-        if (question.getAnswer() != null && question.getAnswer().equalsIgnoreCase(dto.getSelectedOption())) {
-            try {
-                score += Integer.parseInt(question.getMarks());
-            } catch (NumberFormatException nfe) {
-                // Optionally log invalid marks format
-                System.out.println("Invalid marks format for question ID: " + question.getQuestionId());
-            }
-        }
-    }
-    session.setEndTime(LocalDateTime.now());
-    session.setScore(score);
-    session.setUserAnswers(userAnswers);
-    examSessionRepository.save(session);
-    return convertToDTO(session);
-}
     private ExamSessionDTO convertToDTO(ExamSession session) {
+        if (session == null) return null;
+
         ExamSessionDTO dto = new ExamSessionDTO();
         dto.setSessionId(session.getSessionId());
-        dto.setUserId(session.getUser().getId());
+        dto.setUserId(session.getUser().getId().intValue());
         dto.setPaperId(session.getPaper().getPaperId());
         dto.setStartTime(session.getStartTime());
         dto.setEndTime(session.getEndTime());
         dto.setScore(session.getScore());
         dto.setStudentClass(session.getStudentClass());
-        dto.setUserAnswers(
-                session.getUserAnswers() != null ?
-                        session.getUserAnswers().stream().map(ua -> {
-                            UserAnswerDTO uadto = new UserAnswerDTO();
-                            uadto.setId(ua.getId());
-                            uadto.setSessionId(session.getSessionId());
-                            uadto.setQuestionId(ua.getQuestion().getQuestionId());
-                            uadto.setSelectedOption(ua.getSelectedOption());
-                            return uadto;
-                        }).collect(Collectors.toList()) : new ArrayList<>()
-        );
+        dto.setNegativeCount(session.getNegativeCount());
+        dto.setNegativeScore(session.getNegativeScore());
+
+        List<UserAnswerDTO> uaDTOs = session.getUserAnswers() != null
+                ? session.getUserAnswers().stream().map(ua -> {
+            UserAnswerDTO uaDTO = new UserAnswerDTO();
+            uaDTO.setQuestionId(ua.getQuestion().getQuestionId());
+            uaDTO.setSelectedOption(ua.getSelectedOption());
+            return uaDTO;
+        }).toList() : new ArrayList<>();
+
+        dto.setUserAnswers(uaDTOs);
+
         return dto;
     }
+    @Override
+    @Transactional
+    public ResponseDto1<Double> submitExamAnswers(Integer sessionId, Long userId, List<UserAnswerDTO> answers) {
+        try {
+            ExamSession session = examSessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Exam session not found with ID: " + sessionId));
+
+            if (!session.getUser().getId().equals(userId)) {
+                System.out.println("Warning: User ID " + userId + " is submitting for session owned by user " + session.getUser().getId());
+            }
+
+            double score = 0;
+            double negativeScore = 0.0;
+            int negativeCount = 0;
+
+            List<UserAnswer> userAnswers = new ArrayList<>();
+
+            Paper paper = session.getPaper();
+            PaperPattern pattern = paperPatternRepository.findById(paper.getPaperPatternId()).orElse(null);
+
+            int negativeType = pattern != null ? pattern.getNegativeMarks() : 0;
+            double negativePerWrong = switch (negativeType) {
+                case 1 -> 0.25;
+                case 2 -> 0.50;
+                case 3 -> 0.75;
+                case 4 -> 1.0;
+                default -> 0.0;
+            };
+
+            for (UserAnswerDTO dto : answers) {
+                Question question = questionRepository.findById(dto.getQuestionId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
+
+                if (question.isDescriptive()) {
+                    DescriptiveAns da = new DescriptiveAns();
+                    da.setQuestionId(question.getQuestionId());
+                    da.setPaperId(paper.getPaperId());
+                    da.setUserId(userId.intValue());
+                    da.setAns(dto.getSelectedOption());
+                    descriptiveAnsRepository.save(da);
+                } else {
+                    UserAnswer ua = new UserAnswer();
+                    ua.setExamSession(session);
+                    ua.setQuestion(question);
+                    ua.setSelectedOption(dto.getSelectedOption());
+                    userAnswers.add(ua);
+
+                    if (question.getAnswer() != null && question.getAnswer().equalsIgnoreCase(dto.getSelectedOption())) {
+                        score += question.getMarks();
+                    } else {
+                        negativeCount++;
+                        double questionNegative = question.getMarks() * negativePerWrong;
+                        negativeScore += questionNegative;
+                    }
+                }
+            }
+
+            double finalScore = score - negativeScore;
+            session.setEndTime(LocalDateTime.now());
+            session.setScore((double) Math.max(0, Math.round(finalScore)));
+            session.setUserAnswers(userAnswers);
+            session.setNegativeCount((double) negativeCount);
+            session.setNegativeScore(negativeScore);
+
+            examSessionRepository.save(session);
+
+            return ResponseDto1.success(
+                    "Exam submitted successfully",
+                    session.getPaper().getPaperId(),
+                    session.getStartTime().toLocalDate(),
+                    session.getEndTime().toLocalDate()
+            );
+        } catch (Exception e) {
+            return ResponseDto1.error("Failed to submit exam", e.getMessage());
+        }
+    }
+
+
+
 
     @Override
     public List<ExamResultDTO> getResultsByUserId(Long userId) {

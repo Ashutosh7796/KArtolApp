@@ -4,6 +4,7 @@ import com.spring.jwt.Exam.Dto.PaperDTO;
 import com.spring.jwt.Exam.Dto.PaperWithQuestionsDTO;
 import com.spring.jwt.Exam.service.PaperService;
 import com.spring.jwt.dto.PageResponseDto;
+import com.spring.jwt.dto.ResponseDto;
 import com.spring.jwt.exception.ResourceNotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,17 +29,19 @@ public class PaperController {
             description = "Creates a new paper with the given details"
     )
     @PostMapping("/add")
-    public ResponseEntity<?> createPaper(
-            @RequestBody PaperDTO paperDTO
-    ) {
+    public ResponseEntity<ResponseDto<PaperDTO>> createPaper(@RequestBody PaperDTO paperDTO) {
         try {
             PaperDTO paper = paperService.createPaper(paperDTO);
-            return ResponseEntity.ok(paper);
+            return ResponseEntity.ok(
+                    ResponseDto.success("Paper created successfully", paper)
+            );
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to create paper. " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ResponseDto.error("Failed to create paper", e.getMessage())
+            );
         }
     }
+
 
     @Operation(
             summary = "Get Paper by ID",

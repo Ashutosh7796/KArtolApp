@@ -1,6 +1,8 @@
 package com.spring.jwt.Exam.Dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
+import jakarta.persistence.Lob;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,4 +41,7 @@ public class PaperWithQuestionsWithAnsDTO {
 
     @Schema(description = "List of question details included in the paper")
     private List<QuestionDTO> questions;
+
+    @Schema(description = "isDescriptive type ture")
+    private boolean isDescriptive;
 }

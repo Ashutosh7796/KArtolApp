@@ -14,7 +14,7 @@ public class QuestionDtoWithoutAns {
     private QType type;
     private String subject;
     private String level;
-    private String marks;
+    private Integer marks;
     private String option1;
     private String option2;
     private String option3;
