@@ -17,7 +17,8 @@ public class Question {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer questionId;
-
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String questionText;
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
@@ -33,6 +34,8 @@ public class Question {
     private String option3;
     private String option4;
     private String StudentClass;
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String hintAndSol;
     private boolean isDescriptive;
 
