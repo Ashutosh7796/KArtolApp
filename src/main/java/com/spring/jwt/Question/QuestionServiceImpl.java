@@ -218,12 +218,17 @@ public class QuestionServiceImpl implements QuestionService {
             if (isBlank(single.getQuestionText()) ||
                     isBlank(String.valueOf(single.getType())) ||
                     isBlank(single.getLevel()) ||
-                    isBlank(single.getMarks()) ||
-                    isBlank(single.getOption1()) ||
-                    isBlank(single.getOption2()) ||
-                    isBlank(single.getAnswer())) {
-                log.error("A question is missing required fields: {}", single);
-                throw new InvalidQuestionException("All questions must have questionText, type, level, marks, option1, option2, and answer.");
+                    isBlank(String.valueOf(single.getMarks()))) {
+                log.error("Missing required fields: questionText, type, level, or marks: {}", single);
+                throw new InvalidQuestionException("Each question must have questionText, type, level, and marks.");
+            }
+
+// Validate options and answer based on descriptive flag
+            if (!single.isDescriptive()) {
+                if (isBlank(single.getOption1()) || isBlank(single.getOption2()) || isBlank(single.getAnswer())) {
+                    log.error("MCQ question is missing option1, option2, or answer: {}", single);
+                    throw new InvalidQuestionException("MCQ questions must have option1, option2, and answer.");
+                }
             }
         }
 

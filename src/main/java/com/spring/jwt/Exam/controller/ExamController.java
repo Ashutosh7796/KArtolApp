@@ -2,6 +2,8 @@ package com.spring.jwt.Exam.controller;
 
 import com.spring.jwt.Exam.Dto.*;
 import com.spring.jwt.Exam.service.ExamService;
+import com.spring.jwt.dto.ResponseDto;
+import com.spring.jwt.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,12 +27,21 @@ public class ExamController {
 
     // Submit answers for session
     @PostMapping("/{sessionId}/submit")
-    public ExamSessionDTO submitExam(
+    public ResponseDto<ResponseDto1<Double>> submitExam(
             @PathVariable Integer sessionId,
             @RequestParam Long userId,
             @RequestBody List<UserAnswerDTO> answers) {
-        return examService.submitExamAnswers(sessionId, userId, answers);
+        try {
+            ResponseDto1<Double> dto = examService.submitExamAnswers(sessionId, userId, answers);
+            return ResponseDto.success("Exam submitted successfully", dto);
+        } catch (ResourceNotFoundException ex) {
+            return ResponseDto.error("Exam submission failed: Resource not found", ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseDto.error("An unexpected error occurred during exam submission", ex.getMessage());
+        }
     }
+
+
 
     @GetMapping("/results/{userId}")
     public List<ExamResultDTO> getExamResultsByUser(@PathVariable Long userId) {

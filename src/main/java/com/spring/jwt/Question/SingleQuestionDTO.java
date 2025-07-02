@@ -31,9 +31,8 @@ public class SingleQuestionDTO {
     private String level;
 
     @NotBlank
-    @Pattern(regexp = "^[0-9]+(\\.[0-9]+)?$")
     @Schema(description = "Marks", example = "5")
-    private String marks;
+    private Integer marks;
 
     @NotBlank
     @Size(min = 1, max = 500)

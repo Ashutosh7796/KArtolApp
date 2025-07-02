@@ -25,7 +25,7 @@ public class Question {
     private QType type;
     private String subject;
     private String level;
-    private String marks;
+    private Integer marks;
     private Integer userId;
 
     // Four fixed options as separate columns
