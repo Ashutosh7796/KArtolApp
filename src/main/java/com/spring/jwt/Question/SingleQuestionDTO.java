@@ -22,7 +22,7 @@ public class SingleQuestionDTO {
     @Schema(description = "The text of the question", example = "What is the capital of France?")
     private String questionText;
 
-    @NotBlank
+    @NotNull
     @Schema(description = "Type of question (e.g., MCQ, Essay)", example = "MCQ")
     private QType type;
 
@@ -48,13 +48,13 @@ public class SingleQuestionDTO {
     @Size(max = 500)
     private String option4;
 
-    @NotBlank
+
     private String answer;
 
     @Schema(description = "Correct answer to hint And Sol", example = "Paris")
     private String hintAndSol;
 
-    @NotBlank(message = "DESCRIPTIVE or not")
+    @NotNull
     @Schema(description = "DESCRIPTIVE ture if Q is DESCRIPTIVE", example = "Paris", required = true)
     private boolean isDescriptive;
 

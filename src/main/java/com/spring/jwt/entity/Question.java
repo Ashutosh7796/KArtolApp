@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import jakarta.persistence.*;
 
@@ -20,6 +21,7 @@ public class Question {
     @Lob
     @Column(columnDefinition = "LONGTEXT")
     private String questionText;
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
     private QType type;
@@ -37,6 +39,7 @@ public class Question {
     @Lob
     @Column(columnDefinition = "LONGTEXT")
     private String hintAndSol;
+    @NotNull
     private boolean isDescriptive;
 
 
