@@ -308,6 +308,7 @@ public class ExamServiceImpl implements ExamService {
             session.setUserAnswers(userAnswers);
             session.setNegativeCount((double) negativeCount);
             session.setNegativeScore(negativeScore);
+            session.setResultDate(paper.getResultDate());
 
             examSessionRepository.save(session);
 

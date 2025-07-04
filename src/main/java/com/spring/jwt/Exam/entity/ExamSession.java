@@ -29,6 +29,7 @@ public class ExamSession {
     private String StudentClass;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private LocalDateTime resultDate;
     private Double score;
     private Double negativeCount;
     private Double negativeScore;

@@ -2,6 +2,8 @@ package com.spring.jwt.Exam.Dto;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class ExamResultDTO {
     private Integer sessionId;
@@ -12,4 +14,5 @@ public class ExamResultDTO {
     private String status;
     private Double negativeCount;
     private Double negativeScore;
+    private LocalDateTime resultDate;
 }
