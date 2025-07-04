@@ -36,13 +36,11 @@ public class ExamResult {
     private Double score;
     private Double negativeCount;
     private Double negativeScore;
-    
-    // Additional fields for analytics
+
     private Integer totalQuestions;
     private Integer correctAnswers;
     private Integer incorrectAnswers;
     private Integer unansweredQuestions;
-    
-    // Original session ID for reference
+
     private Integer originalSessionId;
 } 

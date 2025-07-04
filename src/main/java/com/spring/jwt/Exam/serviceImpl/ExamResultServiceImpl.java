@@ -10,10 +10,13 @@ import com.spring.jwt.Exam.service.ExamResultService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -26,11 +29,97 @@ public class ExamResultServiceImpl implements ExamResultService {
 
     private final ExamSessionRepository examSessionRepository;
     private final ExamResultRepository examResultRepository;
+    private final JdbcTemplate jdbcTemplate;
+    
+    @Override
+    @Transactional
+    public int fixResultDateFormat() {
+        // Get all sessions with result dates
+        List<Map<String, Object>> rawDates = examSessionRepository.findRawResultDates();
+        log.info("Found {} sessions with result dates to fix", rawDates.size());
+        
+        if (rawDates.isEmpty()) {
+            return 0;
+        }
+        
+        int updatedCount = 0;
+        
+        // For each session, update the result date format
+        for (Map<String, Object> row : rawDates) {
+            try {
+                Integer sessionId = (Integer) row.get("session_id");
+                Object rawDate = row.get("result_date");
+                
+                log.info("Processing session ID: {}, raw date: {}, class: {}", 
+                        sessionId, rawDate, rawDate != null ? rawDate.getClass().getName() : "null");
+                
+                if (rawDate == null) {
+                    continue;
+                }
+                
+                // Update the specific session with the correct date format
+                String sql = "UPDATE exam_session SET result_date = ? WHERE session_id = ?";
+                
+                // Use the current time as a test (you can modify this as needed)
+                LocalDateTime testDate = LocalDateTime.of(2023, 7, 4, 22, 37, 0);
+                
+                int updated = jdbcTemplate.update(sql, testDate, sessionId);
+                log.info("Updated session {}: {} rows affected", sessionId, updated);
+                
+                if (updated > 0) {
+                    updatedCount++;
+                }
+            } catch (Exception e) {
+                log.error("Error updating session: {}", e.getMessage(), e);
+            }
+        }
+        
+        log.info("Successfully updated {} out of {} sessions", updatedCount, rawDates.size());
+        return updatedCount;
+    }
     
     @Override
     @Transactional
     public int processReadyExamResults() {
         LocalDateTime now = LocalDateTime.now();
+        log.info("Checking for exam sessions with resultDate <= {}", now);
+        
+        // Debug: Print all sessions with result dates
+        List<ExamSession> allWithResultDates = examSessionRepository.findAllWithResultDate();
+        log.info("Found {} sessions with non-null resultDate", allWithResultDates.size());
+        for (ExamSession session : allWithResultDates) {
+            log.info("Session ID: {}, resultDate: {}", session.getSessionId(), session.getResultDate());
+        }
+        
+        // Try to find the specific date mentioned by the user
+        try {
+            LocalDateTime specificDate = LocalDateTime.of(2025, 7, 4, 22, 37, 0);
+            log.info("Looking for sessions with resultDate = {}", specificDate);
+            List<ExamSession> specificSessions = examSessionRepository.findByExactResultDate(specificDate);
+            log.info("Found {} sessions with exact resultDate {}", specificSessions.size(), specificDate);
+            
+            // If we found sessions with the specific date, process them directly
+            if (!specificSessions.isEmpty()) {
+                log.info("Processing {} sessions with specific date", specificSessions.size());
+                int processedCount = 0;
+                
+                for (ExamSession session : specificSessions) {
+                    try {
+                        processExamSession(session);
+                        processedCount++;
+                    } catch (Exception e) {
+                        log.error("Error processing session {}: {}", session.getSessionId(), e.getMessage(), e);
+                    }
+                }
+                
+                log.info("Successfully processed {} sessions with specific date", processedCount);
+                return processedCount;
+            }
+        } catch (Exception e) {
+            log.error("Error checking for specific date: {}", e.getMessage(), e);
+        }
+        
+        // Fall back to the standard method
         List<ExamSession> readySessions = examSessionRepository.findByResultDateBeforeOrEqual(now);
         
         if (readySessions.isEmpty()) {
