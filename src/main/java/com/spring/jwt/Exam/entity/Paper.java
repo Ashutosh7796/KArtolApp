@@ -1,6 +1,7 @@
 package com.spring.jwt.Exam.entity;
 
 
+import com.spring.jwt.entity.PaperPattern;
 import com.spring.jwt.entity.Question;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,14 @@ public class Paper {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Boolean isLive;
+    private LocalDateTime resultDate;
+    @ManyToOne(fetch = FetchType.LAZY)
+
+    @JoinColumn(name = "paper_pattern_id", insertable = false, updatable = false)
+    private PaperPattern paperPattern;
+
+
+
 
     @OneToMany(mappedBy = "paper", cascade = CascadeType.ALL)
     private List<PaperQuestion> paperQuestions;

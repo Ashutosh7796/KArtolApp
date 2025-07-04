@@ -1,6 +1,8 @@
 package com.spring.jwt.Exam.Dto;
 
 import com.spring.jwt.entity.enum01.QType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Lob;
 import lombok.Data;
 
 @Data
@@ -10,7 +12,7 @@ public class QuestionDTO {
     private QType type;
     private String subject;
     private String level;
-    private String marks;
+    private Integer marks;
     private Integer userId;
     private String option1;
     private String option2;
@@ -20,4 +22,6 @@ public class QuestionDTO {
     // Usually, do NOT expose the answer in DTO for exam-takers!
     // Include if needed for admin or after exam is over.
     private String answer;
+    private String hintAndSol;
+    private boolean isDescriptive;
 }

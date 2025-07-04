@@ -2,6 +2,7 @@ package com.spring.jwt.Question;
 
 import com.spring.jwt.entity.enum01.QType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Lob;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -21,7 +22,7 @@ public class SingleQuestionDTO {
     @Schema(description = "The text of the question", example = "What is the capital of France?")
     private String questionText;
 
-    @NotBlank
+    @NotNull
     @Schema(description = "Type of question (e.g., MCQ, Essay)", example = "MCQ")
     private QType type;
 
@@ -30,9 +31,8 @@ public class SingleQuestionDTO {
     private String level;
 
     @NotBlank
-    @Pattern(regexp = "^[0-9]+(\\.[0-9]+)?$")
     @Schema(description = "Marks", example = "5")
-    private String marks;
+    private Integer marks;
 
     @NotBlank
     @Size(min = 1, max = 500)
@@ -48,8 +48,15 @@ public class SingleQuestionDTO {
     @Size(max = 500)
     private String option4;
 
-    @NotBlank
+
     private String answer;
+
+    @Schema(description = "Correct answer to hint And Sol", example = "Paris")
+    private String hintAndSol;
+
+    @NotNull
+    @Schema(description = "DESCRIPTIVE ture if Q is DESCRIPTIVE", example = "Paris", required = true)
+    private boolean isDescriptive;
 
     // getters and setters
 }

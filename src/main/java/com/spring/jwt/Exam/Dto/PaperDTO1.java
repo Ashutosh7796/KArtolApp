@@ -17,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "Data Transfer Object for Paper operations")
-public class PaperDTO {
+public class PaperDTO1 {
 
     @Schema(description = "Unique identifier of the paper", example = "1")
     private Integer paperId;
@@ -59,4 +59,6 @@ public class PaperDTO {
     private LocalDateTime resultDate;
 
     private Integer paperPatternId;
+
+    private String patternName;
 }

@@ -74,7 +74,7 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>, Jp
             @Param("subject") String subject,
             @Param("type") QType type,
             @Param("level") String level,
-            @Param("marks") String marks,
+            @Param("marks") Integer marks,
             Pageable pageable
     );
     
@@ -95,7 +95,7 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>, Jp
             @Param("subject") String subject,
             @Param("type") QType type,
             @Param("level") String level,
-            @Param("marks") String marks
+            @Param("marks") Integer marks
     );
 
     boolean existsByQuestionText(String questionText);

@@ -29,7 +29,10 @@ public class ExamSession {
     private String StudentClass;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private Integer score;
+    private LocalDateTime resultDate;
+    private Double score;
+    private Double negativeCount;
+    private Double negativeScore;
 
     @OneToMany(mappedBy = "examSession", cascade = CascadeType.ALL)
     private List<UserAnswer> userAnswers;

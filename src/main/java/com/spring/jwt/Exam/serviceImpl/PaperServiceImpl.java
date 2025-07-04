@@ -5,8 +5,10 @@ import com.spring.jwt.Exam.entity.Paper;
 import com.spring.jwt.Exam.entity.PaperQuestion;
 import com.spring.jwt.Exam.repository.PaperRepository;
 import com.spring.jwt.Exam.service.PaperService;
+import com.spring.jwt.PaperPattern.PaperPatternRepository;
 import com.spring.jwt.Question.QuestionRepository;
 import com.spring.jwt.dto.PageResponseDto;
+import com.spring.jwt.entity.PaperPattern;
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.Question.QuestionDTO;
 import com.spring.jwt.exception.InvalidPaginationParameterException;
@@ -34,8 +36,12 @@ public class PaperServiceImpl implements PaperService {
     @Autowired
     private QuestionRepository questionRepository;
 
+    @Autowired
+    private PaperPatternRepository paperPatternRepository;
+
     private PaperDTO toDTO(Paper entity) {
         if (entity == null) return null;
+
         PaperDTO dto = new PaperDTO();
         dto.setPaperId(entity.getPaperId());
         dto.setTitle(entity.getTitle());
@@ -44,6 +50,14 @@ public class PaperServiceImpl implements PaperService {
         dto.setEndTime(entity.getEndTime());
         dto.setIsLive(entity.getIsLive());
         dto.setStudentClass(entity.getStudentClass());
+        dto.setResultDate(entity.getResultDate());
+
+        // Safely set paperPatternId
+        if (entity.getPaperPattern() != null) {
+            dto.setPaperPatternId(entity.getPaperPattern().getPaperPatternId()); // Use actual ID field
+        }
+
+        // Set Question IDs
         if (entity.getPaperQuestions() != null) {
             dto.setQuestions(
                     entity.getPaperQuestions().stream()
@@ -51,11 +65,46 @@ public class PaperServiceImpl implements PaperService {
                             .collect(Collectors.toList())
             );
         }
+
         return dto;
     }
 
+    private PaperDTO1 toDTO2(Paper entity) {
+        if (entity == null) return null;
+
+        PaperDTO1 dto = new PaperDTO1();
+        dto.setPaperId(entity.getPaperId());
+        dto.setTitle(entity.getTitle());
+        dto.setDescription(entity.getDescription());
+        dto.setStartTime(entity.getStartTime());
+        dto.setEndTime(entity.getEndTime());
+        dto.setIsLive(entity.getIsLive());
+        dto.setStudentClass(entity.getStudentClass());
+
+        // Fetching paperPatternId and patternName
+        if (entity.getPaperPattern() != null) {
+            dto.setPaperPatternId(entity.getPaperPattern().getPaperPatternId()); // Use correct ID field name
+            dto.setPatternName(entity.getPaperPattern().getPatternName());
+        }
+
+        dto.setResultDate(entity.getResultDate());
+
+        if (entity.getPaperQuestions() != null) {
+            dto.setQuestions(
+                    entity.getPaperQuestions().stream()
+                            .map(pq -> pq.getQuestion() != null ? pq.getQuestion().getQuestionId() : null)
+                            .collect(Collectors.toList())
+            );
+        }
+
+        return dto;
+    }
+
+
+
     private Paper toEntity(PaperDTO dto) {
         if (dto == null) return null;
+
         Paper entity = new Paper();
         entity.setPaperId(dto.getPaperId());
         entity.setTitle(dto.getTitle());
@@ -64,7 +113,16 @@ public class PaperServiceImpl implements PaperService {
         entity.setEndTime(dto.getEndTime());
         entity.setIsLive(dto.getIsLive());
         entity.setStudentClass(dto.getStudentClass());
+        entity.setResultDate(dto.getResultDate());
 
+        // Set PaperPattern from ID
+        if (dto.getPaperPatternId() != null) {
+            PaperPattern pattern = paperPatternRepository.findById(dto.getPaperPatternId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Paper pattern not found with id: " + dto.getPaperPatternId()));
+            entity.setPaperPattern(pattern);
+        }
+
+        // Set Questions
         if (dto.getQuestions() != null && !dto.getQuestions().isEmpty()) {
             List<PaperQuestion> paperQuestions = dto.getQuestions().stream().map(qId -> {
                 PaperQuestion pq = new PaperQuestion();
@@ -73,13 +131,14 @@ public class PaperServiceImpl implements PaperService {
                         questionRepository.findById(qId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Question not found with id: " + qId))
                 );
-                // Optionally set order or studentClass if you want
                 return pq;
             }).collect(Collectors.toList());
             entity.setPaperQuestions(paperQuestions);
         }
+
         return entity;
     }
+
 
     private QuestionDTO toQuestionDTO(PaperQuestion pq) {
         if (pq == null || pq.getQuestion() == null) return null;
@@ -151,19 +210,49 @@ public class PaperServiceImpl implements PaperService {
                 .build();
     }
 
+
     @Override
     public PaperDTO createPaper(PaperDTO paperDTO) {
+        // 1. Fetch PaperPattern
+        Integer patternId = paperDTO.getPaperPatternId();
+        PaperPattern pattern = paperPatternRepository.findById(patternId)
+                .orElseThrow(() -> new PaperFetchException("Invalid PaperPattern ID: " + patternId));
+
+        // 2. Validate question count
+        int requiredQuestions = pattern.getNoOfQuestion();
+        List<Integer> questionIds = paperDTO.getQuestions();
+        if (questionIds == null || questionIds.size() != requiredQuestions) {
+            throw new PaperFetchException(
+                    "Number of questions (" + (questionIds == null ? 0 : questionIds.size()) +
+                            ") does not match the required (" + requiredQuestions + ") by the pattern."
+            );
+        }
+
+        // 3. Validate sum of marks
+        int totalMarks = 0;
+        for (Integer qId : questionIds) {
+            Question question = questionRepository.findById(qId)
+                    .orElseThrow(() -> new PaperFetchException("Invalid Question ID: " + qId));
+            totalMarks += question.getMarks(); // assuming getMarks() returns int
+        }
+        if (totalMarks != pattern.getMarks()) {
+            throw new IllegalArgumentException(
+                    "Sum of question marks (" + totalMarks + ") does not match pattern marks (" + pattern.getMarks() + ")."
+            );
+        }
+
+        // 4. Proceed with saving
         Paper paper = toEntity(paperDTO);
-        paper.setPaperId(null);
+//        paper.setPaperId(null);
         Paper saved = paperRepository.save(paper);
         return toDTO(saved);
     }
 
     @Override
-    public PaperDTO getPaper(Integer id) {
+    public PaperDTO1 getPaper(Integer id) {
         Paper paper = paperRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Paper not found with id: " + id));
-        return toDTO(paper);
+                .orElseThrow(() -> new PaperFetchException("Paper not found with id: " + id));
+        return toDTO2(paper);
     }
 
     @Override
@@ -191,7 +280,7 @@ public class PaperServiceImpl implements PaperService {
     @Override
     public PaperDTO updatePaper(Integer id, PaperDTO paperDTO) {
         Paper paper = paperRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Paper not found with id: " + id));
+                .orElseThrow(() -> new PaperFetchException("Paper not found with id: " + id));
         paper.setTitle(paperDTO.getTitle());
         paper.setDescription(paperDTO.getDescription());
         paper.setStartTime(paperDTO.getStartTime());
@@ -206,14 +295,14 @@ public class PaperServiceImpl implements PaperService {
     @Override
     public void deletePaper(Integer id) {
         Paper paper = paperRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Paper not found with id: " + id));
+                .orElseThrow(() -> new PaperFetchException("Paper not found with id: " + id));
         paperRepository.delete(paper);
     }
 
     @Override
     public PaperWithQuestionsDTO getPaperWithQuestions(Integer paperId) {
         Paper paper = paperRepository.findById(paperId)
-                .orElseThrow(() -> new ResourceNotFoundException("Paper not found with id: " + paperId));
+                .orElseThrow(() -> new PaperFetchException("Paper not found with id: " + paperId));
         return toDTO01(paper);
     }
 
@@ -222,7 +311,7 @@ public class PaperServiceImpl implements PaperService {
         try {
             List<Paper> livePapers = paperRepository.findByIsLiveTrueAndStudentClass(studentClass);
             if (livePapers == null || livePapers.isEmpty()) {
-                throw new ResourceNotFoundException("No live papers found for studentClass: " + studentClass);
+                throw new PaperFetchException("No live papers found for studentClass: " + studentClass);
             }
             return livePapers.stream()
                     .map(this::toDTO)

@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import jakarta.persistence.*;
 
@@ -17,14 +18,16 @@ public class Question {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer questionId;
-
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String questionText;
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
     private QType type;
     private String subject;
     private String level;
-    private String marks;
+    private Integer marks;
     private Integer userId;
 
     // Four fixed options as separate columns
@@ -33,7 +36,11 @@ public class Question {
     private String option3;
     private String option4;
     private String StudentClass;
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String hintAndSol;
+    @NotNull
+    private boolean isDescriptive;
 
 
     // Store the answer, e.g. "option1", "option2", etc. or the text itself
