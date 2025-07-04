@@ -99,7 +99,9 @@ public class ExamServiceImpl implements ExamService {
             dto.setEndTime(paper.getEndTime());
             dto.setIsLive(paper.getIsLive());
             dto.setStudentClass(existingSession.getStudentClass());
-            dto.setPaperPatternId(paper.getPaperPatternId());
+            if (paper.getPaperPattern() != null) {
+                dto.setPaperPatternId(paper.getPaperPattern().getPaperPatternId());
+            }
 
             List<QuestionNoAnswerDTO> questionDTOs = paper.getPaperQuestions().stream()
                     .map(PaperQuestion::getQuestion)
@@ -135,7 +137,7 @@ public class ExamServiceImpl implements ExamService {
         dto.setEndTime(paper.getEndTime());
         dto.setIsLive(paper.getIsLive());
         dto.setStudentClass(studentClass);
-        dto.setPaperPatternId(paper.getPaperPatternId());
+        dto.setPaperPatternId(paper.getPaperPattern().getPaperPatternId());
 
         List<QuestionNoAnswerDTO> questionDTOs = paper.getPaperQuestions().stream()
                 .map(PaperQuestion::getQuestion)
@@ -257,7 +259,11 @@ public class ExamServiceImpl implements ExamService {
             List<UserAnswer> userAnswers = new ArrayList<>();
 
             Paper paper = session.getPaper();
-            PaperPattern pattern = paperPatternRepository.findById(paper.getPaperPatternId()).orElse(null);
+            Integer patternId = paper.getPaperPattern() != null ? paper.getPaperPattern().getPaperPatternId() : null;
+
+            PaperPattern pattern = patternId != null
+                    ? paperPatternRepository.findById(patternId).orElse(null)
+                    : null;
 
             int negativeType = pattern != null ? pattern.getNegativeMarks() : 0;
             double negativePerWrong = switch (negativeType) {

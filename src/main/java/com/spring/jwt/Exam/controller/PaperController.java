@@ -1,6 +1,7 @@
 package com.spring.jwt.Exam.controller;
 
 import com.spring.jwt.Exam.Dto.PaperDTO;
+import com.spring.jwt.Exam.Dto.PaperDTO1;
 import com.spring.jwt.Exam.Dto.PaperWithQuestionsDTO;
 import com.spring.jwt.Exam.service.PaperService;
 import com.spring.jwt.dto.PageResponseDto;
@@ -53,7 +54,7 @@ public class PaperController {
             @PathVariable Integer id
     ) {
         try {
-            PaperDTO paper = paperService.getPaper(id);
+            PaperDTO1 paper = paperService.getPaper(id);
             return ResponseEntity.ok(paper);
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

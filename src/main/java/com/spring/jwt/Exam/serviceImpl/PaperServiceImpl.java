@@ -41,6 +41,7 @@ public class PaperServiceImpl implements PaperService {
 
     private PaperDTO toDTO(Paper entity) {
         if (entity == null) return null;
+
         PaperDTO dto = new PaperDTO();
         dto.setPaperId(entity.getPaperId());
         dto.setTitle(entity.getTitle());
@@ -49,8 +50,14 @@ public class PaperServiceImpl implements PaperService {
         dto.setEndTime(entity.getEndTime());
         dto.setIsLive(entity.getIsLive());
         dto.setStudentClass(entity.getStudentClass());
-        dto.setPaperPatternId(entity.getPaperPatternId());
         dto.setResultDate(entity.getResultDate());
+
+        // Safely set paperPatternId
+        if (entity.getPaperPattern() != null) {
+            dto.setPaperPatternId(entity.getPaperPattern().getPaperPatternId()); // Use actual ID field
+        }
+
+        // Set Question IDs
         if (entity.getPaperQuestions() != null) {
             dto.setQuestions(
                     entity.getPaperQuestions().stream()
@@ -58,11 +65,46 @@ public class PaperServiceImpl implements PaperService {
                             .collect(Collectors.toList())
             );
         }
+
         return dto;
     }
 
+    private PaperDTO1 toDTO2(Paper entity) {
+        if (entity == null) return null;
+
+        PaperDTO1 dto = new PaperDTO1();
+        dto.setPaperId(entity.getPaperId());
+        dto.setTitle(entity.getTitle());
+        dto.setDescription(entity.getDescription());
+        dto.setStartTime(entity.getStartTime());
+        dto.setEndTime(entity.getEndTime());
+        dto.setIsLive(entity.getIsLive());
+        dto.setStudentClass(entity.getStudentClass());
+
+        // Fetching paperPatternId and patternName
+        if (entity.getPaperPattern() != null) {
+            dto.setPaperPatternId(entity.getPaperPattern().getPaperPatternId()); // Use correct ID field name
+            dto.setPatternName(entity.getPaperPattern().getPatternName());
+        }
+
+        dto.setResultDate(entity.getResultDate());
+
+        if (entity.getPaperQuestions() != null) {
+            dto.setQuestions(
+                    entity.getPaperQuestions().stream()
+                            .map(pq -> pq.getQuestion() != null ? pq.getQuestion().getQuestionId() : null)
+                            .collect(Collectors.toList())
+            );
+        }
+
+        return dto;
+    }
+
+
+
     private Paper toEntity(PaperDTO dto) {
         if (dto == null) return null;
+
         Paper entity = new Paper();
         entity.setPaperId(dto.getPaperId());
         entity.setTitle(dto.getTitle());
@@ -71,9 +113,16 @@ public class PaperServiceImpl implements PaperService {
         entity.setEndTime(dto.getEndTime());
         entity.setIsLive(dto.getIsLive());
         entity.setStudentClass(dto.getStudentClass());
-        entity.setPaperPatternId(dto.getPaperPatternId());
         entity.setResultDate(dto.getResultDate());
 
+        // Set PaperPattern from ID
+        if (dto.getPaperPatternId() != null) {
+            PaperPattern pattern = paperPatternRepository.findById(dto.getPaperPatternId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Paper pattern not found with id: " + dto.getPaperPatternId()));
+            entity.setPaperPattern(pattern);
+        }
+
+        // Set Questions
         if (dto.getQuestions() != null && !dto.getQuestions().isEmpty()) {
             List<PaperQuestion> paperQuestions = dto.getQuestions().stream().map(qId -> {
                 PaperQuestion pq = new PaperQuestion();
@@ -82,13 +131,14 @@ public class PaperServiceImpl implements PaperService {
                         questionRepository.findById(qId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Question not found with id: " + qId))
                 );
-                // Optionally set order or studentClass if you want
                 return pq;
             }).collect(Collectors.toList());
             entity.setPaperQuestions(paperQuestions);
         }
+
         return entity;
     }
+
 
     private QuestionDTO toQuestionDTO(PaperQuestion pq) {
         if (pq == null || pq.getQuestion() == null) return null;
@@ -199,10 +249,10 @@ public class PaperServiceImpl implements PaperService {
     }
 
     @Override
-    public PaperDTO getPaper(Integer id) {
+    public PaperDTO1 getPaper(Integer id) {
         Paper paper = paperRepository.findById(id)
                 .orElseThrow(() -> new PaperFetchException("Paper not found with id: " + id));
-        return toDTO(paper);
+        return toDTO2(paper);
     }
 
     @Override
