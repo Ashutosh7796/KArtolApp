@@ -54,6 +54,7 @@ public class ExamResultController {
             @ApiResponse(responseCode = "200", description = "Results retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "No results found for the paper")
     })
+
     @GetMapping("/paper/{paperId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<List<ExamResultDTO>> getResultsByPaperId(@PathVariable Integer paperId) {
@@ -70,6 +71,7 @@ public class ExamResultController {
             @ApiResponse(responseCode = "200", description = "Results retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "No results found for the class")
     })
+
     @GetMapping("/class/{studentClass}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<List<ExamResultDTO>> getResultsByStudentClass(@PathVariable String studentClass) {
@@ -82,6 +84,7 @@ public class ExamResultController {
             description = "Triggers the processing of exam sessions that have reached their result date",
             security = { @SecurityRequirement(name = "bearer-jwt") }
     )
+
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Processing completed successfully")
     })
