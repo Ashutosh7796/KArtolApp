@@ -40,7 +40,6 @@ import java.util.Optional;
 public class JwtWithSpringSecurityApplication {
 
 	public static void main(String[] args) {
-		// Register BouncyCastle as a security provider
 		Security.addProvider(new BouncyCastleProvider());
 
 		SpringApplication.run(JwtWithSpringSecurityApplication.class, args);
