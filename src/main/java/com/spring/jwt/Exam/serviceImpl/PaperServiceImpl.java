@@ -54,7 +54,8 @@ public class PaperServiceImpl implements PaperService {
 
         // Safely set paperPatternId
         if (entity.getPaperPattern() != null) {
-            dto.setPaperPatternId(entity.getPaperPattern().getPaperPatternId()); // Use actual ID field
+            dto.setPaperPatternId(entity.getPaperPattern().getPaperPatternId());
+            dto.setPatternName(entity.getPaperPattern().getPatternName());
         }
 
         // Set Question IDs

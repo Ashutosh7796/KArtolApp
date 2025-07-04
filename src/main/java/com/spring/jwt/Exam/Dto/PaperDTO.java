@@ -59,4 +59,6 @@ public class PaperDTO {
     private LocalDateTime resultDate;
 
     private Integer paperPatternId;
+
+    private String patternName;
 }
