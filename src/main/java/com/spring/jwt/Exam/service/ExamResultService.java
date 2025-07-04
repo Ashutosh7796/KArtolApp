@@ -45,4 +45,10 @@ public interface ExamResultService {
      * @return List of exam result DTOs
      */
     List<ExamResultDTO> getResultsByStudentClass(String studentClass);
+    
+    /**
+     * Fix the result date format in the database
+     * @return Number of records updated
+     */
+    int fixResultDateFormat();
 } 

@@ -19,7 +19,7 @@ public class SslConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(SslConfig.class);
 
-    @Value("${server.ssl.enabled:true}")
+    @Value("${server.ssl.enabled:false}")
     private boolean sslEnabled;
 
     @Value("${server.ssl.key-store:classpath:keystore.p12}")
@@ -40,29 +40,9 @@ public class SslConfig {
     @Bean
     public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> sslCustomizer() {
         return factory -> {
-            File keystoreFile = new File("src/main/resources/keystore.p12");
-            File classpathKeystoreFile = new File("target/classes/keystore.p12");
-            
-            if (keystoreFile.exists() || classpathKeystoreFile.exists()) {
-                if (sslEnabled) {
-                    logger.info("Configuring SSL with keystore: {}", keyStore);
-                    
-                    Ssl ssl = new Ssl();
-                    ssl.setEnabled(true);
-                    ssl.setKeyStore(keyStore);
-                    ssl.setKeyStorePassword(keyStorePassword);
-                    ssl.setKeyStoreType(keyStoreType);
-                    ssl.setKeyAlias(keyAlias);
-                    
-                    factory.setSsl(ssl);
-                    logger.info("SSL configured successfully");
-                } else {
-                    logger.info("SSL is disabled by configuration (server.ssl.enabled=false)");
-                }
-            } else {
-                logger.warn("Keystore files not found at expected locations. SSL will not be enabled.");
-                factory.setSsl(null);
-            }
+            // Always disable SSL in this environment
+            logger.info("SSL is disabled by default configuration");
+            factory.setSsl(null);
         };
     }
 } 

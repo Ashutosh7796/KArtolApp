@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ExamSessionRepository extends JpaRepository<ExamSession, Integer> {
@@ -27,4 +28,26 @@ public interface ExamSessionRepository extends JpaRepository<ExamSession, Intege
      */
     @Query("SELECT e FROM ExamSession e WHERE e.resultDate IS NOT NULL AND e.resultDate <= :currentTime")
     List<ExamSession> findByResultDateBeforeOrEqual(@Param("currentTime") LocalDateTime currentTime);
+    
+    /**
+     * Debug method to find all sessions with result dates
+     * @return List of exam sessions that have result dates set
+     */
+    @Query("SELECT e FROM ExamSession e WHERE e.resultDate IS NOT NULL")
+    List<ExamSession> findAllWithResultDate();
+    
+    /**
+     * Debug method to find a session by exact result date
+     * @param resultDate The exact result date to search for
+     * @return List of exam sessions with the specified result date
+     */
+    @Query("SELECT e FROM ExamSession e WHERE e.resultDate = :resultDate")
+    List<ExamSession> findByExactResultDate(@Param("resultDate") LocalDateTime resultDate);
+    
+    /**
+     * Debug method to get raw result date values from the database
+     * @return List of raw result date values
+     */
+    @Query(value = "SELECT session_id, result_date FROM exam_session WHERE result_date IS NOT NULL", nativeQuery = true)
+    List<Map<String, Object>> findRawResultDates();
 }
