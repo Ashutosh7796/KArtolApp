@@ -32,5 +32,4 @@ public class BulkQuestionDTO {
     @Schema(description = "List of questions to create")
     private List<SingleQuestionDTO> questions;
 
-    // getters and setters
 }

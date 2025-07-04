@@ -341,6 +341,7 @@ public class UserController {
             if (user.getAddress() != null) {
                 user.setAddress(encryptionUtil.decrypt(user.getAddress()));
             }
+
         } catch (Exception e) {
             log.error("Error decrypting user data: {}", e.getMessage());
         }

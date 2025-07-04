@@ -41,7 +41,6 @@ public class FeesServiceImpl implements FeesService {
     public FeesDto createFees(FeesDto feesDto) {
         validateFeesDto(feesDto);
 
-        // Set status to "ACTIVE" if not provided or blank
         if (isBlank(feesDto.getStatus())) {
             feesDto.setStatus("ACTIVE");
         }

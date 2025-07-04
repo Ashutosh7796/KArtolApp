@@ -1,11 +1,14 @@
 package com.spring.jwt.mapper;
 
 import com.spring.jwt.dto.UserDTO;
+import com.spring.jwt.entity.Role;
 import com.spring.jwt.entity.User;
 import com.spring.jwt.utils.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -22,6 +25,14 @@ public class UserMapper {
         try {
             UserDTO dto = new UserDTO();
             dto.setEmail(user.getEmail());
+            dto.setUserId(user.getId().toString());
+            
+            // Set the roles as a Set<String>
+            if (user.getRoles() != null) {
+                dto.setRoles(user.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toSet()));
+            }
 
             if (user.getFirstName() != null) {
                 String decrypted = ensureDecrypted(user.getFirstName());
@@ -43,6 +54,7 @@ public class UserMapper {
                 log.debug("Mapped address: {} -> {}", user.getAddress().substring(0, Math.min(10, user.getAddress().length())), 
                          decrypted.substring(0, Math.min(10, decrypted.length())));
             }
+
             
             dto.setMobileNumber(user.getMobileNumber());
             
