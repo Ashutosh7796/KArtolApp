@@ -327,11 +327,10 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
             dto.setUserId(student.getUserId());
             dto.setStudentClass(studentClass);
             dto.setName(student.getName());
-            dto.setAttendance(null); // Not marked yet
+            dto.setAttendance(null);
             dto.setDate(date);
             dto.setSub(sub);
             dto.setTeacherId(teacherId);
-            // Optionally add more student fields if your DTO supports it
             dtos.add(dto);
         }
         return dtos;

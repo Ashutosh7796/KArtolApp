@@ -1,13 +1,14 @@
 package com.spring.jwt.dto;
 
+import com.spring.jwt.entity.Role;
 import com.spring.jwt.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Data
 @AllArgsConstructor
@@ -18,6 +19,11 @@ public class UserDTO {
             description = "Email of User", example = "example@example.com"
     )
     private String email;
+
+    @Schema(
+            description = "userId of User", example = "10011"
+    )
+    private String userId;
 
     @Schema(
             description = "Password to create an account", example = "Pass@1234"
@@ -45,15 +51,16 @@ public class UserDTO {
     private Long mobileNumber;
 
     @Schema(
-            description = "Role of the User", example = "USER"
+            description = "Roles of the User", example = "[\"USER\", \"ADMIN\"]"
     )
-    private String role;
+    private Set<String> roles;
 
     private String name;
     private String dateOfBirth;
     private String studentcol;
     private String studentcol1;
     private String studentClass;
+    private String role; // Single role field for backward compatibility
 
     public UserDTO(User user) {
         this.email = user.getEmail();
@@ -61,6 +68,13 @@ public class UserDTO {
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.mobileNumber = user.getMobileNumber();
+        this.userId = user.getId().toString();
+        
+        if (user.getRoles() != null) {
+            this.roles = user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toSet());
+        }
     }
 
     // Static method to create DTO from User entity
@@ -75,6 +89,13 @@ public class UserDTO {
         dto.setFirstName(user.getFirstName());
         dto.setLastName(user.getLastName());
         dto.setAddress(user.getAddress());
+        dto.setUserId(user.getId().toString());
+        
+        if (user.getRoles() != null) {
+            dto.setRoles(user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toSet()));
+        }
         
         return dto;
     }

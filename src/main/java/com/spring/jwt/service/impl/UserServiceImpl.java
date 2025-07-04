@@ -375,6 +375,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundExceptions("User not found with id: " + id));
         
         UserDTO userDTO = userMapper.toDTO(user);
+
         return populateRoleSpecificData(user, userDTO);
     }
     
@@ -386,6 +387,9 @@ public class UserServiceImpl implements UserService {
         Set<String> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());
+                
+        // Ensure the roles collection is preserved
+        userDTO.setRoles(roles);
 
         Integer userId = user.getId().intValue();
         

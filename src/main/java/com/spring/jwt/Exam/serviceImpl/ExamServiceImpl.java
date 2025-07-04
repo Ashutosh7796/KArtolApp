@@ -336,12 +336,42 @@ public class ExamServiceImpl implements ExamService {
             // You can choose to throw if sessions.isEmpty(), but returning an empty list is RESTful
             return sessions.stream().map(session -> {
                 ExamResultDTO dto = new ExamResultDTO();
-                dto.setSessionId(session.getSessionId());
+                // Use resultId instead of sessionId
+                dto.setResultId(session.getSessionId());
+                dto.setUserId(session.getUser().getId().intValue());
                 dto.setPaperId(session.getPaper().getPaperId());
                 dto.setPaperTitle(session.getPaper().getTitle());
                 dto.setScore(session.getScore());
                 dto.setStudentClass(session.getStudentClass());
-                dto.setStatus(session.getEndTime() != null ? "Submitted" : "In Progress");
+                dto.setExamStartTime(session.getStartTime());
+                dto.setExamEndTime(session.getEndTime());
+                dto.setResultProcessedTime(LocalDateTime.now());
+                dto.setNegativeCount(session.getNegativeCount());
+                dto.setNegativeScore(session.getNegativeScore());
+                
+                // Calculate analytics data
+                int totalQuestions = session.getPaper().getPaperQuestions().size();
+                int answeredQuestions = session.getUserAnswers() != null ? session.getUserAnswers().size() : 0;
+                int correctAnswers = 0;
+                int incorrectAnswers = 0;
+                
+                if (session.getUserAnswers() != null) {
+                    for (UserAnswer answer : session.getUserAnswers()) {
+                        if (answer.getSelectedOption() != null && 
+                            answer.getSelectedOption().equals(answer.getQuestion().getAnswer())) {
+                            correctAnswers++;
+                        } else {
+                            incorrectAnswers++;
+                        }
+                    }
+                }
+                
+                dto.setTotalQuestions(totalQuestions);
+                dto.setCorrectAnswers(correctAnswers);
+                dto.setIncorrectAnswers(incorrectAnswers);
+                dto.setUnansweredQuestions(totalQuestions - answeredQuestions);
+                dto.setOriginalSessionId(session.getSessionId());
+                
                 return dto;
             }).collect(Collectors.toList());
         } catch (Exception ex) {
@@ -385,12 +415,42 @@ public class ExamServiceImpl implements ExamService {
             dto.setStudentClass(entry.getKey());
             List<ExamResultDTO> resultDTOs = entry.getValue().stream().map(session -> {
                 ExamResultDTO res = new ExamResultDTO();
-                res.setSessionId(session.getSessionId());
+                // Use resultId instead of sessionId
+                res.setResultId(session.getSessionId());
+                res.setUserId(session.getUser().getId().intValue());
                 res.setPaperId(session.getPaper().getPaperId());
                 res.setPaperTitle(session.getPaper().getTitle());
                 res.setScore(session.getScore());
                 res.setStudentClass(session.getStudentClass());
-                res.setStatus(session.getEndTime() != null ? "Submitted" : "In Progress");
+                res.setExamStartTime(session.getStartTime());
+                res.setExamEndTime(session.getEndTime());
+                res.setResultProcessedTime(LocalDateTime.now());
+                res.setNegativeCount(session.getNegativeCount());
+                res.setNegativeScore(session.getNegativeScore());
+                
+                // Calculate analytics data
+                int totalQuestions = session.getPaper().getPaperQuestions().size();
+                int answeredQuestions = session.getUserAnswers() != null ? session.getUserAnswers().size() : 0;
+                int correctAnswers = 0;
+                int incorrectAnswers = 0;
+                
+                if (session.getUserAnswers() != null) {
+                    for (UserAnswer answer : session.getUserAnswers()) {
+                        if (answer.getSelectedOption() != null && 
+                            answer.getSelectedOption().equals(answer.getQuestion().getAnswer())) {
+                            correctAnswers++;
+                        } else {
+                            incorrectAnswers++;
+                        }
+                    }
+                }
+                
+                res.setTotalQuestions(totalQuestions);
+                res.setCorrectAnswers(correctAnswers);
+                res.setIncorrectAnswers(incorrectAnswers);
+                res.setUnansweredQuestions(totalQuestions - answeredQuestions);
+                res.setOriginalSessionId(session.getSessionId());
+                
                 return res;
             }).collect(Collectors.toList());
             dto.setResults(resultDTOs);
