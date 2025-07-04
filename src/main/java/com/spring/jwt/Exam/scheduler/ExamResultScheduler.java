@@ -13,13 +13,13 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class ExamResultScheduler {
-
     private final ExamResultService examResultService;
     
     /**
      * Scheduled task to process exam results
      * Runs every 5 minutes by default
      */
+
     @Scheduled(cron = "${app.scheduler.exam-results:0 */5 * * * *}")
     public void processReadyExamResults() {
         log.info("Starting scheduled exam result processing");
