@@ -1,6 +1,6 @@
 package com.spring.jwt.entity.enum01;
 
-public enum ClassPatter {
+public enum ClassPattern {
     JEE,
     NEET,
     PCM,

@@ -6,6 +6,7 @@ import com.spring.jwt.entity.Assessment;
 import com.spring.jwt.entity.AssessmentQuestion;
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.entity.User;
+import com.spring.jwt.entity.enum01.QType;
 import com.spring.jwt.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -72,7 +73,7 @@ class AssessmentServiceImplTest {
         question = new Question();
         question.setQuestionId(1);
         question.setQuestionText("What is the derivative of x²?");
-        question.setType("MCQ");
+        question.setType(QType.valueOf("MCQ"));
         
         // Setup test assessment entity
         assessment = new Assessment();

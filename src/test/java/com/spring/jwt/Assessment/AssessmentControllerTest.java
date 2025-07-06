@@ -1,6 +1,7 @@
 package com.spring.jwt.Assessment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spring.jwt.entity.enum01.QType;
 import com.spring.jwt.utils.ApiResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -57,7 +58,7 @@ public class AssessmentControllerTest {
         questionDTO.setQuestionOrder(1);
         questionDTO.setMarks(10);
         questionDTO.setQuestionText("What is the derivative of x²?");
-        questionDTO.setQuestionType("MCQ");
+        questionDTO.setQuestionType(QType.valueOf("MCQ"));
         
         // Setup test assessment DTO
         assessmentDTO = new AssessmentDTO();
