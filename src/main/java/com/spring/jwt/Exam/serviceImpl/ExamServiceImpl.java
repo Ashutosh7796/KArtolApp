@@ -9,6 +9,7 @@ import com.spring.jwt.entity.Question;
 import com.spring.jwt.entity.User;
 import com.spring.jwt.Question.*;
 import com.spring.jwt.Exam.service.ExamService;
+import com.spring.jwt.Exam.service.ExamSessionSchedulingService;
 import com.spring.jwt.exception.ExamTimeWindowException;
 import com.spring.jwt.exception.ResourceNotFoundException;
 import com.spring.jwt.repository.UserRepository;
@@ -40,6 +41,8 @@ public class ExamServiceImpl implements ExamService {
     private DescriptiveAnsRepository descriptiveAnsRepository;
     @Autowired
     private PaperPatternRepository paperPatternRepository;
+    @Autowired
+    private ExamSessionSchedulingService examSessionSchedulingService;
 
 
     private QuestionNoAnswerDTO convertToQuestionNoAnswerDTO(Question question) {
@@ -127,6 +130,13 @@ public class ExamServiceImpl implements ExamService {
         session.setScore(0.0);
         session.setUserAnswers(new ArrayList<>());
         ExamSession savedSession = examSessionRepository.save(session);
+        
+        // Schedule result processing if paper has an end time
+        if (paper.getEndTime() != null) {
+            // Schedule result processing for 5 minutes after the paper end time
+            LocalDateTime resultDateTime = paper.getEndTime().plusMinutes(5);
+            examSessionSchedulingService.scheduleExamResultProcessing(savedSession.getSessionId(), resultDateTime);
+        }
 
         PaperWithQuestionsDTOn dto = new PaperWithQuestionsDTOn();
         dto.setSessionId(savedSession.getSessionId());

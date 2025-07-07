@@ -41,8 +41,6 @@ public class ExamController {
         }
     }
 
-
-
     @GetMapping("/results/{userId}")
     public List<ExamResultDTO> getExamResultsByUser(@PathVariable Long userId) {
         return examService.getResultsByUserId(userId);
