@@ -51,12 +51,16 @@ public class SingleQuestionDTO {
 
     private String answer;
 
-    @Schema(description = "Correct answer to hint And Sol", example = "Paris")
+    @Schema(description = "Correct answer to hint And Sol", example = "1")
     private String hintAndSol;
 
     @NotNull
-    @Schema(description = "DESCRIPTIVE ture if Q is DESCRIPTIVE", example = "Paris", required = true)
+    @Schema(description = "DESCRIPTIVE ture if Q is DESCRIPTIVE", example = "ture", required = true)
     private boolean isDescriptive;
+
+    @NotNull
+    @Schema(description = "isMultiOptions ture if Q is MultiOptions", example = "ture", required = true)
+    private boolean isMultiOptions;
 
     // getters and setters
 }

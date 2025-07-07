@@ -61,4 +61,6 @@ public class PaperDTO1 {
     private Integer paperPatternId;
 
     private String patternName;
+    @Schema(description = "List of negative marks per question")
+    private List<NegativeMarksDTO> negativeMarksList;
 }

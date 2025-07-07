@@ -41,6 +41,10 @@ public class Paper {
     @OneToMany(mappedBy = "paper", fetch = FetchType.LAZY) // or EAGER as needed
     private List<Question> questions;
 
+    @OneToMany(mappedBy = "paper", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<NegativeMarks> negativeMarksList;
+
+
     public List<Question> getQuestions() {
         return questions;
     }

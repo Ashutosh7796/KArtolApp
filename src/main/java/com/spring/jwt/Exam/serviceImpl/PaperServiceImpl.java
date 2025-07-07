@@ -1,6 +1,7 @@
 package com.spring.jwt.Exam.serviceImpl;
 
 import com.spring.jwt.Exam.Dto.*;
+import com.spring.jwt.Exam.entity.NegativeMarks;
 import com.spring.jwt.Exam.entity.Paper;
 import com.spring.jwt.Exam.entity.PaperQuestion;
 import com.spring.jwt.Exam.repository.PaperRepository;
@@ -82,14 +83,15 @@ public class PaperServiceImpl implements PaperService {
         dto.setIsLive(entity.getIsLive());
         dto.setStudentClass(entity.getStudentClass());
 
-        // Fetching paperPatternId and patternName
+        // Paper pattern info
         if (entity.getPaperPattern() != null) {
-            dto.setPaperPatternId(entity.getPaperPattern().getPaperPatternId()); // Use correct ID field name
+            dto.setPaperPatternId(entity.getPaperPattern().getPaperPatternId());
             dto.setPatternName(entity.getPaperPattern().getPatternName());
         }
 
         dto.setResultDate(entity.getResultDate());
 
+        // Map question IDs
         if (entity.getPaperQuestions() != null) {
             dto.setQuestions(
                     entity.getPaperQuestions().stream()
@@ -98,10 +100,20 @@ public class PaperServiceImpl implements PaperService {
             );
         }
 
+        // Map negative marks
+        if (entity.getNegativeMarksList() != null && !entity.getNegativeMarksList().isEmpty()) {
+            dto.setNegativeMarksList(
+                    entity.getNegativeMarksList().stream()
+                            .map(nm -> NegativeMarksDTO.builder()
+                                    .questionId(nm.getQuestionId())
+                                    .negativeMark(nm.getNegativeMark())
+                                    .build())
+                            .collect(Collectors.toList())
+            );
+        }
+
         return dto;
     }
-
-
 
     private Paper toEntity(PaperDTO dto) {
         if (dto == null) return null;
@@ -135,6 +147,17 @@ public class PaperServiceImpl implements PaperService {
                 return pq;
             }).collect(Collectors.toList());
             entity.setPaperQuestions(paperQuestions);
+        }
+        // Set Negative Marks
+        if (dto.getNegativeMarksList() != null && !dto.getNegativeMarksList().isEmpty()) {
+            List<NegativeMarks> negativeMarksList = dto.getNegativeMarksList().stream().map(nmDto -> {
+                NegativeMarks nm = new NegativeMarks();
+                nm.setQuestionId(nmDto.getQuestionId());
+                nm.setNegativeMark(nmDto.getNegativeMark());
+                nm.setPaper(entity); // Link back to Paper
+                return nm;
+            }).collect(Collectors.toList());
+            entity.setNegativeMarksList(negativeMarksList);
         }
 
         return entity;
@@ -240,6 +263,17 @@ public class PaperServiceImpl implements PaperService {
             throw new IllegalArgumentException(
                     "Sum of question marks (" + totalMarks + ") does not match pattern marks (" + pattern.getMarks() + ")."
             );
+        }
+        // 3.5 Validate Negative Marks only for valid questionIds
+        if (paperDTO.getNegativeMarksList() != null) {
+            for (NegativeMarksDTO nmDto : paperDTO.getNegativeMarksList()) {
+                if (!questionIds.contains(nmDto.getQuestionId())) {
+                    throw new PaperFetchException("Negative mark set for invalid question ID: " + nmDto.getQuestionId());
+                }
+                if (nmDto.getNegativeMark() < 0) {
+                    throw new PaperFetchException("Negative mark value must not be negative: " + nmDto.getNegativeMark());
+                }
+            }
         }
 
         // 4. Proceed with saving

@@ -238,6 +238,9 @@ public class QuestionServiceImpl implements QuestionService {
             dto.setSubject(bulkDTO.getSubject());
             dto.setUserId(bulkDTO.getUserId());
             dto.setStudentClass(bulkDTO.getStudentClass());
+            dto.setUnit(bulkDTO.getUnit());
+            dto.setChapter(bulkDTO.getChapter());
+            dto.setTopic(bulkDTO.getTopic());
             dto.setQuestionText(single.getQuestionText());
             dto.setType(single.getType());
             dto.setLevel(single.getLevel());
@@ -249,6 +252,8 @@ public class QuestionServiceImpl implements QuestionService {
             dto.setAnswer(single.getAnswer());
             dto.setHintAndSol(single.getHintAndSol());
             dto.setDescriptive(single.isDescriptive());
+            dto.setMultiOptions(single.isMultiOptions());
+
 
             Question question = questionMapper.toEntity(dto);
             Question saved = questionRepository.save(question);

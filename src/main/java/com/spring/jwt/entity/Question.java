@@ -26,6 +26,9 @@ public class Question {
     @Column(name = "type")
     private QType type;
     private String subject;
+    private String unit;
+    private String chapter;
+    private String topic;
     private String level;
     private Integer marks;
     private Integer userId;
@@ -41,6 +44,8 @@ public class Question {
     private String hintAndSol;
     @NotNull
     private boolean isDescriptive;
+    @NotNull
+    private boolean isMultiOptions;
 
 
     // Store the answer, e.g. "option1", "option2", etc. or the text itself
