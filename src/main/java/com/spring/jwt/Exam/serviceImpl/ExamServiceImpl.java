@@ -43,6 +43,8 @@ public class ExamServiceImpl implements ExamService {
     private PaperPatternRepository paperPatternRepository;
     @Autowired
     private ExamSessionSchedulingService examSessionSchedulingService;
+    @Autowired
+    private NegativeMarksRepository negativeMarksRepository;
 
 
     private QuestionNoAnswerDTO convertToQuestionNoAnswerDTO(Question question) {
@@ -57,6 +59,7 @@ public class ExamServiceImpl implements ExamService {
         dto.setSubject(question.getSubject());
         dto.setLevel(question.getLevel());
         dto.setMarks(question.getMarks());
+        dto.setMultiOptions(question.isMultiOptions());
 
         // Set options (can include null checks if needed)
         dto.setOption1(question.getOption1());
@@ -284,6 +287,33 @@ public class ExamServiceImpl implements ExamService {
                 default -> 0.0;
             };
 
+//            for (UserAnswerDTO dto : answers) {
+//                Question question = questionRepository.findById(dto.getQuestionId())
+//                        .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
+//
+//                if (question.isDescriptive()) {
+//                    DescriptiveAns da = new DescriptiveAns();
+//                    da.setQuestionId(question.getQuestionId());
+//                    da.setPaperId(paper.getPaperId());
+//                    da.setUserId(userId.intValue());
+//                    da.setAns(dto.getSelectedOption());
+//                    descriptiveAnsRepository.save(da);
+//                } else {
+//                    UserAnswer ua = new UserAnswer();
+//                    ua.setExamSession(session);
+//                    ua.setQuestion(question);
+//                    ua.setSelectedOption(dto.getSelectedOption());
+//                    userAnswers.add(ua);
+//
+//                    if (question.getAnswer() != null && question.getAnswer().equalsIgnoreCase(dto.getSelectedOption())) {
+//                        score += question.getMarks();
+//                    } else {
+//                        negativeCount++;
+//                        double questionNegative = question.getMarks() * negativePerWrong;
+//                        negativeScore += questionNegative;
+//                    }
+//                }
+//            }
             for (UserAnswerDTO dto : answers) {
                 Question question = questionRepository.findById(dto.getQuestionId())
                         .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
@@ -302,15 +332,26 @@ public class ExamServiceImpl implements ExamService {
                     ua.setSelectedOption(dto.getSelectedOption());
                     userAnswers.add(ua);
 
-                    if (question.getAnswer() != null && question.getAnswer().equalsIgnoreCase(dto.getSelectedOption())) {
+                    boolean isCorrect = question.getAnswer() != null &&
+                            question.getAnswer().equalsIgnoreCase(dto.getSelectedOption());
+
+                    if (isCorrect) {
                         score += question.getMarks();
                     } else {
                         negativeCount++;
-                        double questionNegative = question.getMarks() * negativePerWrong;
+
+                        // First check if specific negative mark exists for this paper/question
+                        Optional<NegativeMarks> negative = negativeMarksRepository.findByPaperAndQuestionId(paper, question.getQuestionId());
+
+                        double questionNegative = negative.map(NegativeMarks::getNegativeMark)
+                                .orElse(question.getMarks() * negativePerWrong); // fallback to pattern logic
+
                         negativeScore += questionNegative;
                     }
                 }
             }
+
+
 
             double finalScore = score - negativeScore;
             session.setEndTime(LocalDateTime.now());

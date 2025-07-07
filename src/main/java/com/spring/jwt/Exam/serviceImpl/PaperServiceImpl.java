@@ -128,6 +128,7 @@ public class PaperServiceImpl implements PaperService {
         entity.setStudentClass(dto.getStudentClass());
         entity.setResultDate(dto.getResultDate());
 
+
         // Set PaperPattern from ID
         if (dto.getPaperPatternId() != null) {
             PaperPattern pattern = paperPatternRepository.findById(dto.getPaperPatternId())
@@ -278,7 +279,7 @@ public class PaperServiceImpl implements PaperService {
 
         // 4. Proceed with saving
         Paper paper = toEntity(paperDTO);
-//        paper.setPaperId(null);
+        paper.setPaperPattern(pattern);
         Paper saved = paperRepository.save(paper);
         return toDTO(saved);
     }

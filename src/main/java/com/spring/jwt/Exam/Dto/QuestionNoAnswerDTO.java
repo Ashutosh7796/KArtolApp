@@ -20,5 +20,6 @@ public class QuestionNoAnswerDTO {
     private String option4;
     private String studentClass;
     private boolean isDescriptive;
+    private boolean isMultiOptions;
     // NO answer field!
 }
