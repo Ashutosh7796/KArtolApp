@@ -359,4 +359,74 @@ public class PaperServiceImpl implements PaperService {
             throw new RuntimeException("Failed to fetch live papers.", e);
         }
     }
+
+    /**
+     * Fetch paper with all associated questions including answers and solutions.
+     */
+    @Override
+    public PaperWithQuestionsAndAnswersDTO getPaperWithSolutions(Integer paperId) {
+        Paper paper = paperRepository.findById(paperId)
+                .orElseThrow(() -> new ResourceNotFoundException("Paper not found with ID: " + paperId));
+
+        List<Question> questions = questionRepository.findQuestionsByPaperId(paperId);
+
+        if (questions == null || questions.isEmpty()) {
+            System.out.println("No questions found for paperId: " + paperId);
+        } else {
+            System.out.println("Questions found: " + questions.size());
+        }
+
+        List<QuestionWithAnswerDTO> questionDTOs = questions.stream()
+                .map(this::mapToQuestionWithAnswerDTO)
+                .collect(Collectors.toList());
+
+        return PaperWithQuestionsAndAnswersDTO.builder()
+                .paperId(paper.getPaperId())
+                .title(paper.getTitle())
+                .description(paper.getDescription())
+                .startTime(paper.getStartTime())
+                .endTime(paper.getEndTime())
+                .isLive(paper.getIsLive())
+                .studentClass(paper.getStudentClass())
+                .paperPatternId(paper.getPaperPattern() != null ? paper.getPaperPattern().getPaperPatternId() : null)
+                .questions(questionDTOs)
+                .build();
+    }
+
+
+
+
+    /**
+     * Maps a Question entity to a DTO including answer and hint.
+     */
+    private QuestionWithAnswerDTO mapToQuestionWithAnswerDTO(Question question) {
+        if (question == null) {
+            return null;
+        }
+
+        return QuestionWithAnswerDTO.builder()
+                .questionId(question.getQuestionId())
+                .questionText(question.getQuestionText())
+                .type(question.getType())
+                .subject(question.getSubject())
+                .unit(question.getUnit())
+                .chapter(question.getChapter())
+                .topic(question.getTopic())
+                .level(question.getLevel())
+                .marks(question.getMarks())
+                .userId(question.getUserId())
+                .option1(question.getOption1())
+                .option2(question.getOption2())
+                .option3(question.getOption3())
+                .option4(question.getOption4())
+                .studentClass(question.getStudentClass())
+                .isDescriptive(question.isDescriptive())
+                .isMultiOptions(question.isMultiOptions())
+                .answer(question.getAnswer())
+                .hintAndSol(question.getHintAndSol())
+                .build();
+    }
+
+
 }
+

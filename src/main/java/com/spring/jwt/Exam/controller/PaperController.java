@@ -7,6 +7,7 @@ import com.spring.jwt.Exam.service.PaperService;
 import com.spring.jwt.dto.PageResponseDto;
 import com.spring.jwt.dto.ResponseDto;
 import com.spring.jwt.exception.ResourceNotFoundException;
+import com.spring.jwt.utils.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.spring.jwt.Exam.Dto.PaperWithQuestionsAndAnswersDTO;
 
 import java.util.List;
 
@@ -167,6 +169,25 @@ public class PaperController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to fetch live papers. " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/solutions")
+    @Operation(
+            summary = "Get paper with all questions, answers, and hints",
+            description = "Retrieves a paper by ID including all its questions along with their correct answers and hints/solutions."
+    )
+    public ResponseEntity<ApiResponse<PaperWithQuestionsAndAnswersDTO>> getPaperWithSolutions(
+            @Parameter(description = "ID of the paper to retrieve", required = true)
+            @RequestParam Integer paperId
+    ) {
+        try {
+            PaperWithQuestionsAndAnswersDTO response = paperService.getPaperWithSolutions(paperId);
+            return ResponseEntity.ok(ApiResponse.success("Paper fetched successfully", response));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to fetch paper", e.getMessage()));
         }
     }
 }

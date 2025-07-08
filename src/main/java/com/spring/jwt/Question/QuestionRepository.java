@@ -99,4 +99,10 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>, Jp
     );
 
     boolean existsByQuestionText(String questionText);
+
+    List<Question> findByPaper_PaperId(Integer paperId);
+
+    @Query("SELECT pq.question FROM PaperQuestion pq WHERE pq.paper.paperId = :paperId")
+    List<Question> findQuestionsByPaperId(@Param("paperId") Integer paperId);
+
 }
