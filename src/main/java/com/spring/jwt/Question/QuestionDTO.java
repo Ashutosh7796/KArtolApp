@@ -34,6 +34,12 @@ public class QuestionDTO {
     @NotBlank(message = "Subject is required")
     @Schema(description = "Subject the question belongs to", example = "Geography", required = true)
     private String subject;
+    @NotBlank
+    private String unit;
+    @NotBlank
+    private String chapter;
+    @NotBlank
+    private String topic;
 
     @NotBlank(message = "Level is required")
     @Schema(description = "Difficulty level of the question", example = "Medium", required = true)
@@ -71,6 +77,9 @@ public class QuestionDTO {
 
     @JsonProperty("descriptive")
     private boolean isDescriptive;
+
+    @JsonProperty("MultiOptions")
+    private boolean isMultiOptions;
 
     @Schema(description = "Correct answer to hint And Sol", example = "Paris")
     private String hintAndSol;

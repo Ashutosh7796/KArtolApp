@@ -33,8 +33,17 @@ public class QuestionMapper {
                 .option3(entity.getOption3())
                 .option4(entity.getOption4())
                 .answer(entity.getAnswer())
+                .topic(entity.getTopic())
+                .unit(entity.getUnit())
+                .chapter(entity.getChapter())
                 .hintAndSol(entity.getHintAndSol())
                 .isDescriptive(entity.isDescriptive())
+                .isMultiOptions(entity.isMultiOptions())
+                .StudentClass(entity.getStudentClass())
+                .unit(entity.getUnit())
+                .chapter(entity.getChapter())
+                .topic(entity.getTopic())
+
                 .build();
     }
     
@@ -59,9 +68,18 @@ public class QuestionMapper {
         entity.setOption3(dto.getOption3());
         entity.setOption4(dto.getOption4());
         entity.setAnswer(dto.getAnswer());
+        entity.setChapter(dto.getChapter());
+        entity.setUnit(dto.getUnit());
+        entity.setTopic(dto.getTopic());
         entity.setHintAndSol(dto.getHintAndSol());
         entity.setDescriptive(dto.isDescriptive());
-        
+        entity.setMultiOptions(dto.isMultiOptions());
+        entity.setStudentClass(dto.getStudentClass());
+        entity.setUnit(dto.getUnit());
+        entity.setChapter(dto.getChapter());
+        entity.setTopic(dto.getTopic());
+
+
         return entity;
     }
     
@@ -109,6 +127,19 @@ public class QuestionMapper {
         if (dto.getHintAndSol()!=null){
             entity.setHintAndSol(dto.getHintAndSol());
         }
+        if (dto.getUnit() != null) {
+            entity.setUnit(dto.getUnit());
+        }
+        if (dto.getChapter() != null) {
+            entity.setChapter(dto.getChapter());
+        }
+        if (dto.getTopic() != null) {
+            entity.setTopic(dto.getTopic());
+        }
+        if (dto.isMultiOptions() ){
+            entity.setMultiOptions(dto.isMultiOptions());
+        }
+
     }
     
     /**

@@ -20,6 +20,16 @@ public class BulkQuestionDTO {
     @Schema(description = "Subject for all questions", example = "Geography")
     private String subject;
 
+    @NotBlank
+    @Schema(description = "UNIT for all questions", example = "UNIT 1")
+    private String unit;
+
+    @NotBlank
+    private String chapter;
+
+    @NotBlank
+    private String topic;
+
     @NotNull
     @Schema(description = "User ID for all questions", example = "1")
     private Integer userId;
