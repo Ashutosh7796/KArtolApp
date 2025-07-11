@@ -22,4 +22,6 @@ PaperWithQuestionsDTOn startExam(Integer userId, Integer paperId, String student
     List<ExamSessionDTO> getAllExamSessions();
 
     ExamSessionDTO getLastExamSessionByUserId(Long userId);
+
+    List<ExamPaperSummaryDto> getAllUniquePapers();
 }

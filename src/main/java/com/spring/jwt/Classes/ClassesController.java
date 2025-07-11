@@ -13,7 +13,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 @RestController
-@RequestMapping("/Classes")@Tag(name = "Classes Management", description = "APIs for managing classes")
+@RequestMapping("/api/v1/Classes")
+@Tag(name = "Classes Management", description = "APIs for managing classes")
 @Validated
 @RequiredArgsConstructor
 public class ClassesController {
