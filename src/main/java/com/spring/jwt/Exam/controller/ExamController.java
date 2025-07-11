@@ -1,6 +1,7 @@
 package com.spring.jwt.Exam.controller;
 
 import com.spring.jwt.Exam.Dto.*;
+import com.spring.jwt.Exam.entity.ExamSession;
 import com.spring.jwt.Exam.service.ExamService;
 import com.spring.jwt.dto.ResponseDto;
 import com.spring.jwt.exception.ResourceNotFoundException;
@@ -74,12 +75,24 @@ public class ExamController {
     @GetMapping("/unique-papers")
     public ResponseEntity<ResponseDto<List<ExamPaperSummaryDto>>> getAllUniqueExamPapers() {
         try {
-            List<ExamPaperSummaryDto> papers = examService.getAllUniquePapers();
+            List<ExamPaperSummaryDto> papers = examService.getUniquePaperSummaries();
             return ResponseEntity.ok(new ResponseDto<>("Unique exam papers fetched successfully", papers, null));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(
                     new ResponseDto<>("Failed to fetch unique exam papers", null, e.getMessage())
             );
+        }
+    }
+
+    @GetMapping("/exam-sessions/by-paper/{paperId}")
+    public ResponseDto<List<ExamSessionShowResultDto>> getSessionsByPaperId(@PathVariable Integer paperId) {
+        try {
+            List<ExamSessionShowResultDto> dtos = examService.getSessionsByPaperId(paperId);
+            return ResponseDto.success("Sessions fetched successfully", dtos);
+        } catch (ResourceNotFoundException ex) {
+            return ResponseDto.error("Not found", ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseDto.error("Unexpected error", ex.getMessage());
         }
     }
 

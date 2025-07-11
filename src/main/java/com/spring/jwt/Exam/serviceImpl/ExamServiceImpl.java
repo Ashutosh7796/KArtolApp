@@ -620,14 +620,69 @@ public class ExamServiceImpl implements ExamService {
                 .orElseThrow(() -> new ResourceNotFoundException("No exam session found for user: " + userId));
         return convertToDTO(session);
     }
+@Override
+    public List<ExamPaperSummaryDto> getUniquePaperSummaries() {
+        List<Integer> paperIds = examSessionRepository.findDistinctPaperIds();
+        List<Paper> papers = paperRepository.findAllById(paperIds);
 
-    @Override
-    public List<ExamPaperSummaryDto> getAllUniquePapers() {
-        List<ExamPaperSummaryDto> papers = examSessionRepository.findAllUniquePapers();
-        if (papers.isEmpty()) {
-            throw new ResourceNotFoundException("No exam papers found.");
+        List<ExamPaperSummaryDto> dtos = new ArrayList<>();
+        for (Paper paper : papers) {
+            // Fetch all ExamSessions for this paper
+            List<ExamSession> sessions = examSessionRepository.findByPaper_PaperId(paper.getPaperId());
+
+            // Get startTime and resultDate from the first session, or use aggregation logic
+
+
+            dtos.add(new ExamPaperSummaryDto(
+                    paper.getPaperId(),
+                    paper.getTitle(),
+                    paper.getStartTime(),
+                    paper.getResultDate()
+
+            ));
         }
-        return papers;
+        return dtos;
     }
 
+    @Override
+    public List<ExamSessionShowResultDto> getSessionsByPaperId(Integer paperId) {
+
+        List<ExamSession> sessions = examSessionRepository.findByPaper_PaperId(paperId);
+        if (sessions == null || sessions.isEmpty()) {
+            throw new ResourceNotFoundException("No ExamSession found for paperId: " + paperId);
+        }
+
+        // Get the paper object once, since all sessions have the same paper
+        Paper paper = paperRepository.findById(paperId)
+                .orElseThrow(() -> new ResourceNotFoundException("Paper not found for paperId: " + paperId));
+        String paperTitle = paper.getTitle();
+
+        List<ExamSessionShowResultDto> result = new ArrayList<>();
+        for (ExamSession session : sessions) {
+            User user = session.getUser();
+            String studentName = "";
+            if (user != null) {
+                studentName = (user.getFirstName() != null ? user.getFirstName() : "") +
+                        " " +
+                        (user.getLastName() != null ? user.getLastName() : "");
+                studentName = studentName.trim();
+            }
+
+            result.add(new ExamSessionShowResultDto(
+                    session.getSessionId(),
+                    user != null ? user.getId() : null,
+                    studentName,
+                    paper.getPaperId(),
+                    paperTitle,
+                    session.getStudentClass(),
+                    session.getStartTime(),
+                    session.getEndTime(),
+                    session.getResultDate(),
+                    session.getScore(),
+                    session.getNegativeCount(),
+                    session.getNegativeScore()
+            ));
+        }
+        return result;
+    }
 }

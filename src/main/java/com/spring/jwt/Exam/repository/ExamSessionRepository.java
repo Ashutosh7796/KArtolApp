@@ -2,6 +2,7 @@ package com.spring.jwt.Exam.repository;
 
 import com.spring.jwt.Exam.Dto.ExamPaperSummaryDto;
 import com.spring.jwt.Exam.entity.ExamSession;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -52,12 +53,14 @@ public interface ExamSessionRepository extends JpaRepository<ExamSession, Intege
     @Query(value = "SELECT session_id, result_date FROM exam_session WHERE result_date IS NOT NULL", nativeQuery = true)
     List<Map<String, Object>> findRawResultDates();
 
-    @Query("SELECT (p.paperId, p.paperName, MIN(es.startTime), MIN(es.resultDate)) " +
-            "FROM ExamSession es JOIN es.paper p " +
-            "GROUP BY p.paperId, p.paperName")
-    List<ExamPaperSummaryDto> findAllUniquePapers();
+    @Query("SELECT DISTINCT e.paper.paperId FROM ExamSession e")
+    List<Integer> findDistinctPaperIds();
+
+    List<ExamSession> findByPaper_PaperId(Integer paperId);
 
 
+
+    List<ExamSession> findByPaper_PaperId(Long paperId);
 
 
 
