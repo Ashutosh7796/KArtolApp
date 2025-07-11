@@ -1,9 +1,12 @@
 package com.spring.jwt.Exam.controller;
 
 import com.spring.jwt.Exam.Dto.*;
+import com.spring.jwt.Exam.entity.ExamSession;
 import com.spring.jwt.Exam.service.ExamService;
 import com.spring.jwt.dto.ResponseDto;
 import com.spring.jwt.exception.ResourceNotFoundException;
+import com.spring.jwt.utils.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -51,7 +54,7 @@ public class ExamController {
         return examService.getQuestionsAndAnswersBySessionId(sessionId);
     }
 
-    @GetMapping("/results/student-classes")
+    @GetMapping("/studentClasses")
     public List<StudentClassResultDTO> getAllStudentClassResults() {
         return examService.getResultsGroupedByStudentClass();
     }
@@ -67,4 +70,30 @@ public class ExamController {
         ExamSessionDTO session = examService.getLastExamSessionByUserId(userId);
         return ResponseEntity.ok(session);
     }
+
+
+    @GetMapping("/unique-papers")
+    public ResponseEntity<ResponseDto<List<ExamPaperSummaryDto>>> getAllUniqueExamPapers() {
+        try {
+            List<ExamPaperSummaryDto> papers = examService.getUniquePaperSummaries();
+            return ResponseEntity.ok(new ResponseDto<>("Unique exam papers fetched successfully", papers, null));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(
+                    new ResponseDto<>("Failed to fetch unique exam papers", null, e.getMessage())
+            );
+        }
+    }
+
+    @GetMapping("/exam-sessions/by-paper/{paperId}")
+    public ResponseDto<List<ExamSessionShowResultDto>> getSessionsByPaperId(@PathVariable Integer paperId) {
+        try {
+            List<ExamSessionShowResultDto> dtos = examService.getSessionsByPaperId(paperId);
+            return ResponseDto.success("Sessions fetched successfully", dtos);
+        } catch (ResourceNotFoundException ex) {
+            return ResponseDto.error("Not found", ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseDto.error("Unexpected error", ex.getMessage());
+        }
+    }
+
 }

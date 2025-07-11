@@ -164,6 +164,7 @@ public class AppConfig {
 
                 .requestMatchers("/assessments/**").permitAll()
                 .requestMatchers("/api/**").permitAll()
+                .requestMatchers("/api/v1/papers/solutions/pdf").permitAll()
 
                 .anyRequest().authenticated());
 
@@ -188,6 +189,7 @@ public class AppConfig {
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/search"),
                     new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/papers/solutions/pdf"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getUrl()),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getRefreshUrl())
             );

@@ -1,6 +1,7 @@
 package com.spring.jwt.Exam.service;
 
 import com.spring.jwt.Exam.Dto.*;
+import com.spring.jwt.Exam.entity.ExamSession;
 import com.spring.jwt.dto.ResponseDto;
 
 import java.util.List;
@@ -22,4 +23,8 @@ PaperWithQuestionsDTOn startExam(Integer userId, Integer paperId, String student
     List<ExamSessionDTO> getAllExamSessions();
 
     ExamSessionDTO getLastExamSessionByUserId(Long userId);
+
+    public List<ExamPaperSummaryDto> getUniquePaperSummaries();
+
+    List<ExamSessionShowResultDto> getSessionsByPaperId(Integer paperId);
 }

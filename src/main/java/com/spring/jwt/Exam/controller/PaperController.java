@@ -27,6 +27,8 @@ public class PaperController {
     @Autowired
     private PaperService paperService;
 
+
+
     @Operation(
             summary = "Create a new paper",
             description = "Creates a new paper with the given details"
@@ -190,4 +192,5 @@ public class PaperController {
                     .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to fetch paper", e.getMessage()));
         }
     }
+
 }
