@@ -113,4 +113,34 @@ public class NotesController {
                     ApiResponse.error(HttpStatus.NOT_FOUND, "Failed to delete note", e.getMessage()));
         }
     }
+
+    @Operation(summary = "Get notes by teacherId and studentClass", description = "Fetch notes for a specific teacher and class")
+    @GetMapping("/filter-by-teacher-class")
+    public ResponseEntity<ApiResponse<List<NotesDTO>>> getNotesByTeacherIdAndClass(
+            @RequestParam Integer teacherId,
+            @RequestParam String studentClass
+    ) {
+        try {
+            List<NotesDTO> result = notesService.getNotesByTeacherIdAndClass(teacherId, studentClass);
+            return ResponseEntity.ok(ApiResponse.success("Notes fetched by teacherId and studentClass", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(HttpStatus.NOT_FOUND, "No notes found", e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "Get notes by class and subject", description = "Fetch notes for a specific class and subject")
+    @GetMapping("/filter-by-class-subject")
+    public ResponseEntity<ApiResponse<List<NotesDTO>>> getNotesByStudentClassAndSub(
+            @RequestParam String studentClass,
+            @RequestParam String sub
+    ) {
+        try {
+            List<NotesDTO> result = notesService.getNotesByStudentClassAndSub(studentClass, sub);
+            return ResponseEntity.ok(ApiResponse.success("Notes fetched by studentClass and subject", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(HttpStatus.NOT_FOUND, "No notes found", e.getMessage()));
+        }
+    }
 }

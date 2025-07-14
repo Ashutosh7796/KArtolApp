@@ -1,5 +1,6 @@
 package com.spring.jwt.Exam.serviceImpl;
 
+import com.spring.jwt.CalendarEvent.CalendarEventRepository;
 import com.spring.jwt.Exam.Dto.*;
 import com.spring.jwt.Exam.entity.NegativeMarks;
 import com.spring.jwt.Exam.entity.Paper;
@@ -12,6 +13,7 @@ import com.spring.jwt.dto.PageResponseDto;
 import com.spring.jwt.entity.PaperPattern;
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.Question.QuestionDTO;
+import com.spring.jwt.entity.enum01.EventType;
 import com.spring.jwt.exception.InvalidPaginationParameterException;
 import com.spring.jwt.exception.PaperFetchException;
 import com.spring.jwt.exception.ResourceNotFoundException;
@@ -22,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import com.spring.jwt.entity.CalendarEvent;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,6 +42,9 @@ public class PaperServiceImpl implements PaperService {
 
     @Autowired
     private PaperPatternRepository paperPatternRepository;
+
+    @Autowired
+    private CalendarEventRepository calendarEventRepository;
 
     private PaperDTO toDTO(Paper entity) {
         if (entity == null) return null;
@@ -281,6 +287,21 @@ public class PaperServiceImpl implements PaperService {
         Paper paper = toEntity(paperDTO);
         paper.setPaperPattern(pattern);
         Paper saved = paperRepository.save(paper);
+
+        // 5. Create corresponding CalendarEvent
+        CalendarEvent event = CalendarEvent.builder()
+                .title(paperDTO.getTitle())
+                .description(paperDTO.getDescription())
+                .startDateTime(paperDTO.getStartTime())
+                .endDateTime(paperDTO.getEndTime())
+                .eventType(EventType.EXAM)
+                .examSubject(paperDTO.getPatternName()) // Assuming pattern name is subject
+                .examLevel(paperDTO.getStudentClass())
+                .examRoom("Room-1") // Static or configurable
+                .examPaperId(String.valueOf(saved.getPaperId())) // Link to paper
+                .colorCode("#2196F3") // Optional: Blue for EXAM
+                .build();
+        calendarEventRepository.save(event);
         return toDTO(saved);
     }
 

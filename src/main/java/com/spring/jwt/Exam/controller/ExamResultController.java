@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.PermitAll;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -46,7 +47,8 @@ public class ExamResultController {
             @ApiResponse(responseCode = "404", description = "No results found for the user")
     })
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER') or authentication.principal.id == #userId")
+//    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER') or authentication.principal.id == #userId")
+    @PermitAll
     public ResponseEntity<List<ExamResultDTO>> getResultsByUserId(@PathVariable Long userId) {
         List<ExamResultDTO> results = examResultService.getResultsByUserId(userId);
         return ResponseEntity.ok(results);
@@ -62,7 +64,8 @@ public class ExamResultController {
             @ApiResponse(responseCode = "404", description = "No results found for the paper")
     })
     @GetMapping("/paper/{paperId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+//    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PermitAll
     public ResponseEntity<List<ExamResultDTO>> getResultsByPaperId(@PathVariable Integer paperId) {
         List<ExamResultDTO> results = examResultService.getResultsByPaperId(paperId);
         return ResponseEntity.ok(results);
@@ -78,7 +81,8 @@ public class ExamResultController {
             @ApiResponse(responseCode = "404", description = "No results found for the class")
     })
     @GetMapping("/class/{studentClass}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+//    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PermitAll
     public ResponseEntity<List<ExamResultDTO>> getResultsByStudentClass(@PathVariable String studentClass) {
         List<ExamResultDTO> results = examResultService.getResultsByStudentClass(studentClass);
         return ResponseEntity.ok(results);
@@ -93,7 +97,8 @@ public class ExamResultController {
             @ApiResponse(responseCode = "200", description = "Processing completed successfully")
     })
     @PostMapping("/process")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
+    @PermitAll
     public ResponseEntity<String> processReadyResults() {
         int processed = examResultService.processReadyExamResults();
         return ResponseEntity.ok("Processed " + processed + " exam results");
@@ -105,7 +110,8 @@ public class ExamResultController {
             security = { @SecurityRequirement(name = "bearer-jwt") }
     )
     @GetMapping("/debug/scheduler")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
+    @PermitAll
     public ResponseEntity<Map<String, Object>> debugScheduler() {
         log.info("Manually triggering scheduler for debugging");
         
@@ -158,7 +164,8 @@ public class ExamResultController {
             security = { @SecurityRequirement(name = "bearer-jwt") }
     )
     @PostMapping("/fix-date-format")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
+    @PermitAll
     public ResponseEntity<String> fixDateFormat() {
         log.info("Fixing result date format in the database");
         

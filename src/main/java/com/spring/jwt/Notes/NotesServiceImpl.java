@@ -127,4 +127,28 @@ public class NotesServiceImpl implements NotesService {
         if (noteDto.getTopic() == null || noteDto.getTopic().trim().isEmpty())
             throw new NotesNotCreatedException("topic must not be null or empty.");
     }
+
+    @Override
+    public List<NotesDTO> getNotesByTeacherIdAndClass(Integer teacherId, String studentClass) {
+        List<Notes> notesList = notesRepository.findByTeacherIdAndStudentClass(teacherId, studentClass);
+        if (notesList.isEmpty()) {
+            throw new ResourceNotFoundException("No notes found for teacherId: " + teacherId + " and studentClass: " + studentClass);
+        }
+        return notesList.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<NotesDTO> getNotesByStudentClassAndSub(String studentClass, String sub) {
+        List<Notes> notesList = notesRepository.findByStudentClassAndSub(studentClass, sub);
+        if (notesList.isEmpty()) {
+            throw new ResourceNotFoundException("No notes found for studentClass: " + studentClass + " and sub: " + sub);
+        }
+        return notesList.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+
 }
