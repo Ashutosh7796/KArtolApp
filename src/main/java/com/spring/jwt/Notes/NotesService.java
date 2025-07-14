@@ -10,4 +10,10 @@ public interface NotesService {
     List<NotesDTO> getAllNotes();
     NotesDTO patchNote(Long id, NotesDTO partialDto);
     void deleteNote(Long id);
+
+    List<NotesDTO> getNotesByTeacherIdAndClass(Integer teacherId, String studentClass);
+    List<NotesDTO> getNotesByStudentClassAndSub(String studentClass, String sub);
+
+
+
 }
