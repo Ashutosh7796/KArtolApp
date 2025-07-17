@@ -1,5 +1,6 @@
 package com.spring.jwt.StudentAttendance;
 
+import com.spring.jwt.exception.ResourceNotFoundException;
 import com.spring.jwt.utils.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -231,4 +232,19 @@ public class StudentAttendanceController {
             );
         }
     }
+
+    @GetMapping("/attendance/summary/user/{userId}")
+    public ResponseEntity<?> getAttendanceSummary(@PathVariable Integer userId) {
+        try {
+            StudentAttendanceSummaryResponseDto summary = studentAttendanceService.getSubjectWiseSummaryByUserId(userId);
+            return ResponseEntity.ok(summary);
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: " + ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to fetch attendance summary. Reason: " + ex.getMessage());
+        }
+    }
+
 }

@@ -3,6 +3,8 @@ package com.spring.jwt.StudentAttendance;
 
 import com.spring.jwt.entity.StudentAttendance;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.Date;
@@ -35,4 +37,17 @@ public interface StudentAttendanceRepository extends JpaRepository<StudentAttend
     List<StudentAttendance> findByDateAndSubAndTeacherIdAndStudentClass(
             LocalDate date, String sub, Integer teacherId, String studentClass
     );
+
+    @Query("SELECT s.sub AS subject, " +
+            "SUM(CASE WHEN s.attendance = true THEN 1 ELSE 0 END) AS presentCount, " +
+            "SUM(CASE WHEN s.attendance = false THEN 1 ELSE 0 END) AS absentCount, " +
+            "COUNT(s) AS totalCount " +
+            "FROM StudentAttendance s " +
+            "WHERE s.userId = :userId " +
+            "GROUP BY s.sub")
+    List<Object[]> getAttendanceSummaryByUserId(@Param("userId") Integer userId);
+
+    StudentAttendance findFirstByUserId(Integer userId);
+
+
 }

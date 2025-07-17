@@ -326,7 +326,7 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
             StudentAttendanceDTO dto = new StudentAttendanceDTO();
             dto.setUserId(student.getUserId());
             dto.setStudentClass(studentClass);
-            dto.setName(student.getName());
+            dto.setName(student.getName()+" "+student.getLastName());
             dto.setAttendance(null);
             dto.setDate(date);
             dto.setSub(sub);
@@ -334,6 +334,46 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
             dtos.add(dto);
         }
         return dtos;
+    }
+
+    @Override
+    public StudentAttendanceSummaryResponseDto getSubjectWiseSummaryByUserId(Integer userId) {
+        if (userId == null || !userRepository.existsById(Long.valueOf(userId))) {
+            throw new ResourceNotFoundException("User not found with ID: " + userId);
+        }
+
+        List<Object[]> summaryList = repository.getAttendanceSummaryByUserId(userId);
+
+        List<SubjectAttendanceSummaryDto> subjectSummaries = summaryList.stream().map(obj -> {
+            String subject = (String) obj[0];
+            long present = ((Number) obj[1]).longValue();
+            long absent = ((Number) obj[2]).longValue();
+            long total = ((Number) obj[3]).longValue();
+            double percentage = total > 0 ? (present * 100.0 / total) : 0.0;
+
+            SubjectAttendanceSummaryDto dto = new SubjectAttendanceSummaryDto();
+            dto.setSubject(subject);
+            dto.setPresentCount(present);
+            dto.setAbsentCount(absent);
+            dto.setTotalCount(total);
+            dto.setPercentage(percentage);
+
+            return dto;
+        }).collect(Collectors.toList());
+
+        // Get user name and class from any attendance entry (you can optimize with join if needed)
+        StudentAttendance anyRecord = repository.findFirstByUserId(userId);
+        if (anyRecord == null) {
+            throw new ResourceNotFoundException("No attendance records found for userId: " + userId);
+        }
+
+        StudentAttendanceSummaryResponseDto response = new StudentAttendanceSummaryResponseDto();
+        response.setUserId(userId);
+        response.setName(anyRecord.getName());
+        response.setStudentClass(anyRecord.getStudentClass());
+        response.setSubjectWiseSummary(subjectSummaries);
+
+        return response;
     }
 
 }
