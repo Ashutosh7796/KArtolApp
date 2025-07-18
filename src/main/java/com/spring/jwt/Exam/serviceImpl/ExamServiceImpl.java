@@ -389,6 +389,7 @@ public class ExamServiceImpl implements ExamService {
                 String correctAns = question.getAnswer();
 
                 boolean isMultiOptions = question.isMultiOptions();
+                double questionMarks = question.getMarks();
 
                 if (question.isDescriptive()) {
                     // Save descriptive answer
@@ -398,6 +399,25 @@ public class ExamServiceImpl implements ExamService {
                     da.setUserId(userId.intValue());
                     da.setAns(selectedAns);
                     descriptiveAnsRepository.save(da);
+
+                    // Check correctness and apply marking logic
+                    if (correctAns != null && selectedAns != null) {
+                        boolean isCorrect = correctAns.trim().equalsIgnoreCase(selectedAns.trim());
+
+                        if (isCorrect) {
+                            score += questionMarks;
+                        } else {
+                            negativeCount++;
+
+                            Optional<NegativeMarks> negative = negativeMarksRepository.findByPaperAndQuestionId(paper, question.getQuestionId());
+
+                            double questionNegative = negative.map(NegativeMarks::getNegativeMark)
+                                    .orElse(questionMarks * negativePerWrong);
+
+                            negativeScore += questionNegative;
+                        }
+                    }
+
                 } else {
                     // Save objective answer
                     UserAnswer ua = new UserAnswer();
@@ -405,56 +425,48 @@ public class ExamServiceImpl implements ExamService {
                     ua.setQuestion(question);
                     ua.setSelectedOption(selectedAns);
                     userAnswers.add(ua);
-                }
 
-                double questionMarks = question.getMarks();
+                    if (correctAns != null && selectedAns != null && isMultiOptions) {
+                        Set<Character> correctSet = correctAns.chars().mapToObj(c -> (char) c).collect(Collectors.toSet());
+                        Set<Character> selectedSet = selectedAns.chars().mapToObj(c -> (char) c).collect(Collectors.toSet());
 
-                if (correctAns != null && selectedAns != null && isMultiOptions) {
-                    Set<Character> correctSet = correctAns.chars().mapToObj(c -> (char) c).collect(Collectors.toSet());
-                    Set<Character> selectedSet = selectedAns.chars().mapToObj(c -> (char) c).collect(Collectors.toSet());
+                        if (selectedSet.equals(correctSet)) {
+                            score += questionMarks;
+                        } else if (correctSet.containsAll(selectedSet)) {
+                            score += questionMarks / 2.0;
+                        } else {
+                            negativeScore += 2.0;
+                            negativeCount++;
+                        }
 
-                    if (selectedSet.equals(correctSet)) {
-                        // Full match, any order
-                        score += questionMarks;
-                    } else if (correctSet.containsAll(selectedSet)) {
-                        // All selected options are correct, but not all correct options selected → Half marks
-                        score += questionMarks / 2.0;
                     } else {
-                        // At least one wrong/extra option present → -2 marks
-                        negativeScore += 2.0;
-                        negativeCount++;
-                    }
+                        boolean isCorrect = correctAns != null && correctAns.equalsIgnoreCase(selectedAns);
 
-                } else {
-                    // Non-multi-option or regular correctness
-                    boolean isCorrect = correctAns != null && correctAns.equalsIgnoreCase(selectedAns);
+                        if (isCorrect) {
+                            score += questionMarks;
+                        } else {
+                            negativeCount++;
 
-                    if (isCorrect) {
-                        score += questionMarks;
-                    } else {
-                        negativeCount++;
+                            Optional<NegativeMarks> negative = negativeMarksRepository.findByPaperAndQuestionId(paper, question.getQuestionId());
 
-                        Optional<NegativeMarks> negative = negativeMarksRepository.findByPaperAndQuestionId(paper, question.getQuestionId());
+                            double questionNegative = negative.map(NegativeMarks::getNegativeMark)
+                                    .orElse(questionMarks * negativePerWrong);
 
-                        double questionNegative = negative.map(NegativeMarks::getNegativeMark)
-                                .orElse(question.getMarks() * negativePerWrong);
-
-                        negativeScore += questionNegative;
+                            negativeScore += questionNegative;
+                        }
                     }
                 }
             }
 
-
             double finalScore = score - negativeScore;
             session.setEndTime(LocalDateTime.now());
-            session.setScore((double) Math.round(finalScore)); // allows negative scores
+            session.setScore((double) Math.round(finalScore));
             session.setUserAnswers(userAnswers);
             session.setNegativeCount((double) negativeCount);
             session.setNegativeScore(negativeScore);
             session.setResultDate(paper.getResultDate());
 
             examSessionRepository.save(session);
-
 
             return ResponseDto1.success(
                     "Exam submitted successfully",
