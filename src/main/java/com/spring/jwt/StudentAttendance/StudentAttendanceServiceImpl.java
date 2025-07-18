@@ -76,39 +76,41 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
         List<StudentAttendance> resultList = new ArrayList<>();
 
         for (SingleAttendanceDTO entry : batchDto.getAttendanceList()) {
-            if (!userRepository.existsById(Long.valueOf(entry.getUserId()))) {
-                throw new ResourceNotFoundException("User not found with ID: " + entry.getUserId());
+            Long userId = Long.valueOf(entry.getUserId());
+
+            Student user = studentRepository.findByUserId(Math.toIntExact(userId));
+            if (user == null) {
+                throw new ResourceNotFoundException("User not found with ID: " + userId);
             }
+            String fullName = user.getName() + " " + user.getLastName();
 
             Optional<StudentAttendance> existingOpt = repository.findByDateAndSubAndUserIdAndTeacherId(
-                    batchDto.getDate(), batchDto.getSub(), Long.valueOf(entry.getUserId()), batchDto.getTeacherId()
+                    batchDto.getDate(), batchDto.getSub(), userId, batchDto.getTeacherId()
             );
 
             StudentAttendance entity;
             if (existingOpt.isPresent()) {
                 // Update existing
                 entity = existingOpt.get();
-                entity.setAttendance(entry.getAttendance());
-                entity.setName(batchDto.getName());
-                entity.setMark(batchDto.getMark());
-                entity.setStudentClass(batchDto.getStudentClass());
             } else {
                 // Insert new
                 entity = new StudentAttendance();
                 entity.setDate(batchDto.getDate());
                 entity.setSub(batchDto.getSub());
-                entity.setName(batchDto.getName());
-                entity.setMark(batchDto.getMark());
                 entity.setTeacherId(batchDto.getTeacherId());
                 entity.setUserId(entry.getUserId());
-                entity.setAttendance(entry.getAttendance());
-                entity.setStudentClass(batchDto.getStudentClass());
             }
+
+            entity.setName(fullName);
+            entity.setMark(batchDto.getMark());
+            entity.setAttendance(entry.getAttendance());
+            entity.setStudentClass(batchDto.getStudentClass());
 
             resultList.add(repository.save(entity));
         }
         return resultList;
     }
+
 //    @Override
 //    @Transactional
 //    public void createBatchAttendance(CreateStudentAttendanceDTO batchDto) {
