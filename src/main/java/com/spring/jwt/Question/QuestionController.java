@@ -164,13 +164,13 @@ public class QuestionController {
     }
 
     @PatchMapping("/update")
-//    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('TEACHER')")
     @PermitAll
     public ResponseEntity<ApiResponse<QuestionDTO>> updateQuestion(
             @Parameter(description = "Question ID to update", required = true, example = "1")
             @RequestParam @Min(1) Integer id,
             @Parameter(description = "Question data to update", required = true)
-            @Valid @RequestBody QuestionDTO updatedQuestion) {
+            @RequestBody QuestionUpdateDTO updatedQuestion // <-- Remove @Valid here
+    ) {
         try {
             QuestionDTO updated = questionService.updateQuestion(id, updatedQuestion);
             return ResponseEntity.ok(ApiResponse.success("Question updated successfully", updated));
@@ -184,6 +184,7 @@ public class QuestionController {
                     .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to update question", e.getMessage()));
         }
     }
+
 
     @DeleteMapping("/delete")
 //    @PreAuthorize("hasAuthority('ADMIN')")

@@ -43,11 +43,11 @@ public interface QuestionService {
     /**
      * Update an existing question
      * @param id the question ID to update
-     * @param questionDTO the question data to update
+     * @param QuestionUpdateDTO the question data to update
      * @return the updated question DTO
      * @throws QuestionNotFoundException if question not found
      */
-    QuestionDTO updateQuestion(Integer id, QuestionDTO questionDTO);
+    QuestionDTO updateQuestion(Integer id, QuestionUpdateDTO questionUpdateDTO);
     
     /**
      * Delete a question by its ID
