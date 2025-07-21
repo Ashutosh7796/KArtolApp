@@ -66,7 +66,7 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public Key getKey() {
+    public Key  getKey() {
         byte[] key = Decoders.BASE64.decode(jwtConfig.getSecret());
         return Keys.hmacShaKeyFor(key);
     }

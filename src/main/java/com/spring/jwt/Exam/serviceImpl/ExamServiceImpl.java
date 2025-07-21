@@ -254,6 +254,8 @@ public class ExamServiceImpl implements ExamService {
 
         return dto;
     }
+
+
 //    @Override
 //    @Transactional
 //    public ResponseDto1<Double> submitExamAnswers(Integer sessionId, Long userId, List<UserAnswerDTO> answers) {
@@ -287,49 +289,86 @@ public class ExamServiceImpl implements ExamService {
 //                default -> 0.0;
 //            };
 //
-//
 //            for (UserAnswerDTO dto : answers) {
 //                Question question = questionRepository.findById(dto.getQuestionId())
 //                        .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
 //
+//                String selectedAns = dto.getSelectedOption();
+//                String correctAns = question.getAnswer();
+//
+//                boolean isMultiOptions = question.isMultiOptions();
+//                double questionMarks = question.getMarks();
+//
 //                if (question.isDescriptive()) {
+//                    // Save descriptive answer
 //                    DescriptiveAns da = new DescriptiveAns();
 //                    da.setQuestionId(question.getQuestionId());
 //                    da.setPaperId(paper.getPaperId());
 //                    da.setUserId(userId.intValue());
-//                    da.setAns(dto.getSelectedOption());
+//                    da.setAns(selectedAns);
 //                    descriptiveAnsRepository.save(da);
+//
+//                    // Check correctness and apply marking logic
+//                    if (correctAns != null && selectedAns != null) {
+//                        boolean isCorrect = correctAns.trim().equalsIgnoreCase(selectedAns.trim());
+//
+//                        if (isCorrect) {
+//                            score += questionMarks;
+//                        } else {
+//                            negativeCount++;
+//
+//                            Optional<NegativeMarks> negative = negativeMarksRepository.findByPaperAndQuestionId(paper, question.getQuestionId());
+//
+//                            double questionNegative = negative.map(NegativeMarks::getNegativeMark)
+//                                    .orElse(questionMarks * negativePerWrong);
+//
+//                            negativeScore += questionNegative;
+//                        }
+//                    }
+//
 //                } else {
+//                    // Save objective answer
 //                    UserAnswer ua = new UserAnswer();
 //                    ua.setExamSession(session);
 //                    ua.setQuestion(question);
-//                    ua.setSelectedOption(dto.getSelectedOption());
+//                    ua.setSelectedOption(selectedAns);
 //                    userAnswers.add(ua);
 //
-//                    boolean isCorrect = question.getAnswer() != null &&
-//                            question.getAnswer().equalsIgnoreCase(dto.getSelectedOption());
+//                    if (correctAns != null && selectedAns != null && isMultiOptions) {
+//                        Set<Character> correctSet = correctAns.chars().mapToObj(c -> (char) c).collect(Collectors.toSet());
+//                        Set<Character> selectedSet = selectedAns.chars().mapToObj(c -> (char) c).collect(Collectors.toSet());
 //
-//                    if (isCorrect) {
-//                        score += question.getMarks();
+//                        if (selectedSet.equals(correctSet)) {
+//                            score += questionMarks;
+//                        } else if (correctSet.containsAll(selectedSet)) {
+//                            score += questionMarks / 2.0;
+//                        } else {
+//                            negativeScore += 2.0;
+//                            negativeCount++;
+//                        }
+//
 //                    } else {
-//                        negativeCount++;
+//                        boolean isCorrect = correctAns != null && correctAns.equalsIgnoreCase(selectedAns);
 //
-//                        // First check if specific negative mark exists for this paper/question
-//                        Optional<NegativeMarks> negative = negativeMarksRepository.findByPaperAndQuestionId(paper, question.getQuestionId());
+//                        if (isCorrect) {
+//                            score += questionMarks;
+//                        } else {
+//                            negativeCount++;
 //
-//                        double questionNegative = negative.map(NegativeMarks::getNegativeMark)
-//                                .orElse(question.getMarks() * negativePerWrong); // fallback to pattern logic
+//                            Optional<NegativeMarks> negative = negativeMarksRepository.findByPaperAndQuestionId(paper, question.getQuestionId());
 //
-//                        negativeScore += questionNegative;
+//                            double questionNegative = negative.map(NegativeMarks::getNegativeMark)
+//                                    .orElse(questionMarks * negativePerWrong);
+//
+//                            negativeScore += questionNegative;
+//                        }
 //                    }
 //                }
 //            }
 //
-//
-//
 //            double finalScore = score - negativeScore;
 //            session.setEndTime(LocalDateTime.now());
-//            session.setScore((double) Math.max(0, Math.round(finalScore)));
+//            session.setScore((double) Math.round(finalScore));
 //            session.setUserAnswers(userAnswers);
 //            session.setNegativeCount((double) negativeCount);
 //            session.setNegativeScore(negativeScore);
@@ -347,6 +386,13 @@ public class ExamServiceImpl implements ExamService {
 //            return ResponseDto1.error("Failed to submit exam", e.getMessage());
 //        }
 //    }
+//
+
+    private double getNegativeMarks(Paper paper, Integer questionId, double questionMarks, double negativePerWrong) {
+        return negativeMarksRepository.findByPaperAndQuestionId(paper, questionId)
+                .map(NegativeMarks::getNegativeMark)
+                .orElse(questionMarks * negativePerWrong);
+    }
 
     @Override
     @Transactional
@@ -408,12 +454,7 @@ public class ExamServiceImpl implements ExamService {
                             score += questionMarks;
                         } else {
                             negativeCount++;
-
-                            Optional<NegativeMarks> negative = negativeMarksRepository.findByPaperAndQuestionId(paper, question.getQuestionId());
-
-                            double questionNegative = negative.map(NegativeMarks::getNegativeMark)
-                                    .orElse(questionMarks * negativePerWrong);
-
+                            double questionNegative = getNegativeMarks(paper, question.getQuestionId(), questionMarks, negativePerWrong);
                             negativeScore += questionNegative;
                         }
                     }
@@ -435,8 +476,9 @@ public class ExamServiceImpl implements ExamService {
                         } else if (correctSet.containsAll(selectedSet)) {
                             score += questionMarks / 2.0;
                         } else {
-                            negativeScore += 2.0;
                             negativeCount++;
+                            double questionNegative = getNegativeMarks(paper, question.getQuestionId(), questionMarks, negativePerWrong);
+                            negativeScore += questionNegative;
                         }
 
                     } else {
@@ -446,12 +488,7 @@ public class ExamServiceImpl implements ExamService {
                             score += questionMarks;
                         } else {
                             negativeCount++;
-
-                            Optional<NegativeMarks> negative = negativeMarksRepository.findByPaperAndQuestionId(paper, question.getQuestionId());
-
-                            double questionNegative = negative.map(NegativeMarks::getNegativeMark)
-                                    .orElse(questionMarks * negativePerWrong);
-
+                            double questionNegative = getNegativeMarks(paper, question.getQuestionId(), questionMarks, negativePerWrong);
                             negativeScore += questionNegative;
                         }
                     }
@@ -478,7 +515,6 @@ public class ExamServiceImpl implements ExamService {
             return ResponseDto1.error("Failed to submit exam", e.getMessage());
         }
     }
-
 
 
     @Override

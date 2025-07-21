@@ -82,22 +82,23 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
-    public QuestionDTO updateQuestion(Integer id, QuestionDTO questionDTO) {
+    public QuestionDTO updateQuestion(Integer id, QuestionUpdateDTO questionUpdateDTO) {
         log.debug("Updating question with ID: {}", id);
-        
+
         Question question = questionRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Question with ID {} not found for update", id);
                     return new QuestionNotFoundException("Question not found with id: " + id);
                 });
 
-        questionMapper.updateEntityFromDto(questionDTO, question);
+        questionMapper.updateEntityFromDto(questionUpdateDTO, question);
 
         Question updatedQuestion = questionRepository.save(question);
         log.info("Updated question with ID: {}", updatedQuestion.getQuestionId());
-        
+
         return questionMapper.toDto(updatedQuestion);
     }
+
 
     @Override
     @Transactional

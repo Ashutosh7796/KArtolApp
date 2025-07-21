@@ -86,62 +86,87 @@ public class QuestionMapper {
     /**
      * Update an existing Question entity from a QuestionDTO
      */
-    public void updateEntityFromDto(QuestionDTO dto, Question entity) {
+//    public void updateEntityFromDto(QuestionDTO dto, Question entity) {
+//        if (dto == null || entity == null) {
+//            return;
+//        }
+//
+//        if (dto.getQuestionText() != null) {
+//            entity.setQuestionText(dto.getQuestionText());
+//        }
+//        if (dto.getType() != null) {
+//            entity.setType(dto.getType());
+//        }
+//        if (dto.getSubject() != null) {
+//            entity.setSubject(dto.getSubject());
+//        }
+//        if (dto.getLevel() != null) {
+//            entity.setLevel(dto.getLevel());
+//        }
+//        if (dto.getMarks() != null) {
+//            entity.setMarks(dto.getMarks());
+//        }
+//        if (dto.getUserId() != null) {
+//            entity.setUserId(dto.getUserId());
+//        }
+//        if (dto.getOption1() != null) {
+//            entity.setOption1(dto.getOption1());
+//        }
+//        if (dto.getOption2() != null) {
+//            entity.setOption2(dto.getOption2());
+//        }
+//        if (dto.getOption3() != null) {
+//            entity.setOption3(dto.getOption3());
+//        }
+//        if (dto.getOption4() != null) {
+//            entity.setOption4(dto.getOption4());
+//        }
+//        if (dto.getAnswer() != null) {
+//            entity.setAnswer(dto.getAnswer());
+//        }
+//        if (dto.getHintAndSol()!=null){
+//            entity.setHintAndSol(dto.getHintAndSol());
+//        }
+//        if (dto.getUnit() != null) {
+//            entity.setUnit(dto.getUnit());
+//        }
+//        if (dto.getChapter() != null) {
+//            entity.setChapter(dto.getChapter());
+//        }
+//        if (dto.getTopic() != null) {
+//            entity.setTopic(dto.getTopic());
+//        }
+//        if (dto.isMultiOptions() ){
+//            entity.setMultiOptions(dto.isMultiOptions());
+//        }
+//
+//    }
+    public void updateEntityFromDto(QuestionUpdateDTO dto, Question entity) {
         if (dto == null || entity == null) {
             return;
         }
-        
-        if (dto.getQuestionText() != null) {
-            entity.setQuestionText(dto.getQuestionText());
-        }
-        if (dto.getType() != null) {
-            entity.setType(dto.getType());
-        }
-        if (dto.getSubject() != null) {
-            entity.setSubject(dto.getSubject());
-        }
-        if (dto.getLevel() != null) {
-            entity.setLevel(dto.getLevel());
-        }
-        if (dto.getMarks() != null) {
-            entity.setMarks(dto.getMarks());
-        }
-        if (dto.getUserId() != null) {
-            entity.setUserId(dto.getUserId());
-        }
-        if (dto.getOption1() != null) {
-            entity.setOption1(dto.getOption1());
-        }
-        if (dto.getOption2() != null) {
-            entity.setOption2(dto.getOption2());
-        }
-        if (dto.getOption3() != null) {
-            entity.setOption3(dto.getOption3());
-        }
-        if (dto.getOption4() != null) {
-            entity.setOption4(dto.getOption4());
-        }
-        if (dto.getAnswer() != null) {
-            entity.setAnswer(dto.getAnswer());
-        }
-        if (dto.getHintAndSol()!=null){
-            entity.setHintAndSol(dto.getHintAndSol());
-        }
-        if (dto.getUnit() != null) {
-            entity.setUnit(dto.getUnit());
-        }
-        if (dto.getChapter() != null) {
-            entity.setChapter(dto.getChapter());
-        }
-        if (dto.getTopic() != null) {
-            entity.setTopic(dto.getTopic());
-        }
-        if (dto.isMultiOptions() ){
-            entity.setMultiOptions(dto.isMultiOptions());
-        }
 
+        if (dto.getQuestionText() != null)        entity.setQuestionText(dto.getQuestionText());
+        if (dto.getType() != null)                entity.setType(dto.getType());
+        if (dto.getSubject() != null)             entity.setSubject(dto.getSubject());
+        if (dto.getUnit() != null)                entity.setUnit(dto.getUnit());
+        if (dto.getChapter() != null)             entity.setChapter(dto.getChapter());
+        if (dto.getTopic() != null)               entity.setTopic(dto.getTopic());
+        if (dto.getLevel() != null)               entity.setLevel(dto.getLevel());
+        if (dto.getMarks() != null)               entity.setMarks(dto.getMarks());
+        if (dto.getUserId() != null)              entity.setUserId(dto.getUserId());
+        if (dto.getOption1() != null)             entity.setOption1(dto.getOption1());
+        if (dto.getOption2() != null)             entity.setOption2(dto.getOption2());
+        if (dto.getOption3() != null)             entity.setOption3(dto.getOption3());
+        if (dto.getOption4() != null)             entity.setOption4(dto.getOption4());
+        if (dto.getAnswer() != null)              entity.setAnswer(dto.getAnswer());
+        if (dto.getHintAndSol() != null)          entity.setHintAndSol(dto.getHintAndSol());
+        if (dto.getStudentClass() != null)        entity.setStudentClass(dto.getStudentClass());
+        if (dto.getIsDescriptive() != null)       entity.setDescriptive(dto.getIsDescriptive());
+        if (dto.getIsMultiOptions() != null)      entity.setMultiOptions(dto.getIsMultiOptions());
     }
-    
+
+
     /**
      * Convert a list of Question entities to a list of QuestionDTOs
      */
