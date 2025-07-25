@@ -43,7 +43,7 @@ public interface QuestionService {
     /**
      * Update an existing question
      * @param id the question ID to update
-     * @param QuestionUpdateDTO the question data to update
+     *  the question data to update
      * @return the updated question DTO
      * @throws QuestionNotFoundException if question not found
      */
@@ -90,4 +90,11 @@ public interface QuestionService {
     List<QuestionDTO> getQuestionsBySubTypeLevelMarks(String subject, QType type, String level, String marks);
 
     public List<QuestionDTO> createQuestionsBulk(@Valid BulkQuestionDTO bulkDTO);
+
+    public Page<QuestionDTO> getAllQuestionsDeleted(Pageable pageable);
+
+    void updateDeletedStatus(Integer questionId, boolean deleted);
+    void toggleDeletedStatus(Integer questionId);
+
+
 }

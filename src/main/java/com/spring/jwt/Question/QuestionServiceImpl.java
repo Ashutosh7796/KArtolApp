@@ -2,6 +2,7 @@ package com.spring.jwt.Question;
 
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.entity.enum01.QType;
+import com.spring.jwt.exception.ResourceNotFoundException;
 import com.spring.jwt.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -65,12 +66,20 @@ public class QuestionServiceImpl implements QuestionService {
     @Override
     @Transactional(readOnly = true)
     public Page<QuestionDTO> getAllQuestions(Pageable pageable) {
-        log.debug("Getting all questions with pagination: {}", pageable);
-        
-        Page<Question> questionPage = questionRepository.findAll(pageable);
+        log.debug("Getting only soft-deleted questions with pagination: {}", pageable);
+
+        Page<Question> questionPage = questionRepository.findByDeletedTrue(pageable);
         return questionPage.map(questionMapper::toDto);
     }
-    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<QuestionDTO> getAllQuestionsDeleted(Pageable pageable) {
+        log.debug("Getting only soft-deleted questions with pagination: {}", pageable);
+
+        Page<Question> questionPage = questionRepository.findByDeletedFalse(pageable);
+        return questionPage.map(questionMapper::toDto);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public List<QuestionDTO> getAllQuestions() {
@@ -266,5 +275,23 @@ public class QuestionServiceImpl implements QuestionService {
     // Utility method to check for blank strings
     private boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
+    }
+
+    @Override
+    @Transactional
+    public void updateDeletedStatus(Integer questionId, boolean deleted) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Question not found: " + questionId));
+        question.setDeleted(deleted);
+        questionRepository.save(question);
+    }
+
+    @Override
+    @Transactional
+    public void toggleDeletedStatus(Integer questionId) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Question not found: " + questionId));
+        question.setDeleted(!question.isDeleted());
+        questionRepository.save(question);
     }
 }
