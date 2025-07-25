@@ -1,5 +1,6 @@
 package com.spring.jwt.Question;
 
+import com.spring.jwt.exception.ResourceNotFoundException;
 import com.spring.jwt.utils.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -162,8 +163,49 @@ public class QuestionController {
                     .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to fetch questions", e.getMessage()));
         }
     }
+    @GetMapping("/allDeleted")
+//    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('TEACHER')")
+    @PermitAll
+    public ResponseEntity<ApiResponse<Page<QuestionDTO>>> getAllQuestionsDeleted(
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size", example = "10")
+            @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort field", example = "questionId")
+            @RequestParam(defaultValue = "questionId") String sortBy,
+            @Parameter(description = "Sort direction (asc or desc)", example = "asc")
+            @RequestParam(defaultValue = "asc") String direction) {
+        try {
+            log.info("Accessing /questions/all endpoint - requires authentication");
 
-    @PatchMapping("/update")
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                log.info("User '{}' authenticated with authorities: {}",
+                        auth.getName(),
+                        auth.getAuthorities().stream()
+                                .map(GrantedAuthority::getAuthority)
+                                .collect(Collectors.joining(", "))
+                );
+            } else {
+                log.warn("No authentication found or user not authenticated for /questions/all");
+            }
+
+            Sort sort = direction.equalsIgnoreCase("asc") ?
+                    Sort.by(sortBy).ascending() :
+                    Sort.by(sortBy).descending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<QuestionDTO> questions = questionService.getAllQuestionsDeleted(pageable);
+
+            return ResponseEntity.ok(ApiResponse.success("All questions fetched successfully", questions));
+        } catch (Exception e) {
+            log.error("Error fetching all questions: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to fetch questions", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/update")
     @PermitAll
     public ResponseEntity<ApiResponse<QuestionDTO>> updateQuestion(
             @Parameter(description = "Question ID to update", required = true, example = "1")
@@ -186,7 +228,7 @@ public class QuestionController {
     }
 
 
-    @DeleteMapping("/delete")
+    @DeleteMapping("/hardDelete")
 //    @PreAuthorize("hasAuthority('ADMIN')")
     @PermitAll
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(
@@ -287,6 +329,46 @@ public class QuestionController {
             log.error("Failed to fetch questions by criteria: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to fetch questions by criteria", e.getMessage()));
+        }
+    }
+    @PutMapping("/delete-statusChange")
+//@PreAuthorize("hasAuthority('ADMIN')")
+    @PermitAll
+    public ResponseEntity<ApiResponse<Void>> updateQuestionDeletedStatus(
+            @Parameter(description = "Question ID to update deleted status", required = true, example = "1")
+            @RequestParam Integer id,
+            @RequestBody QuestionDeletedDTO dto) {
+        try {
+            questionService.updateDeletedStatus(id, dto.isDeleted());
+            return ResponseEntity.ok(ApiResponse.success("Deleted status updated successfully"));
+        } catch (ResourceNotFoundException e) {
+            log.error("Question not found for update deleted status: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(HttpStatus.NOT_FOUND, "Question not found", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to update deleted status: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to update deleted status", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/soft-delete")
+//@PreAuthorize("hasAuthority('ADMIN')")
+    @PermitAll
+    public ResponseEntity<ApiResponse<Void>> toggleQuestionDeletedStatus(
+            @Parameter(description = "Question ID to toggle deleted status", required = true, example = "1")
+            @RequestParam Integer id) {
+        try {
+            questionService.toggleDeletedStatus(id);
+            return ResponseEntity.ok(ApiResponse.success("Deleted status toggled successfully"));
+        } catch (ResourceNotFoundException e) {
+            log.error("Question not found for toggle deleted status: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(HttpStatus.NOT_FOUND, "Question not found", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to toggle deleted status: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to toggle deleted status", e.getMessage()));
         }
     }
 

@@ -105,4 +105,9 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>, Jp
     @Query("SELECT pq.question FROM PaperQuestion pq WHERE pq.paper.paperId = :paperId")
     List<Question> findQuestionsByPaperId(@Param("paperId") Integer paperId);
 
+    Page<Question> findByDeletedTrue(Pageable pageable);
+
+    Page<Question> findByDeletedFalse(Pageable pageable);
+
+
 }

@@ -78,6 +78,7 @@ public class QuestionMapper {
         entity.setUnit(dto.getUnit());
         entity.setChapter(dto.getChapter());
         entity.setTopic(dto.getTopic());
+        entity.setDeleted(true);
 
 
         return entity;

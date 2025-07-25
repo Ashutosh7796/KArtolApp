@@ -46,6 +46,8 @@ public class Question {
     private boolean isDescriptive;
     @NotNull
     private boolean isMultiOptions;
+    @NotNull
+    private boolean deleted;
 
 
     // Store the answer, e.g. "option1", "option2", etc. or the text itself
