@@ -33,6 +33,18 @@ public class ExamSession {
     private Double score;
     private Double negativeCount;
     private Double negativeScore;
+    @Column(name = "right_answers")
+    private Integer rightAnswers;
+
+    @Column(name = "wrong_answers")
+    private Integer wrongAnswers;
+
+    @Column(name = "attempted_questions")
+    private Integer attemptedQuestions;
+
+    @Column(name = "total_questions")
+    private Integer totalQuestions;
+
 
     @OneToMany(mappedBy = "examSession", cascade = CascadeType.ALL)
     private List<UserAnswer> userAnswers;
