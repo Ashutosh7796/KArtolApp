@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -31,6 +32,7 @@ import org.springframework.web.filter.ForwardedHeaderFilter;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.TimeZone;
 
 @Configuration
 @EnableWebSecurity
@@ -237,4 +239,10 @@ public class AppConfig {
                 .passwordEncoder(passwordEncoder());
         return builder.build();
     }
+    @Bean
+    public Jackson2ObjectMapperBuilder jacksonObjectMapperBuilder() {
+        return new Jackson2ObjectMapperBuilder()
+                .timeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+    }
+
 }
