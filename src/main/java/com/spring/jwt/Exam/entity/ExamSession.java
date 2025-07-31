@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 
 @Entity
@@ -28,9 +27,9 @@ public class ExamSession {
     @JoinColumn(name = "paper_id")
     private Paper paper;
     private String StudentClass;
-    private OffsetDateTime startTime;
-    private OffsetDateTime endTime;
-    private OffsetDateTime resultDate;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private LocalDateTime resultDate;
     private Double score;
     private Double negativeCount;
     private Double negativeScore;

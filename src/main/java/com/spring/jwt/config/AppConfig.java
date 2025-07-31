@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -32,7 +31,6 @@ import org.springframework.web.filter.ForwardedHeaderFilter;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.TimeZone;
 
 @Configuration
 @EnableWebSecurity
@@ -102,7 +100,7 @@ public class AppConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         log.debug("Configuring security filter chain");
-        
+
         http.csrf(csrf -> csrf
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             .ignoringRequestMatchers(
@@ -171,7 +169,7 @@ public class AppConfig {
                 .anyRequest().authenticated());
 
         // Create a request matcher for public URLs
-        org.springframework.security.web.util.matcher.RequestMatcher publicUrls = 
+        org.springframework.security.web.util.matcher.RequestMatcher publicUrls =
             new org.springframework.security.web.util.matcher.OrRequestMatcher(
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/auth/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/public/**"),
@@ -210,7 +208,7 @@ public class AppConfig {
                 .addFilterBefore(securityHeadersFilter, UsernamePasswordAuthenticationFilter.class);
 
         http.authenticationProvider(customAuthenticationProvider);
-        
+
         log.debug("Security configuration completed");
         return http.build();
     }
@@ -222,7 +220,7 @@ public class AppConfig {
             public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                 CorsConfiguration config = new CorsConfiguration();
                 config.setAllowedOrigins(allowedOrigins);
-                config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
+                config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 config.setAllowCredentials(true); // Important for cookies
                 config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
                 config.setExposedHeaders(Arrays.asList("Authorization"));
@@ -239,10 +237,4 @@ public class AppConfig {
                 .passwordEncoder(passwordEncoder());
         return builder.build();
     }
-    @Bean
-    public Jackson2ObjectMapperBuilder jacksonObjectMapperBuilder() {
-        return new Jackson2ObjectMapperBuilder()
-                .timeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-    }
-
 }

@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -77,6 +76,7 @@ public class ExamServiceImpl implements ExamService {
     }
 
 
+
     @Override
     public PaperWithQuestionsDTOn startExam(Integer userId, Integer paperId, String studentClass) {
         User user = userRepository.findById(Long.valueOf(userId))
@@ -85,8 +85,7 @@ public class ExamServiceImpl implements ExamService {
         Paper paper = paperRepository.findById(paperId)
                 .orElseThrow(() -> new ResourceNotFoundException("Paper not found with ID: " + paperId));
 
-        ZoneId zone = ZoneId.of("Asia/Kolkata");
-        OffsetDateTime now = OffsetDateTime.now(zone); // Use OffsetDateTime here
+        LocalDateTime now = LocalDateTime.now();
 
         // Check for existing session
         Optional<ExamSession> existingSessionOpt = examSessionRepository
@@ -94,8 +93,7 @@ public class ExamServiceImpl implements ExamService {
 
         if (existingSessionOpt.isPresent()) {
             ExamSession existingSession = existingSessionOpt.get();
-
-            if (paper.getEndTime() != null && now.toLocalDateTime().isAfter(paper.getEndTime())) {
+            if (paper.getEndTime() != null && now.isAfter(paper.getEndTime())) {
                 throw new ExamTimeWindowException("Exam time is over. You cannot resume the exam.");
             }
 
@@ -105,7 +103,7 @@ public class ExamServiceImpl implements ExamService {
             dto.setPaperId(paper.getPaperId());
             dto.setTitle(paper.getTitle());
             dto.setDescription(paper.getDescription());
-            dto.setStartTime(paper.getStartTime()); // still LocalDateTime from paper
+            dto.setStartTime(paper.getStartTime());
             dto.setEndTime(paper.getEndTime());
             dto.setIsLive(paper.getIsLive());
             dto.setStudentClass(existingSession.getStudentClass());
@@ -122,17 +120,15 @@ public class ExamServiceImpl implements ExamService {
             return dto;
         }
 
-        // Validate time window
-        if (paper.getStartTime() != null && paper.getEndTime() != null) {
-            OffsetDateTime startTime = paper.getStartTime().atZone(zone).toOffsetDateTime();
-            OffsetDateTime endTime = paper.getEndTime().atZone(zone).toOffsetDateTime();
 
-            if (now.isBefore(startTime) || now.isAfter(endTime)) {
-                throw new ExamTimeWindowException("Exam can only be started between " + startTime + " and " + endTime);
+
+
+        if (paper.getStartTime() != null && paper.getEndTime() != null) {
+            if (now.isBefore(paper.getStartTime()) || now.isAfter(paper.getEndTime())) {
+                throw new ExamTimeWindowException("Exam can only be started between " + paper.getStartTime() + " and " + paper.getEndTime());
             }
         }
 
-        // Create new session
         ExamSession session = new ExamSession();
         session.setUser(user);
         session.setPaper(paper);
@@ -140,19 +136,15 @@ public class ExamServiceImpl implements ExamService {
         session.setStartTime(now);
         session.setScore(0.0);
         session.setUserAnswers(new ArrayList<>());
-
-        // Set resultDate (5 minutes after paper end time if available)
-        if (paper.getEndTime() != null) {
-            OffsetDateTime resultDateTime = paper.getEndTime()
-                    .atZone(zone).toOffsetDateTime()
-                    .plusMinutes(5);
-            session.setResultDate(resultDateTime);
-            examSessionSchedulingService.scheduleExamResultProcessing(session.getSessionId(), resultDateTime.toLocalDateTime());
-        }
-
         ExamSession savedSession = examSessionRepository.save(session);
 
-        // Build DTO
+        // Schedule result processing if paper has an end time
+        if (paper.getEndTime() != null) {
+            // Schedule result processing for 5 minutes after the paper end time
+            LocalDateTime resultDateTime = paper.getEndTime().plusMinutes(5);
+            examSessionSchedulingService.scheduleExamResultProcessing(savedSession.getSessionId(), resultDateTime);
+        }
+
         PaperWithQuestionsDTOn dto = new PaperWithQuestionsDTOn();
         dto.setSessionId(savedSession.getSessionId());
         dto.setPaperId(paper.getPaperId());
@@ -170,111 +162,8 @@ public class ExamServiceImpl implements ExamService {
                 .collect(Collectors.toList());
         Collections.shuffle(questionDTOs);
         dto.setQuestions(questionDTOs);
-
         return dto;
     }
-
-//    @Override
-//    public PaperWithQuestionsDTOn startExam(Integer userId, Integer paperId, String studentClass) {
-//        User user = userRepository.findById(Long.valueOf(userId))
-//                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
-//
-//        Paper paper = paperRepository.findById(paperId)
-//                .orElseThrow(() -> new ResourceNotFoundException("Paper not found with ID: " + paperId));
-//
-//        LocalDateTime now = LocalDateTime.now();
-//
-//        // Check for existing session
-//        Optional<ExamSession> existingSessionOpt = examSessionRepository
-//                .findByUserIdAndPaperId(userId, paperId);
-//
-//        if (existingSessionOpt.isPresent()) {
-//            ExamSession existingSession = existingSessionOpt.get();
-//            if (paper.getEndTime() != null && now.isAfter(paper.getEndTime())) {
-//                throw new ExamTimeWindowException("Exam time is over. You cannot resume the exam.");
-//            }
-//
-//            // Return existing session details
-//            PaperWithQuestionsDTOn dto = new PaperWithQuestionsDTOn();
-//            dto.setSessionId(existingSession.getSessionId());
-//            dto.setPaperId(paper.getPaperId());
-//            dto.setTitle(paper.getTitle());
-//            dto.setDescription(paper.getDescription());
-//            dto.setStartTime(paper.getStartTime());
-//            dto.setEndTime(paper.getEndTime());
-//            dto.setIsLive(paper.getIsLive());
-//            dto.setStudentClass(existingSession.getStudentClass());
-//            if (paper.getPaperPattern() != null) {
-//                dto.setPaperPatternId(paper.getPaperPattern().getPaperPatternId());
-//            }
-//
-//            List<QuestionNoAnswerDTO> questionDTOs = paper.getPaperQuestions().stream()
-//                    .map(PaperQuestion::getQuestion)
-//                    .map(this::convertToQuestionNoAnswerDTO)
-//                    .collect(Collectors.toList());
-//            Collections.shuffle(questionDTOs);
-//            dto.setQuestions(questionDTOs);
-//            return dto;
-//        }
-//
-//        // If no session exists, create new one
-//        ZoneId zone = ZoneId.of("Asia/Kolkata");
-//        ZonedDateTime now1 = ZonedDateTime.now(zone);
-//
-//        LocalDateTime startLocal = paper.getStartTime();
-//        LocalDateTime endLocal = paper.getEndTime();
-//
-//        if (startLocal != null && endLocal != null) {
-//            ZonedDateTime startTime = startLocal.atZone(zone);
-//            ZonedDateTime endTime = endLocal.atZone(zone);
-//
-//            if (now1.isBefore(startTime) || now1.isAfter(endTime)) {
-//                throw new ExamTimeWindowException("Exam can only be started between " + startTime + " and " + endTime);
-//            }
-//        }
-//
-//
-////        if (paper.getStartTime() != null && paper.getEndTime() != null) {
-////            if (now.isBefore(paper.getStartTime()) || now.isAfter(paper.getEndTime())) {
-////                throw new ExamTimeWindowException("Exam can only be started between " + paper.getStartTime() + " and " + paper.getEndTime());
-////            }
-////        }
-//
-//        ExamSession session = new ExamSession();
-//        session.setUser(user);
-//        session.setPaper(paper);
-//        session.setStudentClass(studentClass);
-//        session.setStartTime(now);
-//        session.setScore(0.0);
-//        session.setUserAnswers(new ArrayList<>());
-//        ExamSession savedSession = examSessionRepository.save(session);
-//
-//        // Schedule result processing if paper has an end time
-//        if (paper.getEndTime() != null) {
-//            // Schedule result processing for 5 minutes after the paper end time
-//            LocalDateTime resultDateTime = paper.getEndTime().plusMinutes(5);
-//            examSessionSchedulingService.scheduleExamResultProcessing(savedSession.getSessionId(), resultDateTime);
-//        }
-//
-//        PaperWithQuestionsDTOn dto = new PaperWithQuestionsDTOn();
-//        dto.setSessionId(savedSession.getSessionId());
-//        dto.setPaperId(paper.getPaperId());
-//        dto.setTitle(paper.getTitle());
-//        dto.setDescription(paper.getDescription());
-//        dto.setStartTime(paper.getStartTime());
-//        dto.setEndTime(paper.getEndTime());
-//        dto.setIsLive(paper.getIsLive());
-//        dto.setStudentClass(studentClass);
-//        dto.setPaperPatternId(paper.getPaperPattern().getPaperPatternId());
-//
-//        List<QuestionNoAnswerDTO> questionDTOs = paper.getPaperQuestions().stream()
-//                .map(PaperQuestion::getQuestion)
-//                .map(this::convertToQuestionNoAnswerDTO)
-//                .collect(Collectors.toList());
-//        Collections.shuffle(questionDTOs);
-//        dto.setQuestions(questionDTOs);
-//        return dto;
-//    }
 
 
 //
@@ -350,8 +239,8 @@ public class ExamServiceImpl implements ExamService {
         dto.setSessionId(session.getSessionId());
         dto.setUserId(session.getUser().getId().intValue());
         dto.setPaperId(session.getPaper().getPaperId());
-        dto.setStartTime(session.getStartTime().toLocalDateTime());
-        dto.setEndTime(session.getEndTime().toLocalDateTime());
+        dto.setStartTime(session.getStartTime());
+        dto.setEndTime(session.getEndTime());
         dto.setScore(session.getScore());
         dto.setStudentClass(session.getStudentClass());
         dto.setNegativeCount(session.getNegativeCount());
@@ -526,7 +415,6 @@ public class ExamServiceImpl implements ExamService {
             int right = 0;
             int wrong = 0;
             int attempted = 0;
-            int totalQuestions = answers.size();
 
             List<UserAnswer> userAnswers = new ArrayList<>();
 
@@ -552,7 +440,6 @@ public class ExamServiceImpl implements ExamService {
 
                 String selectedAns = dto.getSelectedOption();
                 String correctAns = question.getAnswer();
-
                 boolean isMultiOptions = question.isMultiOptions();
                 double questionMarks = question.getMarks();
                 boolean isCorrect = false;
@@ -589,22 +476,21 @@ public class ExamServiceImpl implements ExamService {
                         } else if (correctSet.containsAll(selectedSet)) {
                             score += questionMarks / 2.0;
                         } else {
-                            wrong++;
                             negativeCount++;
+                            wrong++;
                             negativeScore += getNegativeMarks(paper, question.getQuestionId(), questionMarks, negativePerWrong);
                         }
-
                     } else {
                         isCorrect = correctAns != null && correctAns.equalsIgnoreCase(selectedAns);
                     }
                 }
 
-                if (!question.isMultiOptions() && !question.isDescriptive()) {
+                if (!question.isDescriptive() && !isMultiOptions && selectedAns != null && correctAns != null) {
                     if (isCorrect) {
                         score += questionMarks;
                     } else {
-                        wrong++;
                         negativeCount++;
+                        wrong++;
                         negativeScore += getNegativeMarks(paper, question.getQuestionId(), questionMarks, negativePerWrong);
                     }
                 }
@@ -615,17 +501,18 @@ public class ExamServiceImpl implements ExamService {
             }
 
             double finalScore = score - negativeScore;
-            session.setEndTime(OffsetDateTime.from(LocalDateTime.now()));
+
+            session.setEndTime(LocalDateTime.now());
             session.setScore((double) Math.round(finalScore));
             session.setUserAnswers(userAnswers);
             session.setNegativeCount((double) negativeCount);
             session.setNegativeScore(negativeScore);
-            session.setResultDate(OffsetDateTime.from(paper.getResultDate()));
+            session.setResultDate(paper.getResultDate());
 
             session.setRightAnswers(right);
             session.setWrongAnswers(wrong);
             session.setAttemptedQuestions(attempted);
-            session.setTotalQuestions(totalQuestions);
+            session.setTotalQuestions(answers.size());
 
             examSessionRepository.save(session);
 
@@ -639,6 +526,7 @@ public class ExamServiceImpl implements ExamService {
             return ResponseDto1.error("Failed to submit exam", e.getMessage());
         }
     }
+
 
 
     @Override
@@ -658,8 +546,8 @@ public class ExamServiceImpl implements ExamService {
                 dto.setPaperTitle(session.getPaper().getTitle());
                 dto.setScore(session.getScore());
                 dto.setStudentClass(session.getStudentClass());
-                dto.setExamStartTime(session.getStartTime().toLocalDateTime());
-                dto.setExamEndTime(session.getEndTime().toLocalDateTime());
+                dto.setExamStartTime(session.getStartTime());
+                dto.setExamEndTime(session.getEndTime());
                 dto.setResultProcessedTime(LocalDateTime.now());
                 dto.setNegativeCount(session.getNegativeCount());
                 dto.setNegativeScore(session.getNegativeScore());
@@ -737,8 +625,8 @@ public class ExamServiceImpl implements ExamService {
                 res.setPaperTitle(session.getPaper().getTitle());
                 res.setScore(session.getScore());
                 res.setStudentClass(session.getStudentClass());
-                res.setExamStartTime(session.getStartTime().toLocalDateTime());
-                res.setExamEndTime(session.getEndTime().toLocalDateTime());
+                res.setExamStartTime(session.getStartTime());
+                res.setExamEndTime(session.getEndTime());
                 res.setResultProcessedTime(LocalDateTime.now());
                 res.setNegativeCount(session.getNegativeCount());
                 res.setNegativeScore(session.getNegativeScore());
@@ -847,9 +735,9 @@ public class ExamServiceImpl implements ExamService {
                     paper.getPaperId(),
                     paperTitle,
                     session.getStudentClass(),
-                    session.getStartTime().toLocalDateTime(),
-                    session.getEndTime().toLocalDateTime(),
-                    session.getResultDate().toLocalDateTime(),
+                    session.getStartTime(),
+                    session.getEndTime(),
+                    session.getResultDate(),
                     session.getScore(),
                     session.getNegativeCount(),
                     session.getNegativeScore()
