@@ -71,6 +71,7 @@ public class QuestionServiceImpl implements QuestionService {
         Page<Question> questionPage = questionRepository.findByDeletedTrue(pageable);
         return questionPage.map(questionMapper::toDto);
     }
+
     @Override
     @Transactional(readOnly = true)
     public Page<QuestionDTO> getAllQuestionsDeleted(Pageable pageable) {
