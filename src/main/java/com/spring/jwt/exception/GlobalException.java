@@ -289,7 +289,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
     @ExceptionHandler(TeacherNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleTeacherNotFoundException(TeacherNotFoundException ex) {
         Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", new java.util.Date());
+        body.put("timestamp", new Date());
         body.put("status", HttpStatus.NOT_FOUND.value());
         body.put("error", "Teacher Not Found");
         body.put("message", ex.getMessage());
@@ -305,7 +305,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ExamOnHolidayException.class)
     public ResponseEntity<Map<String, Object>> handleExamOnHolidayException(ExamOnHolidayException ex) {
         Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", new java.util.Date());
+        body.put("timestamp", new Date());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "Invalid Event Scheduling");
         body.put("message", ex.getMessage());
@@ -316,7 +316,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
     @ExceptionHandler(PaperPatternNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handlePaperPatternNotFoundException(PaperPatternNotFoundException ex) {
         Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", new java.util.Date());
+        body.put("timestamp", new Date());
         body.put("status", HttpStatus.NOT_FOUND.value());
         body.put("error", "Paper Pattern Not Found");
         body.put("message", ex.getMessage());
