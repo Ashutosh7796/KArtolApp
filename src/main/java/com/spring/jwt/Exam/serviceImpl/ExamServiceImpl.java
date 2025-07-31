@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -119,11 +121,27 @@ public class ExamServiceImpl implements ExamService {
         }
 
         // If no session exists, create new one
-        if (paper.getStartTime() != null && paper.getEndTime() != null) {
-            if (now.isBefore(paper.getStartTime()) || now.isAfter(paper.getEndTime())) {
-                throw new ExamTimeWindowException("Exam can only be started between " + paper.getStartTime() + " and " + paper.getEndTime());
+        ZoneId zone = ZoneId.of("Asia/Kolkata");
+        ZonedDateTime now1 = ZonedDateTime.now(zone);
+
+        LocalDateTime startLocal = paper.getStartTime();
+        LocalDateTime endLocal = paper.getEndTime();
+
+        if (startLocal != null && endLocal != null) {
+            ZonedDateTime startTime = startLocal.atZone(zone);
+            ZonedDateTime endTime = endLocal.atZone(zone);
+
+            if (now1.isBefore(startTime) || now1.isAfter(endTime)) {
+                throw new ExamTimeWindowException("Exam can only be started between " + startTime + " and " + endTime);
             }
         }
+
+
+//        if (paper.getStartTime() != null && paper.getEndTime() != null) {
+//            if (now.isBefore(paper.getStartTime()) || now.isAfter(paper.getEndTime())) {
+//                throw new ExamTimeWindowException("Exam can only be started between " + paper.getStartTime() + " and " + paper.getEndTime());
+//            }
+//        }
 
         ExamSession session = new ExamSession();
         session.setUser(user);
