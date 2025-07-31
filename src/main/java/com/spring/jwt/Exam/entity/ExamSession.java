@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Entity
@@ -27,12 +28,24 @@ public class ExamSession {
     @JoinColumn(name = "paper_id")
     private Paper paper;
     private String StudentClass;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
-    private LocalDateTime resultDate;
+    private OffsetDateTime startTime;
+    private OffsetDateTime endTime;
+    private OffsetDateTime resultDate;
     private Double score;
     private Double negativeCount;
     private Double negativeScore;
+    @Column(name = "right_answers")
+    private Integer rightAnswers;
+
+    @Column(name = "wrong_answers")
+    private Integer wrongAnswers;
+
+    @Column(name = "attempted_questions")
+    private Integer attemptedQuestions;
+
+    @Column(name = "total_questions")
+    private Integer totalQuestions;
+
 
     @OneToMany(mappedBy = "examSession", cascade = CascadeType.ALL)
     private List<UserAnswer> userAnswers;

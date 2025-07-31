@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
@@ -74,7 +75,7 @@ public class ExamSessionSchedulingServiceImpl implements ExamSessionSchedulingSe
             // Update the session with the result date
             ExamSession session = examSessionRepository.findById(sessionId).orElse(null);
             if (session != null) {
-                session.setResultDate(resultDateTime);
+                session.setResultDate(OffsetDateTime.from(resultDateTime));
                 examSessionRepository.save(session);
                 log.info("Updated session ID: {} with result date: {}", sessionId, resultDateTime);
                 return true;
@@ -98,7 +99,7 @@ public class ExamSessionSchedulingServiceImpl implements ExamSessionSchedulingSe
             log.info("Found {} sessions with result dates", sessions.size());
             
             for (ExamSession session : sessions) {
-                LocalDateTime resultDate = session.getResultDate();
+                LocalDateTime resultDate = session.getResultDate().toLocalDateTime();
                 Integer sessionId = session.getSessionId();
                 
                 // Only schedule future dates
