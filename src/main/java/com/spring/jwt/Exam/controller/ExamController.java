@@ -32,7 +32,7 @@ public class ExamController {
         return examService.startExam(userId, paperId, studentClass);
     }
 
-    // Submit answers for session
+
     @PostMapping("/{sessionId}/submit")
     public ResponseDto<ResponseDto1<Double>> submitExam(
             @PathVariable Integer sessionId,
