@@ -170,8 +170,8 @@ public class ExamResultServiceImpl implements ExamResultService {
         result.setUser(session.getUser());
         result.setPaper(session.getPaper());
         result.setStudentClass(session.getStudentClass());
-        result.setExamStartTime(session.getStartTime());
-        result.setExamEndTime(session.getEndTime());
+        result.setExamStartTime(session.getStartTime().toLocalDateTime());
+        result.setExamEndTime(session.getEndTime().toLocalDateTime());
         result.setResultProcessedTime(LocalDateTime.now());
         result.setScore(session.getScore());
         result.setNegativeCount(session.getNegativeCount());
