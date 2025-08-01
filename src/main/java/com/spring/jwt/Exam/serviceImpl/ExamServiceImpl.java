@@ -831,7 +831,11 @@ public class ExamServiceImpl implements ExamService {
                     session.getResultDate(),
                     session.getScore(),
                     session.getNegativeCount(),
-                    session.getNegativeScore()
+                    session.getNegativeScore(),
+                    session.getRightAnswers(),         // ✅ added
+                    session.getWrongAnswers(),         // ✅ added
+                    session.getAttemptedQuestions(),   // ✅ added
+                    session.getTotalQuestions()
             ));
         }
         return result;
