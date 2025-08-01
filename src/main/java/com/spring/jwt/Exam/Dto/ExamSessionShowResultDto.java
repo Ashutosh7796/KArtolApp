@@ -1,5 +1,7 @@
 package com.spring.jwt.Exam.Dto;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,4 +21,9 @@ public class ExamSessionShowResultDto {
     private Double score;
     private Double negativeCount;
     private Double negativeScore;
+    private Integer rightAnswers;
+
+    private Integer wrongAnswers;
+    private Integer attemptedQuestions;
+    private Integer totalQuestions;
 }
