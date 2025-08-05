@@ -31,6 +31,13 @@ public class ExamController {
             @RequestParam String studentClass) {
         return examService.startExam(userId, paperId, studentClass);
     }
+    @PostMapping("/startMobile")
+    public PaperWithQuestionsDTOn startExamMobile(
+            @RequestParam Integer userId,
+            @RequestParam Integer paperId,
+            @RequestParam String studentClass) {
+        return examService.startExamMobile(userId, paperId, studentClass);
+    }
 
 
     @PostMapping("/{sessionId}/submit")

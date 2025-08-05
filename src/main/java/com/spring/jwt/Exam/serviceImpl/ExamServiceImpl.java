@@ -166,6 +166,84 @@ public class ExamServiceImpl implements ExamService {
         dto.setQuestions(questionDTOs);
         return dto;
     }
+    @Override
+    public PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, String studentClass) {
+        User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        Paper paper = paperRepository.findById(paperId)
+                .orElseThrow(() -> new ResourceNotFoundException("Paper not found with ID: " + paperId));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Allow start 10 minutes before official start time
+        LocalDateTime allowedStartTime = paper.getStartTime() != null ? paper.getStartTime().minusMinutes(10) : null;
+
+        // Fetch latest existing session if available
+        List<ExamSession> sessions = examSessionRepository.findByUser_IdAndPaper_PaperIdOrderByStartTimeDesc(userId, paperId);
+        if (!sessions.isEmpty()) {
+            ExamSession existingSession = sessions.get(0);
+
+            if (existingSession.getScore() != null) {
+                throw new ExamTimeWindowException("Exam already submitted by you.");
+            }
+
+            if (paper.getEndTime() != null && now.isAfter(paper.getEndTime())) {
+                throw new ExamTimeWindowException("Exam time is over. You cannot resume the exam.");
+            }
+
+            return buildExamDTO(existingSession, paper, existingSession.getStudentClass());
+        }
+
+        // Check time window with 10-minute earlier start allowed for mobile
+        if (allowedStartTime != null && paper.getEndTime() != null) {
+            if (now.isBefore(allowedStartTime) || now.isAfter(paper.getEndTime())) {
+                throw new ExamTimeWindowException("Exam can only be started between " + allowedStartTime + " and " + paper.getEndTime());
+            }
+        }
+
+        // Create new session
+        ExamSession session = new ExamSession();
+        session.setUser(user);
+        session.setPaper(paper);
+        session.setStudentClass(studentClass);
+        session.setStartTime(now);
+        session.setScore(null);
+        session.setUserAnswers(new ArrayList<>());
+        ExamSession savedSession = examSessionRepository.save(session);
+
+        // Schedule result processing
+        if (paper.getEndTime() != null) {
+            LocalDateTime resultDateTime = paper.getEndTime().plusMinutes(5);
+            examSessionSchedulingService.scheduleExamResultProcessing(savedSession.getSessionId(), resultDateTime);
+        }
+
+        return buildExamDTO(savedSession, paper, studentClass);
+    }
+
+    private PaperWithQuestionsDTOn buildExamDTO(ExamSession session, Paper paper, String studentClass) {
+        PaperWithQuestionsDTOn dto = new PaperWithQuestionsDTOn();
+        dto.setSessionId(session.getSessionId());
+        dto.setPaperId(paper.getPaperId());
+        dto.setTitle(paper.getTitle());
+        dto.setDescription(paper.getDescription());
+        dto.setStartTime(paper.getStartTime());
+        dto.setEndTime(paper.getEndTime());
+        dto.setIsLive(paper.getIsLive());
+        dto.setStudentClass(studentClass);
+        if (paper.getPaperPattern() != null) {
+            dto.setPaperPatternId(paper.getPaperPattern().getPaperPatternId());
+        }
+
+        List<QuestionNoAnswerDTO> questionDTOs = paper.getPaperQuestions().stream()
+                .map(PaperQuestion::getQuestion)
+                .map(this::convertToQuestionNoAnswerDTO)
+                .collect(Collectors.toList());
+
+        Collections.shuffle(questionDTOs);
+        dto.setQuestions(questionDTOs);
+        return dto;
+    }
 
 
 //    @Override
@@ -493,30 +571,30 @@ public class ExamServiceImpl implements ExamService {
     @Transactional
     public ResponseDto1<Double> submitExamAnswers(Integer sessionId, Long userId, List<UserAnswerDTO> answers) {
         try {
+            // Fetch session, throw if not found
             ExamSession session = examSessionRepository.findById(sessionId)
                     .orElseThrow(() -> new ResourceNotFoundException("Exam session not found with ID: " + sessionId));
 
+            // Prevent double submission
+            if (session.getScore() != null) {
+                return ResponseDto1.error("Exam submission error", "Exam already submitted for this session.");
+            }
+
+            // Verify user ownership (log warning but continue)
             if (!session.getUser().getId().equals(userId)) {
                 System.out.println("Warning: User ID " + userId + " is submitting for session owned by user " + session.getUser().getId());
             }
 
-            double score = 0;
-            double negativeScore = 0.0;
-            int negativeCount = 0;
-            int right = 0;
-            int wrong = 0;
-            int attempted = 0;
-
-            List<UserAnswer> userAnswers = new ArrayList<>();
-
             Paper paper = session.getPaper();
-            Integer patternId = paper.getPaperPattern() != null ? paper.getPaperPattern().getPaperPatternId() : null;
+            List<Question> allQuestions = paper.getPaperQuestions().stream()
+                    .map(PaperQuestion::getQuestion)
+                    .collect(Collectors.toList());
+            int totalQuestions = allQuestions.size();
 
-            PaperPattern pattern = patternId != null
-                    ? paperPatternRepository.findById(patternId).orElse(null)
-                    : null;
-
-            int negativeType = pattern != null ? pattern.getNegativeMarks() : 0;
+            // Get negative marking info
+            int negativeType = Optional.ofNullable(paper.getPaperPattern())
+                    .map(PaperPattern::getNegativeMarks)
+                    .orElse(0);
             double negativePerWrong = switch (negativeType) {
                 case 1 -> 0.25;
                 case 2 -> 0.50;
@@ -525,21 +603,28 @@ public class ExamServiceImpl implements ExamService {
                 default -> 0.0;
             };
 
-            for (UserAnswerDTO dto : answers) {
-                Question question = questionRepository.findById(dto.getQuestionId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + dto.getQuestionId()));
+            // Map questionId -> UserAnswerDTO for O(1) lookup
+            Map<Integer, UserAnswerDTO> answerMap = answers.stream()
+                    .collect(Collectors.toMap(UserAnswerDTO::getQuestionId, a -> a));
 
-                String selectedAns = dto.getSelectedOption();
+            List<UserAnswer> userAnswers = new ArrayList<>();
+            double score = 0;
+            double negativeScore = 0;
+            int negativeCount = 0;
+            int right = 0;
+            int wrong = 0;
+
+            for (Question question : allQuestions) {
+                UserAnswerDTO dto = answerMap.get(question.getQuestionId());
+                String selectedAns = (dto != null) ? dto.getSelectedOption() : null;
                 String correctAns = question.getAnswer();
                 boolean isMultiOptions = question.isMultiOptions();
-                double questionMarks = question.getMarks();
+                double marks = question.getMarks();
+                boolean attempted = selectedAns != null && !selectedAns.trim().isEmpty();
                 boolean isCorrect = false;
 
-                if (selectedAns != null && !selectedAns.trim().isEmpty()) {
-                    attempted++;
-                }
-
                 if (question.isDescriptive()) {
+                    // Save descriptive answers
                     DescriptiveAns da = new DescriptiveAns();
                     da.setQuestionId(question.getQuestionId());
                     da.setPaperId(paper.getPaperId());
@@ -547,76 +632,256 @@ public class ExamServiceImpl implements ExamService {
                     da.setAns(selectedAns);
                     descriptiveAnsRepository.save(da);
 
-                    if (correctAns != null && selectedAns != null) {
+                    if (attempted && correctAns != null) {
                         isCorrect = correctAns.trim().equalsIgnoreCase(selectedAns.trim());
+                        if (isCorrect) {
+                            score += marks;
+                        } else {
+                            wrong++;
+                            negativeCount++;
+                            negativeScore += getNegativeMarks(paper, question.getQuestionId(), marks, negativePerWrong);
+                        }
                     }
+                    // Unattempted descriptive questions do not count as right or wrong
                 } else {
+                    // Objective questions
                     UserAnswer ua = new UserAnswer();
                     ua.setExamSession(session);
                     ua.setQuestion(question);
                     ua.setSelectedOption(selectedAns);
                     userAnswers.add(ua);
 
-                    if (correctAns != null && selectedAns != null && isMultiOptions) {
-                        Set<Character> correctSet = correctAns.chars().mapToObj(c -> (char) c).collect(Collectors.toSet());
-                        Set<Character> selectedSet = selectedAns.chars().mapToObj(c -> (char) c).collect(Collectors.toSet());
+                    if (attempted) {
+                        if (isMultiOptions && correctAns != null) {
+                            Set<Character> correctSet = correctAns.chars().mapToObj(c -> (char)c).collect(Collectors.toSet());
+                            Set<Character> selectedSet = selectedAns.chars().mapToObj(c -> (char)c).collect(Collectors.toSet());
 
-                        if (selectedSet.equals(correctSet)) {
-                            isCorrect = true;
-                            score += questionMarks;
-                        } else if (correctSet.containsAll(selectedSet)) {
-                            score += questionMarks / 2.0;
+                            if (selectedSet.equals(correctSet)) {
+                                isCorrect = true;
+                                score += marks;
+                            } else if (correctSet.containsAll(selectedSet)) {
+                                score += marks / 2.0;
+                                // partial credit, do not count as wrong
+                            } else {
+                                wrong++;
+                                negativeCount++;
+                                negativeScore += getNegativeMarks(paper, question.getQuestionId(), marks, negativePerWrong);
+                            }
                         } else {
-                            negativeCount++;
-                            wrong++;
-                            negativeScore += getNegativeMarks(paper, question.getQuestionId(), questionMarks, negativePerWrong);
+                            // Single choice objective
+                            if (correctAns != null && correctAns.equalsIgnoreCase(selectedAns)) {
+                                isCorrect = true;
+                                score += marks;
+                            } else {
+                                wrong++;
+                                negativeCount++;
+                                negativeScore += getNegativeMarks(paper, question.getQuestionId(), marks, negativePerWrong);
+                            }
                         }
-                    } else {
-                        isCorrect = correctAns != null && correctAns.equalsIgnoreCase(selectedAns);
                     }
                 }
 
-                if (!question.isDescriptive() && !isMultiOptions && selectedAns != null && correctAns != null) {
-                    if (isCorrect) {
-                        score += questionMarks;
-                    } else {
-                        negativeCount++;
-                        wrong++;
-                        negativeScore += getNegativeMarks(paper, question.getQuestionId(), questionMarks, negativePerWrong);
-                    }
-                }
-
-                if (isCorrect) {
-                    right++;
-                }
+                if (attempted && isCorrect) right++;
+                // wrong incremented during scoring for objective questions above
             }
 
+            int attempted = right + wrong;
+            int unsolved = totalQuestions - attempted;
             double finalScore = score - negativeScore;
 
+            // Save session results
             session.setEndTime(LocalDateTime.now());
-            session.setScore((double) Math.round(finalScore));
+            session.setScore(Math.round(finalScore * 100.0) / 100.0);  // rounded to 2 decimals
             session.setUserAnswers(userAnswers);
             session.setNegativeCount((double) negativeCount);
             session.setNegativeScore(negativeScore);
             session.setResultDate(paper.getResultDate());
-
             session.setRightAnswers(right);
             session.setWrongAnswers(wrong);
             session.setAttemptedQuestions(attempted);
-            session.setTotalQuestions(answers.size());
+            session.setTotalQuestions(totalQuestions);
 
             examSessionRepository.save(session);
 
             return ResponseDto1.success(
                     "Exam submitted successfully",
-                    session.getPaper().getPaperId(),
+                    paper.getPaperId(),
                     session.getStartTime().toLocalDate(),
                     session.getEndTime().toLocalDate()
             );
+
         } catch (Exception e) {
             return ResponseDto1.error("Failed to submit exam", e.getMessage());
         }
     }
+
+//    @Override
+//    @Transactional
+//    public ResponseDto1<Double> submitExamAnswers(Integer sessionId, Long userId, List<UserAnswerDTO> answers) {
+//
+//        try {
+//            ExamSession session = examSessionRepository.findById(sessionId)
+//                    .orElseThrow(() -> new ResourceNotFoundException("Exam session not found with ID: " + sessionId));
+//
+//            // === Prevent resubmission if score is already set ===
+//            if (session.getScore() != null) {
+//                return ResponseDto1.error("Exam submission error", "Exam already submitted for this session.");
+//            }
+//
+//            if (!session.getUser().getId().equals(userId)) {
+//                System.out.println("Warning: User ID " + userId + " is submitting for session owned by user " + session.getUser().getId());
+//            }
+//
+//            double score = 0;
+//            double negativeScore = 0.0;
+//            int negativeCount = 0;
+//            int right = 0;
+//            int wrong = 0;
+//
+//            // Map questionId -> answerDTO for fast lookup
+//            Map<Integer, UserAnswerDTO> answerMap = answers.stream()
+//                    .collect(Collectors.toMap(UserAnswerDTO::getQuestionId, a -> a));
+//
+//            // Get the paper and all questions from it
+//            Paper paper = session.getPaper();
+//            List<Question> allQuestions = paper.getPaperQuestions().stream()
+//                    .map(PaperQuestion::getQuestion)
+//                    .collect(Collectors.toList());
+//            int totalQuestions = allQuestions.size();
+//
+//            Integer patternId = paper.getPaperPattern() != null
+//                    ? paper.getPaperPattern().getPaperPatternId()
+//                    : null;
+//
+//            PaperPattern pattern = patternId != null
+//                    ? paperPatternRepository.findById(patternId).orElse(null)
+//                    : null;
+//
+//            int negativeType = pattern != null ? pattern.getNegativeMarks() : 0;
+//            double negativePerWrong = switch (negativeType) {
+//                case 1 -> 0.25;
+//                case 2 -> 0.50;
+//                case 3 -> 0.75;
+//                case 4 -> 1.0;
+//                default -> 0.0;
+//            };
+//
+//            List<UserAnswer> userAnswers = new ArrayList<>();
+//
+//            for (Question question : allQuestions) {
+//                UserAnswerDTO dto = answerMap.get(question.getQuestionId());
+//                String selectedAns = (dto != null) ? dto.getSelectedOption() : null;
+//                String correctAns = question.getAnswer();
+//                boolean isMultiOptions = question.isMultiOptions();
+//                double questionMarks = question.getMarks();
+//                boolean isCorrect = false;
+//                boolean isAttempted = false;
+//
+//                // Attempted flag for attempted calculation
+//                if (selectedAns != null && !selectedAns.trim().isEmpty()) {
+//                    isAttempted = true;
+//                }
+//
+//                if (question.isDescriptive()) {
+//                    // Save descriptive answer
+//                    DescriptiveAns da = new DescriptiveAns();
+//                    da.setQuestionId(question.getQuestionId());
+//                    da.setPaperId(paper.getPaperId());
+//                    da.setUserId(userId.intValue());
+//                    da.setAns(selectedAns);
+//                    descriptiveAnsRepository.save(da);
+//
+//                    // Evaluate descriptive if possible (if correctAns is set)
+//                    if (correctAns != null && selectedAns != null && !selectedAns.trim().isEmpty()) {
+//                        isAttempted = true;
+//                        if (correctAns.trim().equalsIgnoreCase(selectedAns.trim())) {
+//                            isCorrect = true;
+//                            score += questionMarks; // Descriptive correct
+//                        } else {
+//                            wrong++;
+//                            negativeCount++;
+//                            negativeScore += getNegativeMarks(paper, question.getQuestionId(), questionMarks, negativePerWrong);
+//                        }
+//                    }
+//                    // If descriptive is not attempted or no correct answer, count as unsolved
+//                } else {
+//                    // Save UserAnswer for objective type
+//                    UserAnswer ua = new UserAnswer();
+//                    ua.setExamSession(session);
+//                    ua.setQuestion(question);
+//                    ua.setSelectedOption(selectedAns);
+//                    userAnswers.add(ua);
+//
+//                    if (selectedAns != null && !selectedAns.trim().isEmpty()) {
+//                        if (isMultiOptions) {
+//                            Set<Character> correctSet = correctAns != null
+//                                    ? correctAns.chars().mapToObj(c -> (char) c).collect(Collectors.toSet())
+//                                    : Collections.emptySet();
+//                            Set<Character> selectedSet = selectedAns.chars().mapToObj(c -> (char) c).collect(Collectors.toSet());
+//
+//                            if (selectedSet.equals(correctSet)) {
+//                                isCorrect = true;
+//                                score += questionMarks;
+//                            } else if (correctSet.containsAll(selectedSet)) {
+//                                score += questionMarks / 2.0;
+//                            } else {
+//                                wrong++;
+//                                negativeCount++;
+//                                negativeScore += getNegativeMarks(paper, question.getQuestionId(), questionMarks, negativePerWrong);
+//                            }
+//                        } else { // Single choice
+//                            if (correctAns != null && correctAns.equalsIgnoreCase(selectedAns)) {
+//                                isCorrect = true;
+//                                score += questionMarks;
+//                            } else {
+//                                wrong++;
+//                                negativeCount++;
+//                                negativeScore += getNegativeMarks(paper, question.getQuestionId(), questionMarks, negativePerWrong);
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                if (isAttempted && isCorrect) {
+//                    right++;
+//                } else if (isAttempted && !isCorrect && !question.isDescriptive()) {
+//                    // wrong already incremented above for obj type
+//                }
+//                // For unattempted, do nothing here (will calculate at end)
+//            }
+//
+//            int attempted = right + wrong;
+//            int unsolved = totalQuestions - attempted;
+//
+//            double finalScore = score - negativeScore;
+//
+//            session.setEndTime(LocalDateTime.now());
+//            session.setScore((double) Math.round(finalScore));
+//            session.setUserAnswers(userAnswers);
+//            session.setNegativeCount((double) negativeCount);
+//            session.setNegativeScore(negativeScore);
+//            session.setResultDate(paper.getResultDate());
+//
+//            session.setRightAnswers(right);
+//            session.setWrongAnswers(wrong);
+//            session.setAttemptedQuestions(attempted);
+//            session.setTotalQuestions(totalQuestions);
+//
+//            examSessionRepository.save(session);
+//
+//            // You may return the number of unsolved (unattempted)
+//            // Or to include in response DTO if desired
+//
+//            return ResponseDto1.success(
+//                    "Exam submitted successfully",
+//                    session.getPaper().getPaperId(),
+//                    session.getStartTime().toLocalDate(),
+//                    session.getEndTime().toLocalDate()
+//            );
+//        } catch (Exception e) {
+//            return ResponseDto1.error("Failed to submit exam", e.getMessage());
+//        }
+//    }
 
 
 

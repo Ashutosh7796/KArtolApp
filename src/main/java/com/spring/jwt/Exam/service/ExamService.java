@@ -27,4 +27,6 @@ PaperWithQuestionsDTOn startExam(Integer userId, Integer paperId, String student
     public List<ExamPaperSummaryDto> getUniquePaperSummaries();
 
     List<ExamSessionShowResultDto> getSessionsByPaperId(Integer paperId);
+
+    PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, String studentClass);
 }
