@@ -235,10 +235,11 @@ public class QuestionServiceImpl implements QuestionService {
             }
 
 // Validate options and answer based on descriptive flag
+//            isBlank(single.getOption1()) || isBlank(single.getOption2()) ||
             if (!single.isDescriptive()) {
-                if (isBlank(single.getOption1()) || isBlank(single.getOption2()) || isBlank(single.getAnswer())) {
-                    log.error("MCQ question is missing option1, option2, or answer: {}", single);
-                    throw new InvalidQuestionException("MCQ questions must have option1, option2, and answer.");
+                if ( isBlank(single.getAnswer())) {
+                    log.error("MCQ question is missing  or answer: {}", single);
+                    throw new InvalidQuestionException("MCQ questions must have  and answer.");
                 }
             }
         }
