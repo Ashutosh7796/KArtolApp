@@ -55,11 +55,11 @@ public class QuestionDTO {
     private Integer userId;
 
     @Size(min = 1, max = 500, message = "Option 1 must be between 1 and 500 characters")
-    @Schema(description = "First option for multiple choice questions", example = "Paris", required = true)
+    @Schema(description = "First option for multiple choice questions", example = "Paris")
     private String option1;
 
     @Size(min = 1, max = 500, message = "Option 2 must be between 1 and 500 characters")
-    @Schema(description = "Second option for multiple choice questions", example = "London", required = true)
+    @Schema(description = "Second option for multiple choice questions", example = "London")
     private String option2;
 
     @Schema(description = "Third option for multiple choice questions", example = "Berlin")
