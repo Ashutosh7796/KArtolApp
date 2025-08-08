@@ -591,6 +591,29 @@ public class ExamServiceImpl implements ExamService {
                     .collect(Collectors.toList());
             int totalQuestions = allQuestions.size();
 
+            // ===== Handle EMPTY answers array: set all scoring fields to zero =====
+            if (answers == null || answers.isEmpty()) {
+                session.setEndTime(LocalDateTime.now());
+                session.setScore(0.0);
+                session.setRightAnswers(0);
+                session.setWrongAnswers(0);
+                session.setAttemptedQuestions(0);
+                session.setTotalQuestions(totalQuestions);
+                session.setNegativeCount(0.0);
+                session.setNegativeScore(0.0);
+                session.setUserAnswers(new ArrayList<>());
+                session.setResultDate(paper.getResultDate());
+
+                examSessionRepository.save(session);
+
+                return ResponseDto1.success(
+                        "Exam submitted successfully (empty answers)",
+                        paper.getPaperId(),
+                        session.getStartTime().toLocalDate(),
+                        session.getEndTime().toLocalDate()
+                );
+            }
+
             // Get negative marking info
             int negativeType = Optional.ofNullable(paper.getPaperPattern())
                     .map(PaperPattern::getNegativeMarks)
