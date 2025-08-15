@@ -4,6 +4,7 @@ import com.spring.jwt.exception.BaseException;
 import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
 import com.spring.jwt.jwt.TokenBlacklistService;
+import com.spring.jwt.jwt.ActiveSessionService;
 import com.spring.jwt.repository.UserRepository;
 import com.spring.jwt.service.security.UserDetailsCustom;
 import io.jsonwebtoken.*;
@@ -43,22 +44,26 @@ public class JwtServiceImpl implements JwtService {
     private final JwtConfig jwtConfig;
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final ActiveSessionService activeSessionService;
 
     @Autowired
     public JwtServiceImpl(@Lazy UserDetailsService userDetailsService, 
                           UserRepository userRepository, 
                           @Lazy JwtConfig jwtConfig,
-                          TokenBlacklistService tokenBlacklistService) {
+                           TokenBlacklistService tokenBlacklistService,
+                           ActiveSessionService activeSessionService) {
         this.userDetailsService = userDetailsService;
         this.userRepository = userRepository;
         this.jwtConfig = jwtConfig;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.activeSessionService = activeSessionService;
     }
 
     @Override
     public Claims extractClaims(String token) {
         return Jwts
                 .parserBuilder()
+                .setAllowedClockSkewSeconds(jwtConfig.getAllowedClockSkewSeconds())
                 .setSigningKey(getKey())
                 .build()
                 .parseClaimsJws(token)
@@ -79,7 +84,7 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String generateToken(UserDetailsCustom userDetailsCustom, String deviceFingerprint) {
         Instant now = Instant.now();
-        Instant notBefore = now.plusSeconds(1);
+        Instant notBefore = now.plusSeconds(Math.max(0, jwtConfig.getNotBefore()));
 
         List<String> roles = userDetailsCustom.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -94,7 +99,7 @@ public class JwtServiceImpl implements JwtService {
                 userDetailsCustom.getUsername(), 
                 deviceFingerprint != null ? deviceFingerprint.substring(0, 8) + "..." : "none");
 
-        JwtBuilder jwtBuilder = Jwts.builder()
+            JwtBuilder jwtBuilder = Jwts.builder()
                 .setSubject(userDetailsCustom.getUsername())
                 .setIssuer(jwtConfig.getIssuer())
                 .setAudience(jwtConfig.getAudience())
@@ -102,7 +107,6 @@ public class JwtServiceImpl implements JwtService {
                 .claim("firstname", firstName)
                 .claim("userId", userId)
                 .claim("authorities", roles)
-                .claim("roles", roles)
                 .claim("isEnable", userDetailsCustom.isEnabled());
 
         if (userDetailsCustom.getStudentId() != null) {
@@ -133,7 +137,7 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String generateRefreshToken(UserDetailsCustom userDetailsCustom, String deviceFingerprint) {
         Instant now = Instant.now();
-        Instant notBefore = now.plusSeconds(1);
+        Instant notBefore = now.plusSeconds(Math.max(0, jwtConfig.getNotBefore()));
         
         log.debug("Generating refresh token for user: {}, device: {}", 
                 userDetailsCustom.getUsername(), 
@@ -143,12 +147,11 @@ public class JwtServiceImpl implements JwtService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        JwtBuilder jwtBuilder = Jwts.builder()
+            JwtBuilder jwtBuilder = Jwts.builder()
                 .setSubject(userDetailsCustom.getUsername())
                 .setIssuer(jwtConfig.getIssuer())
                 .setId(UUID.randomUUID().toString())
                 .claim("userId", userDetailsCustom.getUserId())
-                .claim("roles", roles)
                 .claim("authorities", roles);
 
         if (userDetailsCustom.getStudentId() != null) {
@@ -207,11 +210,22 @@ public class JwtServiceImpl implements JwtService {
         }
         
         try {
+            String ip = request.getHeader("X-Forwarded-For");
+            if (ip != null && ip.contains(",")) {
+                ip = ip.split(",")[0].trim();
+            }
+            if (ip == null || ip.isBlank()) {
+                ip = request.getRemoteAddr();
+            }
+            String ua = request.getHeader("User-Agent");
+            String lang = request.getHeader("Accept-Language");
+            String enc = request.getHeader("Accept-Encoding");
+
             StringBuilder deviceInfo = new StringBuilder();
-            deviceInfo.append(request.getHeader("User-Agent")).append("|");
-            deviceInfo.append(request.getRemoteAddr()).append("|");
-            deviceInfo.append(request.getHeader("Accept-Language")).append("|");
-            deviceInfo.append(request.getHeader("Accept-Encoding"));
+            deviceInfo.append(ua).append("|");
+            deviceInfo.append(ip).append("|");
+            deviceInfo.append(lang).append("|");
+            deviceInfo.append(enc);
 
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(deviceInfo.toString().getBytes(StandardCharsets.UTF_8));
@@ -274,18 +288,42 @@ public class JwtServiceImpl implements JwtService {
                         new Date(), nbf);
                 return false;
             }
-
-            if (jwtConfig.isDeviceFingerprintingEnabled() && StringUtils.hasText(deviceFingerprint)) {
+            if (jwtConfig.isDeviceFingerprintingEnabled()) {
                 String tokenDeviceFingerprint = claims.get(CLAIM_KEY_DEVICE_FINGERPRINT, String.class);
-
-                if (StringUtils.hasText(tokenDeviceFingerprint) && !tokenDeviceFingerprint.equals(deviceFingerprint)) {
-                    log.warn("Device fingerprint mismatch: token={}, request={}", 
-                            tokenDeviceFingerprint.substring(0, 8) + "...", 
+                // If request supplied a fingerprint, enforce it matches the token's fingerprint
+                if (StringUtils.hasText(deviceFingerprint) && StringUtils.hasText(tokenDeviceFingerprint)
+                        && !tokenDeviceFingerprint.equals(deviceFingerprint)) {
+                    log.warn("Device fingerprint mismatch: token={}, request={}",
+                            tokenDeviceFingerprint.substring(0, 8) + "...",
                             deviceFingerprint.substring(0, 8) + "...");
                     return false;
                 }
+
+                // Enforce single active session: token fingerprint must match the one stored for the user
+                try {
+                    var user = userRepository.findByEmail(username);
+                    if (user != null && StringUtils.hasText(user.getDeviceFingerprint())
+                            && StringUtils.hasText(tokenDeviceFingerprint)
+                            && !user.getDeviceFingerprint().equals(tokenDeviceFingerprint)) {
+                        log.warn("Token fingerprint is no longer current for user: {}", username);
+                        return false;
+                    }
+                } catch (Exception e) {
+                    log.warn("Could not verify user's current device fingerprint: {}", e.getMessage());
+                }
             }
             
+            // Enforce single active session: token must be the current active token for this user
+            try {
+                String tokenId = claims.getId();
+                if (StringUtils.hasText(tokenId) && !activeSessionService.isCurrentAccessToken(username, tokenId)) {
+                    log.warn("Access token is not current for user: {}", username);
+                    return false;
+                }
+            } catch (Exception e) {
+                log.warn("Could not verify active session: {}", e.getMessage());
+            }
+
             log.debug("Token validation successful for user: {}", username);
             return true;
         } catch (Exception e) {

@@ -51,8 +51,11 @@ public class CookieService {
      */
     public Cookie invalidateCookie(String name, String path) {
         Cookie cookie = new Cookie(name, "");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
         cookie.setMaxAge(0);
         cookie.setPath(path != null ? path : "/");
+        cookie.setAttribute("SameSite", "Strict");
         return cookie;
     }
     

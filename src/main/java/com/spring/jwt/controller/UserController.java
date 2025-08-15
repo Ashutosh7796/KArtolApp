@@ -33,6 +33,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -327,6 +328,7 @@ public class UserController {
             )
     })
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('STUDENT')")
     public ResponseEntity<UserDTO> getUserById(
             @PathVariable @Min(value = 1, message = "Invalid user ID") Long id) {
         UserDTO user = userService.getUserById(id);

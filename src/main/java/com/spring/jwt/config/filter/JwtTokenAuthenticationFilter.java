@@ -3,6 +3,7 @@ package com.spring.jwt.config.filter;
 
 import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
+import com.spring.jwt.jwt.ActiveSessionService;
 import com.spring.jwt.service.security.UserDetailsServiceCustom;
 import com.spring.jwt.utils.BaseResponseDTO;
 import com.spring.jwt.utils.HelperUtils;
@@ -39,6 +40,7 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsServiceCustom userDetailsService;
     private final RequestMatcher publicUrls;
+    private final ActiveSessionService activeSessionService;
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
     private static final String ACCESS_TOKEN_COOKIE_NAME = "access_token";
@@ -62,7 +64,7 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (publicUrls.matches(request)) {
+        if (isPublic(request)) {
             log.debug("Skipping JWT filter for public URL: {}", path);
             filterChain.doFilter(request, response);
             return;
@@ -77,9 +79,10 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
         }
         
         try {
-            if (!processToken(token)) {
+            if (!processToken(request, token)) {
                 log.warn("Invalid token for path: {}", path);
-                handleInvalidToken(response, "Invalid token");
+                String reason = getSpecificInvalidReason(token, request);
+                handleInvalidToken(response, reason);
                 return;
             }
 
@@ -100,12 +103,56 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
+    private boolean isPublic(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        // Minimal allowlist to avoid interfering with public endpoints
+        if (path.equals(jwtConfig.getUrl()) || path.equals(jwtConfig.getRefreshUrl())) return true;
+        if (path.startsWith("/api/auth/")) return true;
+        if (path.startsWith("/api/public/")) return true;
+        if (path.startsWith("/v2/api-docs") || path.startsWith("/v3/api-docs")) return true;
+        if (path.startsWith("/swagger-ui") || path.equals("/swagger-ui.html")) return true;
+        if (path.startsWith("/swagger-resources") || path.startsWith("/configuration/")) return true;
+        if (path.startsWith("/webjars/")) return true;
+        if (path.equals("/api/v1/users/register") || path.startsWith("/api/v1/users/password/")) return true;
+        if (path.equals("/api/v1/papers/solutions/pdf")) return true;
+        // Fallback to configured matcher if present
+        try { return publicUrls != null && publicUrls.matches(request); } catch (Exception ignored) {}
+        return false;
+    }
+
+    private String getSpecificInvalidReason(String token, HttpServletRequest request) {
+        try {
+            if (jwtService.isBlacklisted(token)) {
+                return "Token is revoked/blacklisted";
+            }
+            Claims claims = jwtService.extractClaims(token);
+            String tokenDfp = claims.get("dfp", String.class);
+            String reqDfp = jwtService.generateDeviceFingerprint(request);
+            if (StringUtils.hasText(tokenDfp) && StringUtils.hasText(reqDfp) && !tokenDfp.equals(reqDfp)) {
+                return "Device mismatch: please login again on this device";
+            }
+            String username = claims.getSubject();
+            String tokenId = claims.getId();
+            if (StringUtils.hasText(username) && StringUtils.hasText(tokenId) && !activeSessionService.isCurrentAccessToken(username, tokenId)) {
+                return "You are logged in on another device. Please logout from the other device to continue";
+            }
+            return "Invalid or expired token";
+        } catch (ExpiredJwtException e) {
+            return "Expired token";
+        } catch (JwtException e) {
+            return "Malformed or invalid token";
+        } catch (Exception e) {
+            return "Unauthorized";
+        }
+    }
+
     /**
      * Process the JWT token and set authentication if valid
      * @return true if token is valid and authentication was set, false otherwise
      */
-    private boolean processToken(String token) {
-        if (jwtService.isValidToken(token)) {
+    private boolean processToken(HttpServletRequest request, String token) {
+        String deviceFingerprint = jwtService.generateDeviceFingerprint(request);
+        if (jwtService.isValidToken(token, deviceFingerprint)) {
             Claims claims = jwtService.extractClaims(token);
             String username = claims.getSubject();
 
@@ -130,6 +177,14 @@ public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
                     );
 
                     SecurityContextHolder.getContext().setAuthentication(auth);
+                    // If token is not the current session, fail fast with specific message
+                    try {
+                        String tokenId = claims.getId();
+                        if (!activeSessionService.isCurrentAccessToken(username, tokenId)) {
+                            log.warn("Token not current for user: {}", username);
+                            return false;
+                        }
+                    } catch (Exception ignored) {}
                     log.debug("Authentication set in security context for user: {}", username);
                     return true;
                 } else {
