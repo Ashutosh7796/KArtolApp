@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spring.jwt.dto.RefreshTokenRequest;
 import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
+import com.spring.jwt.jwt.ActiveSessionService;
 import com.spring.jwt.service.security.UserDetailsCustom;
 import com.spring.jwt.service.security.UserDetailsServiceCustom;
 import com.spring.jwt.utils.BaseResponseDTO;
@@ -37,6 +38,7 @@ public class JwtRefreshTokenFilter extends AbstractAuthenticationProcessingFilte
     private final ObjectMapper objectMapper;
     private final UserDetailsServiceCustom userDetailsService;
     private final JwtConfig jwtConfig;
+    private final ActiveSessionService activeSessionService;
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
     private static final String CLAIM_KEY_TOKEN_TYPE = "token_type";
@@ -45,14 +47,16 @@ public class JwtRefreshTokenFilter extends AbstractAuthenticationProcessingFilte
 
     public JwtRefreshTokenFilter(AuthenticationManager manager,
                                 JwtConfig jwtConfig,
-                                JwtService jwtService,
-                                UserDetailsServiceCustom userDetailsService) {
+                                 JwtService jwtService,
+                                 UserDetailsServiceCustom userDetailsService,
+                                 ActiveSessionService activeSessionService) {
         super(new AntPathRequestMatcher(jwtConfig.getRefreshUrl(), "POST"));
         setAuthenticationManager(manager);
         this.objectMapper = new ObjectMapper();
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.jwtConfig = jwtConfig;
+        this.activeSessionService = activeSessionService;
     }
 
     @Override
@@ -144,7 +148,8 @@ public class JwtRefreshTokenFilter extends AbstractAuthenticationProcessingFilte
                 throw new BadCredentialsException("Invalid token format or structure");
             }
 
-            if (!jwtService.isValidToken(refreshToken)) {
+            String deviceFingerprint = jwtService.generateDeviceFingerprint(request);
+            if (!jwtService.isValidToken(refreshToken, deviceFingerprint)) {
                 log.error("Expired or invalid refresh token");
                 throw new BadCredentialsException("Expired or invalid refresh token");
             }
@@ -208,6 +213,16 @@ public class JwtRefreshTokenFilter extends AbstractAuthenticationProcessingFilte
 
             String newAccessToken = jwtService.generateToken(userDetails, deviceFingerprint);
             String newRefreshToken = jwtService.generateRefreshToken(userDetails, deviceFingerprint);
+
+            try {
+                String accessJti = jwtService.extractTokenId(newAccessToken);
+                String refreshJti = jwtService.extractTokenId(newRefreshToken);
+                activeSessionService.replaceActiveSession(username, accessJti, refreshJti,
+                        jwtService.extractClaims(newAccessToken).getExpiration().toInstant(),
+                        jwtService.extractClaims(newRefreshToken).getExpiration().toInstant());
+            } catch (Exception e) {
+                log.warn("Failed to update active session on refresh: {}", e.getMessage());
+            }
 
             Cookie refreshTokenCookie = createRefreshTokenCookie(newRefreshToken);
             response.addCookie(refreshTokenCookie);

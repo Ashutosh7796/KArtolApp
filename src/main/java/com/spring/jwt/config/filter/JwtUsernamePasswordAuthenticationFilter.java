@@ -6,6 +6,7 @@ import com.spring.jwt.entity.User;
 import com.spring.jwt.exception.BaseException;
 import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
+import com.spring.jwt.jwt.ActiveSessionService;
 import com.spring.jwt.repository.UserRepository;
 import com.spring.jwt.service.security.UserDetailsCustom;
 import com.spring.jwt.utils.BaseResponseDTO;
@@ -41,19 +42,22 @@ public class JwtUsernamePasswordAuthenticationFilter extends AbstractAuthenticat
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
     private final JwtConfig jwtConfig;
+    private final ActiveSessionService activeSessionService;
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 
     public JwtUsernamePasswordAuthenticationFilter(AuthenticationManager manager,
                                                    JwtConfig jwtConfig,
-                                                   JwtService jwtService,
-                                                   UserRepository userRepository){
+                                                    JwtService jwtService,
+                                                    UserRepository userRepository,
+                                                    ActiveSessionService activeSessionService){
         super(new AntPathRequestMatcher(jwtConfig.getUrl(), "POST"));
         setAuthenticationManager(manager);
         this.objectMapper = new ObjectMapper();
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.jwtConfig = jwtConfig;
+        this.activeSessionService = activeSessionService;
     }
 
     @Override
@@ -102,6 +106,18 @@ public class JwtUsernamePasswordAuthenticationFilter extends AbstractAuthenticat
 
             String accessToken = jwtService.generateToken(userDetailsCustom, deviceFingerprint);
             String refreshToken = jwtService.generateRefreshToken(userDetailsCustom, deviceFingerprint);
+
+            try {
+                // small delay tolerance due to nbf to avoid race
+                String accessJti = jwtService.extractTokenId(accessToken);
+                String refreshJti = jwtService.extractTokenId(refreshToken);
+                String username = userDetailsCustom.getUsername();
+                activeSessionService.replaceActiveSession(username, accessJti, refreshJti,
+                        jwtService.extractClaims(accessToken).getExpiration().toInstant(),
+                        jwtService.extractClaims(refreshToken).getExpiration().toInstant());
+            } catch (Exception e) {
+                log.warn("Failed to register active session: {}", e.getMessage());
+            }
 
             Cookie refreshTokenCookie = createRefreshTokenCookie(refreshToken);
             response.addCookie(refreshTokenCookie);
