@@ -15,5 +15,6 @@ public class PaperWithQuestionsDTO {
     private String studentClass;
     private LocalDateTime resultDate;
     private Integer paperPatternId;
+    private LocalDateTime paperEndTime;
     private List<QuestionNoAnswerDTO> questions;
 }

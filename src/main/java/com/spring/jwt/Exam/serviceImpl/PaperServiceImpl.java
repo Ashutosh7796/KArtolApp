@@ -58,6 +58,7 @@ public class PaperServiceImpl implements PaperService {
         dto.setIsLive(entity.getIsLive());
         dto.setStudentClass(entity.getStudentClass());
         dto.setResultDate(entity.getResultDate());
+        dto.setPaperEndTime(entity.getPaperEndTime());
 
         // Safely set paperPatternId
         if (entity.getPaperPattern() != null) {
@@ -88,6 +89,7 @@ public class PaperServiceImpl implements PaperService {
         dto.setEndTime(entity.getEndTime());
         dto.setIsLive(entity.getIsLive());
         dto.setStudentClass(entity.getStudentClass());
+        dto.setPaperEndTime(entity.getPaperEndTime());
 
         // Paper pattern info
         if (entity.getPaperPattern() != null) {
@@ -133,6 +135,7 @@ public class PaperServiceImpl implements PaperService {
         entity.setIsLive(dto.getIsLive());
         entity.setStudentClass(dto.getStudentClass());
         entity.setResultDate(dto.getResultDate());
+        entity.setPaperEndTime(dto.getPaperEndTime());
 
 
         // Set PaperPattern from ID
@@ -200,6 +203,7 @@ public class PaperServiceImpl implements PaperService {
         dto.setEndTime(entity.getEndTime());
         dto.setIsLive(entity.getIsLive());
         dto.setStudentClass(entity.getStudentClass());
+        dto.setPaperEndTime(entity.getPaperEndTime());
         if (entity.getPaperQuestions() != null) {
             dto.setQuestions(entity.getPaperQuestions().stream()
                     .map(pq -> toQuestionNoAnswerDTO(pq.getQuestion()))
@@ -237,6 +241,7 @@ public class PaperServiceImpl implements PaperService {
                 .endTime(paper.getEndTime())
                 .isLive(paper.getIsLive())
                 .studentClass(paper.getStudentClass())
+                .paperEndTime(paper.getPaperEndTime())
                 .questions(questionDTOs)
                 .build();
     }
