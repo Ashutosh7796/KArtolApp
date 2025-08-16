@@ -25,6 +25,7 @@ public class Paper {
     private String studentClass;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private LocalDateTime paperEndTime;
     private Boolean isLive;
     private LocalDateTime resultDate;
 

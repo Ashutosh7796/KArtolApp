@@ -40,6 +40,8 @@ public class PaperDTO1 {
     @Schema(description = "End time of the paper", example = "2025-06-23T12:00:00", required = true)
     private LocalDateTime endTime;
 
+    private LocalDateTime paperEndTime;
+
     @NotNull(message = "isLive flag is required")
     @Schema(description = "Whether the paper is currently live", example = "true", required = true)
     private Boolean isLive;

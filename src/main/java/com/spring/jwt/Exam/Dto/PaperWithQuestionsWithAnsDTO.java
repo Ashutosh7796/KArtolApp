@@ -44,4 +44,6 @@ public class PaperWithQuestionsWithAnsDTO {
 
     @Schema(description = "isDescriptive type ture")
     private boolean isDescriptive;
+
+    private LocalDateTime paperEndTime;
 }
