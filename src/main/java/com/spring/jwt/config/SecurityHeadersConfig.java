@@ -82,8 +82,8 @@ public class SecurityHeadersConfig {
     public HeaderWriter apiSecurityHeaders() {
         RequestMatcher apiMatcher = new OrRequestMatcher(Arrays.asList(
                 new AntPathRequestMatcher("/api/**"),
-                new AntPathRequestMatcher("/questions/**"),
-                new AntPathRequestMatcher("/user/**")
+                new AntPathRequestMatcher("/questions/**")
+//                new AntPathRequestMatcher("/user/**")
         ));
         
         return new DelegatingRequestMatcherHeaderWriter(

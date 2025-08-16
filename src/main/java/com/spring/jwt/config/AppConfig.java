@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -34,6 +35,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableScheduling
 @EnableMethodSecurity(
     securedEnabled = true,
     jsr250Enabled = true,
@@ -67,6 +69,9 @@ public class AppConfig {
     @Autowired
     private RateLimitingFilter rateLimitingFilter;
 
+    @Autowired
+    private com.spring.jwt.jwt.ActiveSessionService activeSessionService;
+
     @Value("${app.url.frontend:http://localhost:5173}")
     private String frontendUrl;
 
@@ -88,8 +93,9 @@ public class AppConfig {
             AuthenticationManager authenticationManager,
             JwtConfig jwtConfig,
             JwtService jwtService,
-            UserDetailsServiceCustom userDetailsService) {
-        return new JwtRefreshTokenFilter(authenticationManager, jwtConfig, jwtService, userDetailsService);
+            UserDetailsServiceCustom userDetailsService,
+            com.spring.jwt.jwt.ActiveSessionService activeSessionService) {
+        return new JwtRefreshTokenFilter(authenticationManager, jwtConfig, jwtService, userDetailsService, activeSessionService);
     }
 
     @Bean
@@ -154,7 +160,6 @@ public class AppConfig {
 
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/user/**").permitAll()
-                .requestMatchers("/api/v1/users/**").permitAll()
                 .requestMatchers("/fees//**").permitAll()
 
                 .requestMatchers("/questions/add").permitAll()
@@ -163,7 +168,6 @@ public class AppConfig {
                 .requestMatchers("/questions/**").permitAll()
 
                 .requestMatchers("/assessments/**").permitAll()
-                .requestMatchers("/api/**").permitAll()
                 .requestMatchers("/api/v1/papers/solutions/pdf").permitAll()
 
                 .anyRequest().authenticated());
@@ -175,7 +179,7 @@ public class AppConfig {
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/public/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/users/register"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/users/password/**"),
-                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/users/**"), // Temporary for testing
+                
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/v2/api-docs/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/v3/api-docs/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/swagger-resources/**"),
@@ -188,16 +192,16 @@ public class AppConfig {
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/assessments/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/search"),
-                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/**"),
+                    
                     new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/papers/solutions/pdf"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getUrl()),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getRefreshUrl())
             );
 
         log.debug("Configuring security filters");
-        JwtUsernamePasswordAuthenticationFilter jwtUsernamePasswordAuthenticationFilter = new JwtUsernamePasswordAuthenticationFilter(authenticationManager(http), jwtConfig, jwtService, userRepository);
-        JwtTokenAuthenticationFilter jwtTokenAuthenticationFilter = new JwtTokenAuthenticationFilter(jwtConfig, jwtService, userDetailsService(), publicUrls);
-        JwtRefreshTokenFilter jwtRefreshTokenFilter = new JwtRefreshTokenFilter(authenticationManager(http), jwtConfig, jwtService, userDetailsService());
+        JwtUsernamePasswordAuthenticationFilter jwtUsernamePasswordAuthenticationFilter = new JwtUsernamePasswordAuthenticationFilter(authenticationManager(http), jwtConfig, jwtService, userRepository, activeSessionService);
+        JwtTokenAuthenticationFilter jwtTokenAuthenticationFilter = new JwtTokenAuthenticationFilter(jwtConfig, jwtService, userDetailsService(), publicUrls, activeSessionService);
+        JwtRefreshTokenFilter jwtRefreshTokenFilter = new JwtRefreshTokenFilter(authenticationManager(http), jwtConfig, jwtService, userDetailsService(), activeSessionService);
 
         http.addFilterBefore(jwtTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -221,7 +225,7 @@ public class AppConfig {
                 CorsConfiguration config = new CorsConfiguration();
                 config.setAllowedOrigins(allowedOrigins);
                 config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                config.setAllowCredentials(true); // Important for cookies
+                config.setAllowCredentials(true);
                 config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
                 config.setExposedHeaders(Arrays.asList("Authorization"));
                 config.setMaxAge(3600L);
@@ -237,4 +241,6 @@ public class AppConfig {
                 .passwordEncoder(passwordEncoder());
         return builder.build();
     }
+
+    
 }
