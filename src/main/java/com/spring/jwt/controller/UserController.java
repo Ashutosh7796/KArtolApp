@@ -328,7 +328,7 @@ public class UserController {
             )
     })
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('STUDENT')")
+//    @PreAuthorize("hasAuthority('STUDENT')")
     public ResponseEntity<UserDTO> getUserById(
             @PathVariable @Min(value = 1, message = "Invalid user ID") Long id) {
         UserDTO user = userService.getUserById(id);
