@@ -126,9 +126,9 @@ public class ExamServiceImpl implements ExamService {
         }
 
         // ✅ No session yet — check time window
-        if (paper.getStartTime() != null && paper.getEndTime() != null) {
-            if (now.isBefore(paper.getStartTime()) || now.isAfter(paper.getEndTime())) {
-                throw new ExamTimeWindowException("Exam can only be started between " + paper.getStartTime() + " and " + paper.getEndTime());
+        if (paper.getStartTime() != null && paper.getPaperEndTime() != null) {
+            if (now.isBefore(paper.getStartTime()) || now.isAfter(paper.getPaperEndTime())) {
+                throw new ExamTimeWindowException("Exam can only be started between " + paper.getStartTime() + " and " + paper.getPaperEndTime());
             }
         }
 
@@ -253,7 +253,7 @@ public PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, S
             throw new ExamTimeWindowException("Exam already submitted by you.");
         }
         // Past end time?
-        if (paper.getEndTime() != null && now.isAfter(paper.getEndTime())) {
+        if (paper.getPaperEndTime() != null && now.isAfter(paper.getPaperEndTime())) {
             throw new ExamTimeWindowException("Exam time is over. You cannot resume the exam.");
         }
         // Before allowed mobile start time?
@@ -266,13 +266,13 @@ public PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, S
     }
 
     // ✅ 3. No session yet -> check mobile time window
-    if (allowedStartTime != null && paper.getEndTime() != null) {
-        if (now.isBefore(allowedStartTime) || now.isAfter(paper.getEndTime())) {
-            throw new ExamTimeWindowException("Exam can only be started between " + allowedStartTime + " and " + paper.getEndTime());
+    if (allowedStartTime != null && paper.getPaperEndTime() != null) {
+        if (now.isBefore(allowedStartTime) || now.isAfter(paper.getPaperEndTime())) {
+            throw new ExamTimeWindowException("Exam can only be started between " + allowedStartTime + " and " + paper.getPaperEndTime());
         }
     } else if (paper.getStartTime() != null && now.isBefore(paper.getStartTime())) {
         throw new ExamTimeWindowException("Exam has not started yet.");
-    } else if (paper.getEndTime() != null && now.isAfter(paper.getEndTime())) {
+    } else if (paper.getPaperEndTime() != null && now.isAfter(paper.getPaperEndTime())) {
         throw new ExamTimeWindowException("Exam has already ended.");
     }
 
@@ -287,7 +287,7 @@ public PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, S
     ExamSession savedSession = examSessionRepository.save(newSession);
 
     // ✅ 5. Schedule result processing only if in future
-    if (paper.getEndTime() != null && paper.getEndTime().isAfter(now)) {
+    if (paper.getPaperEndTime() != null && paper.getPaperEndTime().isAfter(now)) {
         examSessionSchedulingService.scheduleExamResultProcessing(savedSession.getSessionId(),
                 paper.getEndTime().plusMinutes(5));
     }
