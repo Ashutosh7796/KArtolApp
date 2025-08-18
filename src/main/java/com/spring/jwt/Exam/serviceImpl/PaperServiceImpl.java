@@ -291,6 +291,7 @@ public class PaperServiceImpl implements PaperService {
         // 4. Proceed with saving
         Paper paper = toEntity(paperDTO);
         paper.setPaperPattern(pattern);
+        paper.setPaperEndTime(paper.getStartTime().plusHours(4));
         Paper saved = paperRepository.save(paper);
 
         // 5. Create corresponding CalendarEvent
@@ -308,6 +309,13 @@ public class PaperServiceImpl implements PaperService {
                 .build();
         calendarEventRepository.save(event);
         return toDTO(saved);
+    }
+    private void setPaperEndTime(Paper paper) {
+        if (paper.getStartTime() != null) {
+            paper.setPaperEndTime(paper.getStartTime().plusHours(4));
+        } else {
+            throw new IllegalArgumentException("Start time must be set before calculating paper end time.");
+        }
     }
 
     @Override

@@ -112,10 +112,17 @@ public class AppConfig {
             .ignoringRequestMatchers(
                 "/api/**",
                 "/user/**",
-                "/questions/**",
+                "/api/v1/questions/**",
                 "/assessments/**",
                 "/fees/**",
-                "/exam/**",
+                "/api/v1/exam/**",
+                "api/v1/attendance/**",
+                "api/v1/paper-patterns/**",
+                "api/v1/notes/**",
+                "/api/v1/calendar-events/**",
+                "api/v1/exam-results/**",
+                "api/v1/exam/session",
+                "api/v1/Classes",
                 jwtConfig.getUrl(),
                 jwtConfig.getRefreshUrl()
             )
@@ -142,6 +149,8 @@ public class AppConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/v1/users/register").permitAll()
                 .requestMatchers("/api/v1/users/password/**").permitAll()
+                .requestMatchers("/api/v1/exam/**").permitAll()
+                .requestMatchers("/api/v1/**").permitAll()
                 .requestMatchers(jwtConfig.getUrl()).permitAll()
                 .requestMatchers(jwtConfig.getRefreshUrl()).permitAll()
 
@@ -162,13 +171,22 @@ public class AppConfig {
                 .requestMatchers("/user/**").permitAll()
                 .requestMatchers("/fees//**").permitAll()
 
-                .requestMatchers("/questions/add").permitAll()
+                .requestMatchers("/api/v1/questions/**").permitAll()
                 .requestMatchers("/questions/search").permitAll()
 
                 .requestMatchers("/questions/**").permitAll()
 
                 .requestMatchers("/assessments/**").permitAll()
+                .requestMatchers("/api/v1/exam/**").permitAll()
                 .requestMatchers("/api/v1/papers/solutions/pdf").permitAll()
+                .requestMatchers("/api/v1/papers/**").permitAll()
+                .requestMatchers("/api/v1/attendance/**").permitAll()
+                .requestMatchers("/api/v1/paper-patterns/**").permitAll()
+                .requestMatchers("api/v1/notes/**").permitAll()
+                .requestMatchers("/api/v1/calendar-events/**").permitAll()
+                .requestMatchers("/api/v1/exam-results/**").permitAll()
+                .requestMatchers("/api/v1/exam/session/**").permitAll()
+                .requestMatchers("/api/v1/Classes/**").permitAll()
 
                 .anyRequest().authenticated());
 
@@ -179,7 +197,7 @@ public class AppConfig {
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/public/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/users/register"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/users/password/**"),
-                
+
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/v2/api-docs/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/v3/api-docs/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/swagger-resources/**"),
@@ -190,10 +208,18 @@ public class AppConfig {
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/user/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/fees/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/assessments/**"),
-                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/**"),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/questions/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/attendance/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/questions/search"),
-                    
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/papers/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/exam/**"),
                     new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/papers/solutions/pdf"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/paper-patterns/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/notes/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/calendar-events/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/exam-results/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/exam/session/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/Classes/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getUrl()),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getRefreshUrl())
             );
@@ -242,5 +268,5 @@ public class AppConfig {
         return builder.build();
     }
 
-    
+
 }
