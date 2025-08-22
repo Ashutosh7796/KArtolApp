@@ -2,6 +2,7 @@ package com.spring.jwt.Question;
 
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.entity.enum01.QType;
+import com.spring.jwt.exception.PageNotFoundException;
 import com.spring.jwt.exception.ResourceNotFoundException;
 import com.spring.jwt.repository.UserRepository;
 import jakarta.validation.Valid;
@@ -136,7 +137,30 @@ public class QuestionServiceImpl implements QuestionService {
         
         return questionPage.map(questionMapper::toDto);
     }
-    
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<QuestionDTO> getQuestionsByUserIdAndDescriptive(Integer userId, boolean isDescriptive, Pageable pageable) {
+        log.debug("Getting questions by user ID: {} with isDescriptive: {} and pagination: {}", userId, isDescriptive, pageable);
+
+        Page<Question> questionPage = questionRepository.findByUserIdAndIsDescriptive(userId, isDescriptive, pageable);
+
+        if (questionPage.isEmpty()) {
+            log.warn("No questions found for user ID: {} with isDescriptive: {}", userId, isDescriptive);
+            throw new ResourceNotFoundException("No questions found for user ID: " + userId);
+        }
+
+        // Check if requested page is out of bounds
+        if (pageable.getPageNumber() >= questionPage.getTotalPages()) {
+            log.warn("Requested page number {} exceeds total pages {}", pageable.getPageNumber(), questionPage.getTotalPages());
+            throw new PageNotFoundException("Requested page " + pageable.getPageNumber() + " exceeds total available pages " + questionPage.getTotalPages());
+        }
+
+        return questionPage.map(questionMapper::toDto);
+    }
+
+
+
     @Override
     @Transactional(readOnly = true)
     public List<QuestionDTO> getQuestionsByUserId(Integer userId) {

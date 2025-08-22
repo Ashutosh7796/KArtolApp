@@ -14,9 +14,11 @@ import com.spring.jwt.entity.PaperPattern;
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.Question.QuestionDTO;
 import com.spring.jwt.entity.enum01.EventType;
+import com.spring.jwt.entity.enum01.QType;
 import com.spring.jwt.exception.InvalidPaginationParameterException;
 import com.spring.jwt.exception.PaperFetchException;
 import com.spring.jwt.exception.ResourceNotFoundException;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
@@ -28,7 +30,6 @@ import com.spring.jwt.entity.CalendarEvent;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
 
 
 @Service
@@ -68,11 +69,7 @@ public class PaperServiceImpl implements PaperService {
 
         // Set Question IDs
         if (entity.getPaperQuestions() != null) {
-            dto.setQuestions(
-                    entity.getPaperQuestions().stream()
-                            .map(pq -> pq.getQuestion() != null ? pq.getQuestion().getQuestionId() : null)
-                            .collect(Collectors.toList())
-            );
+            dto.setQuestions(entity.getPaperQuestions().stream().map(pq -> pq.getQuestion() != null ? pq.getQuestion().getQuestionId() : null).collect(Collectors.toList()));
         }
 
         return dto;
@@ -101,23 +98,12 @@ public class PaperServiceImpl implements PaperService {
 
         // Map question IDs
         if (entity.getPaperQuestions() != null) {
-            dto.setQuestions(
-                    entity.getPaperQuestions().stream()
-                            .map(pq -> pq.getQuestion() != null ? pq.getQuestion().getQuestionId() : null)
-                            .collect(Collectors.toList())
-            );
+            dto.setQuestions(entity.getPaperQuestions().stream().map(pq -> pq.getQuestion() != null ? pq.getQuestion().getQuestionId() : null).collect(Collectors.toList()));
         }
 
         // Map negative marks
         if (entity.getNegativeMarksList() != null && !entity.getNegativeMarksList().isEmpty()) {
-            dto.setNegativeMarksList(
-                    entity.getNegativeMarksList().stream()
-                            .map(nm -> NegativeMarksDTO.builder()
-                                    .questionId(nm.getQuestionId())
-                                    .negativeMark(nm.getNegativeMark())
-                                    .build())
-                            .collect(Collectors.toList())
-            );
+            dto.setNegativeMarksList(entity.getNegativeMarksList().stream().map(nm -> NegativeMarksDTO.builder().questionId(nm.getQuestionId()).negativeMark(nm.getNegativeMark()).build()).collect(Collectors.toList()));
         }
 
         return dto;
@@ -140,8 +126,7 @@ public class PaperServiceImpl implements PaperService {
 
         // Set PaperPattern from ID
         if (dto.getPaperPatternId() != null) {
-            PaperPattern pattern = paperPatternRepository.findById(dto.getPaperPatternId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Paper pattern not found with id: " + dto.getPaperPatternId()));
+            PaperPattern pattern = paperPatternRepository.findById(dto.getPaperPatternId()).orElseThrow(() -> new ResourceNotFoundException("Paper pattern not found with id: " + dto.getPaperPatternId()));
             entity.setPaperPattern(pattern);
         }
 
@@ -150,10 +135,7 @@ public class PaperServiceImpl implements PaperService {
             List<PaperQuestion> paperQuestions = dto.getQuestions().stream().map(qId -> {
                 PaperQuestion pq = new PaperQuestion();
                 pq.setPaper(entity);
-                pq.setQuestion(
-                        questionRepository.findById(qId)
-                                .orElseThrow(() -> new ResourceNotFoundException("Question not found with id: " + qId))
-                );
+                pq.setQuestion(questionRepository.findById(qId).orElseThrow(() -> new ResourceNotFoundException("Question not found with id: " + qId)));
                 return pq;
             }).collect(Collectors.toList());
             entity.setPaperQuestions(paperQuestions);
@@ -192,6 +174,7 @@ public class PaperServiceImpl implements PaperService {
         dto.setAnswer(pq.getQuestion().getAnswer());
         return dto;
     }
+
     // Entity to PaperWithQuestionsDTO
     private PaperWithQuestionsDTO toDTO01(Paper entity) {
         if (entity == null) return null;
@@ -205,10 +188,7 @@ public class PaperServiceImpl implements PaperService {
         dto.setStudentClass(entity.getStudentClass());
         dto.setPaperEndTime(entity.getPaperEndTime());
         if (entity.getPaperQuestions() != null) {
-            dto.setQuestions(entity.getPaperQuestions().stream()
-                    .map(pq -> toQuestionNoAnswerDTO(pq.getQuestion()))
-                    .collect(Collectors.toList())
-            );
+            dto.setQuestions(entity.getPaperQuestions().stream().map(pq -> toQuestionNoAnswerDTO(pq.getQuestion())).collect(Collectors.toList()));
         }
         return dto;
     }
@@ -233,83 +213,199 @@ public class PaperServiceImpl implements PaperService {
     }
 
     public PaperWithQuestionsWithAnsDTO toPaperWithQuestionsDTO(Paper paper, List<QuestionDTO> questionDTOs) {
-        return PaperWithQuestionsWithAnsDTO.builder()
-                .paperId(paper.getPaperId())
-                .title(paper.getTitle())
-                .description(paper.getDescription())
-                .startTime(paper.getStartTime())
-                .endTime(paper.getEndTime())
-                .isLive(paper.getIsLive())
-                .studentClass(paper.getStudentClass())
-                .paperEndTime(paper.getPaperEndTime())
-                .questions(questionDTOs)
-                .build();
+        return PaperWithQuestionsWithAnsDTO.builder().paperId(paper.getPaperId()).title(paper.getTitle()).description(paper.getDescription()).startTime(paper.getStartTime()).endTime(paper.getEndTime()).isLive(paper.getIsLive()).studentClass(paper.getStudentClass()).paperEndTime(paper.getPaperEndTime()).questions(questionDTOs).build();
     }
 
 
-    @Override
-    public PaperDTO createPaper(PaperDTO paperDTO) {
-        // 1. Fetch PaperPattern
-        Integer patternId = paperDTO.getPaperPatternId();
-        PaperPattern pattern = paperPatternRepository.findById(patternId)
-                .orElseThrow(() -> new PaperFetchException("Invalid PaperPattern ID: " + patternId));
+//    @Override
+//    public PaperDTO createPaper(PaperDTO paperDTO) {
+//        // 1. Fetch PaperPattern
+//        Integer patternId = paperDTO.getPaperPatternId();
+//        PaperPattern pattern = paperPatternRepository.findById(patternId).orElseThrow(() -> new PaperFetchException("Invalid PaperPattern ID: " + patternId));
+//
+//        // 2. Validate question count
+//        List<Integer> questionIds = paperDTO.getQuestions();
+//        if (questionIds == null || questionIds.size() != pattern.getNoOfQuestion()) {
+//            throw new PaperFetchException("Number of questions (" + (questionIds == null ? 0 : questionIds.size()) + ") does not match the required (" + pattern.getNoOfQuestion() + ") by the pattern.");
+//        }
+//
+//        // 2.1 Batch fetch all questions with provided IDs
+//        List<Question> questions = questionRepository.findAllById(questionIds);
+//        if (questions.size() != questionIds.size()) {
+//            throw new PaperFetchException("Some Question IDs are invalid.");
+//        }
+//
+//        QType patternType = pattern.getType();
+//        int mcqCount = 0;
+//        int descriptiveCount = 0;
+//
+//        for (Question question : questions) {
+//            boolean isDescriptive = question.isDescriptive(); // Assuming getter exists
+//
+//            if (patternType == QType.MCQ) {
+//                if (isDescriptive) {
+//                    throw new PaperFetchException("Pattern type is MCQ, but question " + question.getQuestionId() + " is descriptive.");
+//                }
+//                mcqCount++;
+//            } else if (patternType == QType.DESCRIPTIVE) {
+//                if (!isDescriptive) {
+//                    throw new PaperFetchException("Pattern type is DESCRIPTIVE, but question " + question.getQuestionId() + " is MCQ.");
+//                }
+//                descriptiveCount++;
+//            } else if (patternType == QType.MCQ_DESCRIPTIVE) {
+//                if (isDescriptive) {
+//                    descriptiveCount++;
+//                } else {
+//                    mcqCount++;
+//                }
+//            }
+//        }
+//
+//        // For MCQ_DESCRIPTIVE: Verify counts match
+//        if (patternType == QType.MCQ_DESCRIPTIVE) {
+//            if (mcqCount != pattern.getMCQ()) {
+//                throw new PaperFetchException("Pattern expects " + pattern.getMCQ() + " MCQ questions, but received: " + mcqCount);
+//            }
+//            if (descriptiveCount != pattern.getDESCRIPTIVE()) {
+//                throw new PaperFetchException("Pattern expects " + pattern.getDESCRIPTIVE() + " DESCRIPTIVE questions, but received: " + descriptiveCount);
+//            }
+//        }
+//
+//        // 3. Validate sum of marks
+//        int totalMarks = questions.stream().mapToInt(Question::getMarks).sum();
+//        if (totalMarks != pattern.getMarks()) {
+//            throw new IllegalArgumentException("Sum of question marks (" + totalMarks + ") does not match pattern marks (" + pattern.getMarks() + ").");
+//        }
+//
+//        // 3.5 Validate Negative Marks only for valid questionIds
+//        if (paperDTO.getNegativeMarksList() != null) {
+//            for (NegativeMarksDTO nmDto : paperDTO.getNegativeMarksList()) {
+//                if (!questionIds.contains(nmDto.getQuestionId())) {
+//                    throw new PaperFetchException("Negative mark set for invalid question ID: " + nmDto.getQuestionId());
+//                }
+//                if (nmDto.getNegativeMark() < 0) {
+//                    throw new PaperFetchException("Negative mark value must not be negative: " + nmDto.getNegativeMark());
+//                }
+//            }
+//        }
+//
+//        // 4. Proceed with saving
+//        Paper paper = toEntity(paperDTO);
+//        paper.setPaperPattern(pattern);
+//        paper.setPaperEndTime(paper.getStartTime().plusHours(4));
+//        Paper saved = paperRepository.save(paper);
+//
+//        // 5. Create corresponding CalendarEvent
+//        CalendarEvent event = CalendarEvent.builder().title(paperDTO.getTitle()).description(paperDTO.getDescription()).startDateTime(paperDTO.getStartTime()).endDateTime(paperDTO.getEndTime()).eventType(EventType.EXAM).examSubject(paperDTO.getPatternName()) // Assuming pattern name is subject
+//                .examLevel(paperDTO.getStudentClass()).examRoom("Room-1") // Static or configurable
+//                .examPaperId(String.valueOf(saved.getPaperId())).colorCode("#2196F3") // Optional: Blue for EXAM
+//                .build();
+//        calendarEventRepository.save(event);
+//        return toDTO(saved);
+//    }
+@Override
+@Transactional
+public PaperDTO createPaper(PaperDTO paperDTO) {
+    // 1. Fetch PaperPattern
+    Integer patternId = paperDTO.getPaperPatternId();
+    PaperPattern pattern = paperPatternRepository.findById(patternId)
+            .orElseThrow(() -> new PaperFetchException("Invalid PaperPattern ID: " + patternId));
 
-        // 2. Validate question count
-        int requiredQuestions = pattern.getNoOfQuestion();
-        List<Integer> questionIds = paperDTO.getQuestions();
-        if (questionIds == null || questionIds.size() != requiredQuestions) {
-            throw new PaperFetchException(
-                    "Number of questions (" + (questionIds == null ? 0 : questionIds.size()) +
-                            ") does not match the required (" + requiredQuestions + ") by the pattern."
-            );
-        }
+    // 2. Validate question count
+    List<Integer> questionIds = paperDTO.getQuestions();
+    if (questionIds == null || questionIds.size() != pattern.getNoOfQuestion()) {
+        throw new PaperFetchException("Number of questions (" + (questionIds == null ? 0 : questionIds.size()) +
+                ") does not match the required (" + pattern.getNoOfQuestion() + ") by the pattern.");
+    }
 
-        // 3. Validate sum of marks
-        int totalMarks = 0;
-        for (Integer qId : questionIds) {
-            Question question = questionRepository.findById(qId)
-                    .orElseThrow(() -> new PaperFetchException("Invalid Question ID: " + qId));
-            totalMarks += question.getMarks(); // assuming getMarks() returns int
-        }
-        if (totalMarks != pattern.getMarks()) {
-            throw new IllegalArgumentException(
-                    "Sum of question marks (" + totalMarks + ") does not match pattern marks (" + pattern.getMarks() + ")."
-            );
-        }
-        // 3.5 Validate Negative Marks only for valid questionIds
-        if (paperDTO.getNegativeMarksList() != null) {
-            for (NegativeMarksDTO nmDto : paperDTO.getNegativeMarksList()) {
-                if (!questionIds.contains(nmDto.getQuestionId())) {
-                    throw new PaperFetchException("Negative mark set for invalid question ID: " + nmDto.getQuestionId());
-                }
-                if (nmDto.getNegativeMark() < 0) {
-                    throw new PaperFetchException("Negative mark value must not be negative: " + nmDto.getNegativeMark());
-                }
+    // 2.1 Fetch necessary Question fields efficiently using projection DTO
+    List<QuestionSummaryDTO> questions = questionRepository.findQuestionSummariesByQuestionIds(questionIds);
+    if (questions.size() != questionIds.size()) {
+        throw new PaperFetchException("Some Question IDs are invalid.");
+    }
+
+    QType patternType = pattern.getType();
+    int mcqCount = 0;
+    int descriptiveCount = 0;
+    int totalMarks = 0;
+
+    for (QuestionSummaryDTO question : questions) {
+        boolean isDescriptive = question.isDescriptive();
+
+        if (patternType == QType.MCQ) {
+            if (isDescriptive) {
+                throw new PaperFetchException("Pattern type is MCQ, but question " + question.getQuestionId() + " is descriptive.");
+            }
+            mcqCount++;
+        } else if (patternType == QType.DESCRIPTIVE) {
+            if (!isDescriptive) {
+                throw new PaperFetchException("Pattern type is DESCRIPTIVE, but question " + question.getQuestionId() + " is MCQ.");
+            }
+            descriptiveCount++;
+        } else if (patternType == QType.MCQ_DESCRIPTIVE) {
+            if (isDescriptive) {
+                descriptiveCount++;
+            } else {
+                mcqCount++;
             }
         }
 
-        // 4. Proceed with saving
-        Paper paper = toEntity(paperDTO);
-        paper.setPaperPattern(pattern);
-        paper.setPaperEndTime(paper.getStartTime().plusHours(4));
-        Paper saved = paperRepository.save(paper);
-
-        // 5. Create corresponding CalendarEvent
-        CalendarEvent event = CalendarEvent.builder()
-                .title(paperDTO.getTitle())
-                .description(paperDTO.getDescription())
-                .startDateTime(paperDTO.getStartTime())
-                .endDateTime(paperDTO.getEndTime())
-                .eventType(EventType.EXAM)
-                .examSubject(paperDTO.getPatternName()) // Assuming pattern name is subject
-                .examLevel(paperDTO.getStudentClass())
-                .examRoom("Room-1") // Static or configurable
-                .examPaperId(String.valueOf(saved.getPaperId())) // Link to paper
-                .colorCode("#2196F3") // Optional: Blue for EXAM
-                .build();
-        calendarEventRepository.save(event);
-        return toDTO(saved);
+        totalMarks += question.getMarks();
     }
+
+    // 2.2 For MCQ_DESCRIPTIVE patterns, verify counts match
+    if (patternType == QType.MCQ_DESCRIPTIVE) {
+        if (mcqCount != pattern.getMCQ()) {
+            throw new PaperFetchException("Pattern expects " + pattern.getMCQ() + " MCQ questions, but received: " + mcqCount);
+        }
+        if (descriptiveCount != pattern.getDESCRIPTIVE()) {
+            throw new PaperFetchException("Pattern expects " + pattern.getDESCRIPTIVE() + " DESCRIPTIVE questions, but received: " + descriptiveCount);
+        }
+    }
+
+    // 3. Validate sum of marks
+    if (totalMarks != pattern.getMarks()) {
+        throw new IllegalArgumentException("Sum of question marks (" + totalMarks + ") does not match pattern marks (" + pattern.getMarks() + ").");
+    }
+
+    // 4. Validate Negative Marks only for valid questionIds
+    if (paperDTO.getNegativeMarksList() != null) {
+        for (NegativeMarksDTO nmDto : paperDTO.getNegativeMarksList()) {
+            if (!questionIds.contains(nmDto.getQuestionId())) {
+                throw new PaperFetchException("Negative mark set for invalid question ID: " + nmDto.getQuestionId());
+            }
+            if (nmDto.getNegativeMark() < 0) {
+                throw new PaperFetchException("Negative mark value must not be negative: " + nmDto.getNegativeMark());
+            }
+        }
+    }
+
+    // 5. Proceed with saving Paper entity
+    Paper paper = toEntity(paperDTO);
+    paper.setPaperPattern(pattern);
+    paper.setPaperEndTime(paper.getStartTime().plusHours(4));
+    Paper saved = paperRepository.save(paper);
+
+    // 6. Create and save corresponding CalendarEvent
+    CalendarEvent event = CalendarEvent.builder()
+            .title(paperDTO.getTitle())
+            .description(paperDTO.getDescription())
+            .startDateTime(paperDTO.getStartTime())
+            .endDateTime(paperDTO.getEndTime())
+            .eventType(EventType.EXAM)
+            .examSubject(paperDTO.getPatternName())
+            .examLevel(paperDTO.getStudentClass())
+            .examRoom("Room-1")
+            .examPaperId(String.valueOf(saved.getPaperId()))
+            .colorCode("#2196F3")
+            .build();
+    calendarEventRepository.save(event);
+
+    // 7. Return DTO of saved Paper
+    return toDTO(saved);
+}
+
+
     private void setPaperEndTime(Paper paper) {
         if (paper.getStartTime() != null) {
             paper.setPaperEndTime(paper.getStartTime().plusHours(4));
@@ -320,8 +416,7 @@ public class PaperServiceImpl implements PaperService {
 
     @Override
     public PaperDTO1 getPaper(Integer id) {
-        Paper paper = paperRepository.findById(id)
-                .orElseThrow(() -> new PaperFetchException("Paper not found with id: " + id));
+        Paper paper = paperRepository.findById(id).orElseThrow(() -> new PaperFetchException("Paper not found with id: " + id));
         return toDTO2(paper);
     }
 
@@ -333,24 +428,15 @@ public class PaperServiceImpl implements PaperService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("paperId").descending());
         Page<Paper> paperPage = paperRepository.findAll(pageable);
 
-        List<PaperDTO> paperDTOs = paperPage.getContent().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+        List<PaperDTO> paperDTOs = paperPage.getContent().stream().map(this::toDTO).collect(Collectors.toList());
 
-        return new PageResponseDto<>(
-                paperDTOs,
-                paperPage.getNumber(),
-                paperPage.getSize(),
-                paperPage.getTotalElements(),
-                paperPage.getTotalPages()
-        );
+        return new PageResponseDto<>(paperDTOs, paperPage.getNumber(), paperPage.getSize(), paperPage.getTotalElements(), paperPage.getTotalPages());
     }
 
 
     @Override
     public PaperDTO updatePaper(Integer id, PaperDTO paperDTO) {
-        Paper paper = paperRepository.findById(id)
-                .orElseThrow(() -> new PaperFetchException("Paper not found with id: " + id));
+        Paper paper = paperRepository.findById(id).orElseThrow(() -> new PaperFetchException("Paper not found with id: " + id));
         paper.setTitle(paperDTO.getTitle());
         paper.setDescription(paperDTO.getDescription());
         paper.setStartTime(paperDTO.getStartTime());
@@ -364,15 +450,13 @@ public class PaperServiceImpl implements PaperService {
 
     @Override
     public void deletePaper(Integer id) {
-        Paper paper = paperRepository.findById(id)
-                .orElseThrow(() -> new PaperFetchException("Paper not found with id: " + id));
+        Paper paper = paperRepository.findById(id).orElseThrow(() -> new PaperFetchException("Paper not found with id: " + id));
         paperRepository.delete(paper);
     }
 
     @Override
     public PaperWithQuestionsDTO getPaperWithQuestions(Integer paperId) {
-        Paper paper = paperRepository.findById(paperId)
-                .orElseThrow(() -> new PaperFetchException("Paper not found with id: " + paperId));
+        Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new PaperFetchException("Paper not found with id: " + paperId));
         return toDTO01(paper);
     }
 
@@ -384,9 +468,7 @@ public class PaperServiceImpl implements PaperService {
             if (livePapers == null || livePapers.isEmpty()) {
                 throw new PaperFetchException("No live papers found for studentClass: " + studentClass);
             }
-            return livePapers.stream()
-                    .map(this::toDTO)
-                    .collect(Collectors.toList());
+            return livePapers.stream().map(this::toDTO).collect(Collectors.toList());
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -399,8 +481,7 @@ public class PaperServiceImpl implements PaperService {
      */
     @Override
     public PaperWithQuestionsAndAnswersDTO getPaperWithSolutions(Integer paperId) {
-        Paper paper = paperRepository.findById(paperId)
-                .orElseThrow(() -> new ResourceNotFoundException("Paper not found with ID: " + paperId));
+        Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new ResourceNotFoundException("Paper not found with ID: " + paperId));
 
         List<Question> questions = questionRepository.findQuestionsByPaperId(paperId);
 
@@ -410,24 +491,10 @@ public class PaperServiceImpl implements PaperService {
             System.out.println("Questions found: " + questions.size());
         }
 
-        List<QuestionWithAnswerDTO> questionDTOs = questions.stream()
-                .map(this::mapToQuestionWithAnswerDTO)
-                .collect(Collectors.toList());
+        List<QuestionWithAnswerDTO> questionDTOs = questions.stream().map(this::mapToQuestionWithAnswerDTO).collect(Collectors.toList());
 
-        return PaperWithQuestionsAndAnswersDTO.builder()
-                .paperId(paper.getPaperId())
-                .title(paper.getTitle())
-                .description(paper.getDescription())
-                .startTime(paper.getStartTime())
-                .endTime(paper.getEndTime())
-                .isLive(paper.getIsLive())
-                .studentClass(paper.getStudentClass())
-                .paperPatternId(paper.getPaperPattern() != null ? paper.getPaperPattern().getPaperPatternId() : null)
-                .questions(questionDTOs)
-                .build();
+        return PaperWithQuestionsAndAnswersDTO.builder().paperId(paper.getPaperId()).title(paper.getTitle()).description(paper.getDescription()).startTime(paper.getStartTime()).endTime(paper.getEndTime()).isLive(paper.getIsLive()).studentClass(paper.getStudentClass()).paperPatternId(paper.getPaperPattern() != null ? paper.getPaperPattern().getPaperPatternId() : null).questions(questionDTOs).build();
     }
-
-
 
 
     /**
@@ -438,27 +505,7 @@ public class PaperServiceImpl implements PaperService {
             return null;
         }
 
-        return QuestionWithAnswerDTO.builder()
-                .questionId(question.getQuestionId())
-                .questionText(question.getQuestionText())
-                .type(question.getType())
-                .subject(question.getSubject())
-                .unit(question.getUnit())
-                .chapter(question.getChapter())
-                .topic(question.getTopic())
-                .level(question.getLevel())
-                .marks(question.getMarks())
-                .userId(question.getUserId())
-                .option1(question.getOption1())
-                .option2(question.getOption2())
-                .option3(question.getOption3())
-                .option4(question.getOption4())
-                .studentClass(question.getStudentClass())
-                .isDescriptive(question.isDescriptive())
-                .isMultiOptions(question.isMultiOptions())
-                .answer(question.getAnswer())
-                .hintAndSol(question.getHintAndSol())
-                .build();
+        return QuestionWithAnswerDTO.builder().questionId(question.getQuestionId()).questionText(question.getQuestionText()).type(question.getType()).subject(question.getSubject()).unit(question.getUnit()).chapter(question.getChapter()).topic(question.getTopic()).level(question.getLevel()).marks(question.getMarks()).userId(question.getUserId()).option1(question.getOption1()).option2(question.getOption2()).option3(question.getOption3()).option4(question.getOption4()).studentClass(question.getStudentClass()).isDescriptive(question.isDescriptive()).isMultiOptions(question.isMultiOptions()).answer(question.getAnswer()).hintAndSol(question.getHintAndSol()).build();
     }
 
 

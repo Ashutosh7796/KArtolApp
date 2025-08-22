@@ -25,5 +25,8 @@ public class PaperPattern {
     private Integer requiredQuestion;
     private Integer negativeMarks;
     private Integer marks;
+    private Integer MCQ;
+    private Integer DESCRIPTIVE;
+
     
 }

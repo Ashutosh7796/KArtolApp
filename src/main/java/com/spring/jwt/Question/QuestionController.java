@@ -1,5 +1,6 @@
 package com.spring.jwt.Question;
 
+import com.spring.jwt.exception.PageNotFoundException;
 import com.spring.jwt.exception.ResourceNotFoundException;
 import com.spring.jwt.utils.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -275,6 +276,45 @@ public class QuestionController {
             log.error("No questions found for user: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.error(HttpStatus.NOT_FOUND, "No questions found", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to fetch questions by userId: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to fetch questions by userId", e.getMessage()));
+        }
+    }
+    @GetMapping("/userIdDescriptive")
+    @PermitAll
+    public ResponseEntity<ApiResponse<Page<QuestionDTO>>> getQuestionsByUserIdAndDescriptive(
+            @Parameter(description = "User ID", required = true, example = "1")
+            @RequestParam @Min(1) Integer userId,
+            @Parameter(description = "Is question descriptive? true or false", required = true, example = "false")
+            @RequestParam boolean isDescriptive,
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size", example = "10")
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Sort field", example = "questionId")
+            @RequestParam(defaultValue = "questionId") String sortBy,
+            @Parameter(description = "Sort direction (asc or desc)", example = "desc")
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        try {
+            Sort sort = direction.equalsIgnoreCase("asc") ?
+                    Sort.by(sortBy).ascending() :
+                    Sort.by(sortBy).descending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<QuestionDTO> questions = questionService.getQuestionsByUserIdAndDescriptive(userId, isDescriptive, pageable);
+
+            return ResponseEntity.ok(ApiResponse.success("Questions fetched for userId " + userId, questions));
+        } catch (ResourceNotFoundException e) {
+            log.error("No questions found for user: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(HttpStatus.NOT_FOUND, "No questions found", e.getMessage()));
+        } catch (PageNotFoundException e) {
+            log.error("Requested page not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(HttpStatus.NOT_FOUND, "Page not found", e.getMessage()));
         } catch (Exception e) {
             log.error("Failed to fetch questions by userId: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()

@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Data
@@ -52,7 +53,9 @@ public class Question {
 
     // Store the answer, e.g. "option1", "option2", etc. or the text itself
     private String answer;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "paper_id")
     private Paper paper;
+
+
 }

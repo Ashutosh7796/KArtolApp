@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,8 +35,9 @@ public class Paper {
     private PaperPattern paperPattern;
 
 
-    @OneToMany(mappedBy = "paper", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "paper", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
     private List<PaperQuestion> paperQuestions;
+
 
     @OneToMany(mappedBy = "paper", fetch = FetchType.LAZY) // or EAGER as needed
     private List<Question> questions;
