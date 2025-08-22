@@ -13,6 +13,4 @@ public class QuestionSummaryDTO {
         this.marks = marks;
         this.isDescriptive = isDescriptive;
     }
-
-
 }
