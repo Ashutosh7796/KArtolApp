@@ -19,6 +19,8 @@ class PatternMapper {
         dto.setNoOfQuestion(paperPattern.getNoOfQuestion());
         dto.setRequiredQuestion(paperPattern.getRequiredQuestion());
         dto.setNegativeMarks(paperPattern.getNegativeMarks());
+        dto.setMCQ(paperPattern.getMCQ());
+        dto.setDESCRIPTIVE(paperPattern.getDESCRIPTIVE());
         return dto;
     }    public PaperPattern toEntity(PaperPatternDto dto){
         if(dto==null){
@@ -33,5 +35,7 @@ class PatternMapper {
         paperPattern.setRequiredQuestion(dto.getRequiredQuestion());
         paperPattern.setMarks(dto.getMarks());
         paperPattern.setNegativeMarks(dto.getNegativeMarks());
+        paperPattern.setDESCRIPTIVE(dto.getDESCRIPTIVE());
+        paperPattern.setMCQ(dto.getMCQ());
         return paperPattern;    }
 }

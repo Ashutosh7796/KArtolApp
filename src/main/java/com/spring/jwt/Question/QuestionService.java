@@ -96,5 +96,5 @@ public interface QuestionService {
     void updateDeletedStatus(Integer questionId, boolean deleted);
     void toggleDeletedStatus(Integer questionId);
 
-
+    Page<QuestionDTO> getQuestionsByUserIdAndDescriptive(Integer userId, boolean isDescriptive, Pageable pageable);
 }

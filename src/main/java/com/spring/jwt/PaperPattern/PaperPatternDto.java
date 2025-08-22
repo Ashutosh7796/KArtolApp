@@ -28,4 +28,8 @@ public class PaperPatternDto {
     private Integer negativeMarks;
     @Schema(description = "Total marks of pattern")
     private Integer marks;
+
+    private Integer MCQ;
+
+    private Integer DESCRIPTIVE;
 }

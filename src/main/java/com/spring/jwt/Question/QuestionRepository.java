@@ -1,5 +1,6 @@
 package com.spring.jwt.Question;
 
+import com.spring.jwt.Exam.Dto.QuestionSummaryDTO;
 import com.spring.jwt.entity.Question;
 import com.spring.jwt.entity.enum01.QType;
 import org.springframework.data.domain.Page;
@@ -108,6 +109,13 @@ public interface QuestionRepository extends JpaRepository<Question, Integer>, Jp
     Page<Question> findByDeletedTrue(Pageable pageable);
 
     Page<Question> findByDeletedFalse(Pageable pageable);
+
+
+    Page<Question> findByUserIdAndIsDescriptive(Integer userId, boolean isDescriptive, Pageable pageable);
+
+    @Query("SELECT new com.spring.jwt.Exam.Dto.QuestionSummaryDTO(q.questionId, q.marks, q.isDescriptive) " +
+            "FROM Question q WHERE q.questionId IN :questionIds")
+    List<QuestionSummaryDTO> findQuestionSummariesByQuestionIds(@Param("questionIds") List<Integer> questionIds);
 
 
 }
