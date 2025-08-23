@@ -29,16 +29,22 @@ class PaperPatternServiceImpl implements PaperPatternService {
         if (type != null) {
             switch (type) {
                 case MCQ:
-                    if (paperPatternDto.getMCQ() == null || paperPatternDto.getMCQ() == 0) {
-                        throw new IllegalArgumentException("MCQ count is required for type MCQ");
+                    if (paperPatternDto.getMCQ() == null || paperPatternDto.getMCQ() <= 0) {
+                        throw new IllegalArgumentException("MCQ count must be greater than 0 for type MCQ");
+                    }
+                    if (paperPatternDto.getDESCRIPTIVE() != null && paperPatternDto.getDESCRIPTIVE() != 0) {
+                        throw new IllegalArgumentException("Descriptive count must be 0 for type MCQ");
                     }
                     paperPatternDto.setNoOfQuestion(paperPatternDto.getMCQ());
                     paperPatternDto.setRequiredQuestion(paperPatternDto.getMCQ());
                     break;
 
                 case DESCRIPTIVE:
-                    if (paperPatternDto.getDESCRIPTIVE() == null || paperPatternDto.getDESCRIPTIVE() == 0) {
-                        throw new IllegalArgumentException("Descriptive count is required for type DESCRIPTIVE");
+                    if (paperPatternDto.getDESCRIPTIVE() == null || paperPatternDto.getDESCRIPTIVE() <= 0) {
+                        throw new IllegalArgumentException("Descriptive count must be greater than 0 for type DESCRIPTIVE");
+                    }
+                    if (paperPatternDto.getMCQ() != null && paperPatternDto.getMCQ() != 0) {
+                        throw new IllegalArgumentException("MCQ count must be 0 for type DESCRIPTIVE");
                     }
                     paperPatternDto.setNoOfQuestion(paperPatternDto.getDESCRIPTIVE());
                     paperPatternDto.setRequiredQuestion(paperPatternDto.getDESCRIPTIVE());
@@ -48,8 +54,8 @@ class PaperPatternServiceImpl implements PaperPatternService {
                     Integer mcq = paperPatternDto.getMCQ();
                     Integer desc = paperPatternDto.getDESCRIPTIVE();
 
-                    if (mcq == null || desc == null) {
-                        throw new IllegalArgumentException("Both MCQ and Descriptive counts are required for type MCQ_DESCRIPTIVE");
+                    if (mcq == null || mcq <= 0 || desc == null || desc <= 0) {
+                        throw new IllegalArgumentException("Both MCQ and Descriptive counts must be greater than 0 for type MCQ_DESCRIPTIVE");
                     }
 
                     int total = mcq + desc;
@@ -60,6 +66,7 @@ class PaperPatternServiceImpl implements PaperPatternService {
                 default:
                     throw new IllegalArgumentException("Invalid question type: " + type);
             }
+
         } else {
             throw new IllegalArgumentException("Question type cannot be null");
         }
