@@ -28,5 +28,5 @@ PaperWithQuestionsDTOn startExam(Integer userId, Integer paperId, String student
 
     List<ExamSessionShowResultDto> getSessionsByPaperId(Integer paperId);
 
-    PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, String studentClass);
+    PaperWithQuestionsDTOnn startExamMobile(Integer userId, Integer paperId, String studentClass);
 }
