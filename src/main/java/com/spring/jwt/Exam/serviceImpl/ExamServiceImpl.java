@@ -18,6 +18,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -225,8 +226,7 @@ public class ExamServiceImpl implements ExamService {
 //    }
 @Override
 @Transactional // ensures consistency & prevents race condition
-public PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, String studentClass) {
-    // ✅ 1. Fetch user & paper
+public PaperWithQuestionsDTOnn startExamMobile(Integer userId, Integer paperId, String studentClass) {
     User user = userRepository.findById(Long.valueOf(userId))
             .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
@@ -235,12 +235,10 @@ public PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, S
 
     LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
 
-    // ✅ Allow start 10 minutes early for mobile if start time is set
     LocalDateTime allowedStartTime = paper.getStartTime() != null
             ? paper.getStartTime().minusMinutes(10)
             : null;
 
-    // ✅ 2. Check if there’s an existing session to resume
     ExamSession existingSession = examSessionRepository
             .findByUser_IdAndPaper_PaperIdOrderByStartTimeDesc(userId, paperId)
             .stream()
@@ -248,24 +246,18 @@ public PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, S
             .orElse(null);
 
     if (existingSession != null) {
-        // Already submitted?
         if (existingSession.getScore() != null) {
             throw new ExamTimeWindowException("Exam already submitted by you.");
         }
-        // Past end time?
         if (paper.getPaperEndTime() != null && now.isAfter(paper.getPaperEndTime())) {
             throw new ExamTimeWindowException("Exam time is over. You cannot resume the exam.");
         }
-        // Before allowed mobile start time?
         if (allowedStartTime != null && now.isBefore(allowedStartTime)) {
             throw new ExamTimeWindowException("You cannot resume the exam before " + allowedStartTime);
         }
-
-        // Return DTO for resuming
-        return buildExamDTOForStart(existingSession, paper, existingSession.getStudentClass());
+        return buildExamDTO(existingSession, paper, existingSession.getStudentClass());
     }
 
-    // ✅ 3. No session yet -> check mobile time window
     if (allowedStartTime != null && paper.getPaperEndTime() != null) {
         if (now.isBefore(allowedStartTime) || now.isAfter(paper.getPaperEndTime())) {
             throw new ExamTimeWindowException("Exam can only be started between " + allowedStartTime + " and " + paper.getPaperEndTime());
@@ -276,7 +268,6 @@ public PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, S
         throw new ExamTimeWindowException("Exam has already ended.");
     }
 
-    // ✅ 4. Create new session
     ExamSession newSession = new ExamSession();
     newSession.setUser(user);
     newSession.setPaper(paper);
@@ -286,19 +277,49 @@ public PaperWithQuestionsDTOn startExamMobile(Integer userId, Integer paperId, S
     newSession.setUserAnswers(new ArrayList<>());
     ExamSession savedSession = examSessionRepository.save(newSession);
 
-    // ✅ 5. Schedule result processing only if in future
     if (paper.getPaperEndTime() != null && paper.getPaperEndTime().isAfter(now)) {
         examSessionSchedulingService.scheduleExamResultProcessing(savedSession.getSessionId(),
                 paper.getEndTime().plusMinutes(5));
     }
 
-    // ✅ 6. Return DTO for new start
-    return buildExamDTOForStart(savedSession, paper, studentClass);
+    return buildExamDTO(savedSession, paper, studentClass);
 }
 
-    /**
-     * Builds a DTO for starting/resuming an exam with shuffled questions (no answers).
-     */
+    public PaperWithQuestionsDTOnn buildExamDTO(ExamSession session, Paper paper, String studentClass) {
+        PaperWithQuestionsDTOnn dto = new PaperWithQuestionsDTOnn();
+        dto.setSessionId(session.getSessionId());
+        dto.setPaperId(paper.getPaperId());
+        dto.setTitle(paper.getTitle());
+        dto.setDescription(paper.getDescription());
+        dto.setStartTime(paper.getStartTime());
+        dto.setEndTime(paper.getEndTime());
+        dto.setIsLive(paper.getIsLive());
+        dto.setStudentClass(studentClass);
+        dto.setPaperPatternId(paper.getPaperPattern() != null ? paper.getPaperPattern().getPaperPatternId() : null);
+        dto.setPaperEndTime(paper.getPaperEndTime());
+
+        List<QuestionNoAnswerDTO> questionDTOs = paper.getPaperQuestions().stream()
+                .map(PaperQuestion::getQuestion)
+                .map(this::convertToQuestionNoAnswerDTO)
+                .collect(Collectors.toList());
+
+        Collections.shuffle(questionDTOs);
+        dto.setQuestions(questionDTOs);
+
+        if (paper.getStartTime() != null && paper.getEndTime() != null) {
+            Duration duration = Duration.between(paper.getStartTime(), paper.getEndTime());
+            String formattedDuration = String.format("%02d:%02d:%02d",
+                    duration.toHours(),
+                    duration.toMinutesPart(),
+                    duration.toSecondsPart());
+            dto.setDuration(formattedDuration);
+        } else {
+            dto.setDuration("00:00:00");
+        }
+        return dto;
+    }
+
+
     private PaperWithQuestionsDTOn buildExamDTOForStart(ExamSession session, Paper paper, String studentClass) {
         PaperWithQuestionsDTOn dto = new PaperWithQuestionsDTOn();
 

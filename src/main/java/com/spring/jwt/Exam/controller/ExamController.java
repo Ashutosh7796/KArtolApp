@@ -32,7 +32,7 @@ public class ExamController {
         return examService.startExam(userId, paperId, studentClass);
     }
     @PostMapping("/startMobile")
-    public PaperWithQuestionsDTOn startExamMobile(
+    public PaperWithQuestionsDTOnn startExamMobile(
             @RequestParam Integer userId,
             @RequestParam Integer paperId,
             @RequestParam String studentClass) {
