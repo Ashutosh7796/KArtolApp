@@ -1,20 +1,14 @@
-package com.spring.jwt.entity;
+package com.spring.jwt.UserFee;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-@Entity
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "userFee")
-public class UserFee {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class UserFeeDTO {
     private Integer userFeeId;
-
     private String date;
     private String amount;
     private String totalFees;
@@ -22,9 +16,10 @@ public class UserFee {
     private String paidFeesOnDate;
     private String type;
     private Integer feesId;
-    private long userId;
     private String status;
+    private long userId;
     private String studentClass;
     private String batch;
 
+    // Getters and setters
 }

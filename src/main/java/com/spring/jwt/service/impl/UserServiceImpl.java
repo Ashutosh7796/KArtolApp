@@ -157,7 +157,7 @@ public class UserServiceImpl implements UserService {
         student.setLastName(userDTO.getLastName());
         student.setDateOfBirth(userDTO.getDateOfBirth());
         student.setAddress(userDTO.getAddress());
-        student.setStudentcol(userDTO.getStudentcol());
+        student.setBatch(userDTO.getBatch());
         student.setStudentcol1(userDTO.getStudentcol1());
         student.setStudentClass(userDTO.getStudentClass());
         student.setUserId(user.getId().intValue());
@@ -169,7 +169,7 @@ public class UserServiceImpl implements UserService {
     private void createTeacherProfile(User user, UserDTO userDTO) {
         Teacher teacher = new Teacher();
         teacher.setName(userDTO.getFirstName() + " " + userDTO.getLastName());
-        teacher.setSub(userDTO.getStudentcol());
+        teacher.setSub(userDTO.getBatch());
         teacher.setDeg(userDTO.getStudentcol1());
         teacher.setStatus("Active");
         teacher.setUserId(user.getId().intValue());
@@ -181,11 +181,11 @@ public class UserServiceImpl implements UserService {
     private void createParentProfile(User user, UserDTO userDTO) {
         Integer studentId = null;
         try {
-            if (userDTO.getStudentcol() != null && !userDTO.getStudentcol().isEmpty()) {
-                studentId = Integer.parseInt(userDTO.getStudentcol());
+            if (userDTO.getBatch() != null && !userDTO.getBatch().isEmpty()) {
+                studentId = Integer.parseInt(userDTO.getBatch());
             }
         } catch (NumberFormatException e) {
-            log.warn("Invalid student ID format for parent registration: {}", userDTO.getStudentcol());
+            log.warn("Invalid student ID format for parent registration: {}", userDTO.getBatch());
         }
         
         Parents parent = new Parents();
@@ -398,7 +398,7 @@ public class UserServiceImpl implements UserService {
             if (student != null) {
                 userDTO.setRole("STUDENT");
                 userDTO.setDateOfBirth(student.getDateOfBirth());
-                userDTO.setStudentcol(student.getStudentcol());
+                userDTO.setBatch(student.getBatch());
                 userDTO.setStudentcol1(student.getStudentcol1());
                 userDTO.setStudentClass(student.getStudentClass());
             }
@@ -407,7 +407,7 @@ public class UserServiceImpl implements UserService {
             if (teacher != null) {
                 userDTO.setRole("TEACHER");
                 userDTO.setName(teacher.getName());
-                userDTO.setStudentcol(teacher.getSub());
+                userDTO.setBatch(teacher.getSub());
                 userDTO.setStudentcol1(teacher.getDeg());
             }
         } else if (roles.contains("PARENT")) {
@@ -415,7 +415,7 @@ public class UserServiceImpl implements UserService {
             if (parent != null) {
                 userDTO.setRole("PARENT");
                 userDTO.setName(parent.getName());
-                userDTO.setStudentcol(parent.getStudentId() != null ? parent.getStudentId().toString() : null); // Student ID
+                userDTO.setBatch(parent.getStudentId() != null ? parent.getStudentId().toString() : null); // Student ID
                 userDTO.setStudentcol1(parent.getStudentName());
                 userDTO.setStudentClass(parent.getBatch());
             }

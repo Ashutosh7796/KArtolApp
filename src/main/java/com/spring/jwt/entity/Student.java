@@ -19,7 +19,7 @@ public class Student {
     private String lastName;
     private String dateOfBirth;
     private String address;
-    private String studentcol;
+    private String batch;
     private String studentcol1;
     private String studentClass;
 

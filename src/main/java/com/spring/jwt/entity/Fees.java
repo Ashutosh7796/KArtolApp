@@ -19,7 +19,10 @@ public class Fees {
     private String name;
     private Integer fee;
     private String type;
-    private String StudentClass;
+    private String studentClass;
     private  String status;
     private Date date;
+    private String batch;
+
+
 }

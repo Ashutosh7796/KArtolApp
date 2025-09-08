@@ -14,7 +14,7 @@ public class StudentDTO {
     private String lastName;
     private String dateOfBirth;
     private String address;
-    private String studentcol;
+    private String batch;
     private String studentcol1;
     private String studentClass;
     private Integer userId;
@@ -30,7 +30,7 @@ public class StudentDTO {
         dto.setLastName(student.getLastName());
         dto.setDateOfBirth(student.getDateOfBirth());
         dto.setAddress(student.getAddress());
-        dto.setStudentcol(student.getStudentcol());
+        dto.setBatch(student.getBatch());
         dto.setStudentcol1(student.getStudentcol1());
         dto.setStudentClass(student.getStudentClass());
         dto.setUserId(student.getUserId());
