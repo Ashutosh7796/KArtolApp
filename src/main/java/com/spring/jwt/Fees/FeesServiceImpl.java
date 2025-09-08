@@ -14,6 +14,7 @@ public class FeesServiceImpl implements FeesService {
     private FeesRepository feesRepository;
 
     private FeesDto toDto(Fees fees) {
+        // Using Lombok-generated all-args constructor
         return new FeesDto(
                 fees.getFeesId(),
                 fees.getName(),
@@ -21,11 +22,13 @@ public class FeesServiceImpl implements FeesService {
                 fees.getType(),
                 fees.getStudentClass(),
                 fees.getStatus(),
-                fees.getDate()
+                fees.getDate(),
+                fees.getBatch() // Include batch if present
         );
     }
 
     private Fees toEntity(FeesDto dto) {
+        // Using Lombok-generated all-args constructor
         return new Fees(
                 dto.getFeesId(),
                 dto.getName(),
@@ -33,9 +36,11 @@ public class FeesServiceImpl implements FeesService {
                 dto.getType(),
                 dto.getStudentClass(),
                 dto.getStatus(),
-                dto.getDate()
+                dto.getDate(),
+                dto.getBatch() // Include batch if present
         );
     }
+
 
     @Override
     public FeesDto createFees(FeesDto feesDto) {

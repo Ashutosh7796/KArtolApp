@@ -17,4 +17,7 @@ public class FeesDto {
     private String studentClass;
     private String status;
     private Date date;
+    private String batch;
+
+
 }
