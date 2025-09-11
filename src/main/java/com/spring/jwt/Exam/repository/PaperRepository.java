@@ -5,6 +5,8 @@ import com.spring.jwt.Exam.entity.Paper;
 import com.spring.jwt.entity.Question;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,5 +18,9 @@ public interface PaperRepository extends JpaRepository<Paper, Integer> {
     @EntityGraph(attributePaths = {"paperQuestions.question"})
     Optional<Paper> findById(Integer paperId);
 
+
+    @EntityGraph(attributePaths = {"paperQuestions.question"})
+    @Query("SELECT p FROM Paper p WHERE p.paperId = :paperId")
+    Optional<Paper> findByIdWithTimesAndStatus(@Param("paperId") Integer paperId);
 
 }

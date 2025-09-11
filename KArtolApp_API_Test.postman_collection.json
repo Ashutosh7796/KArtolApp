@@ -103,11 +103,13 @@
 							}
 						],
 						"body": {
+
 							"mode": "raw",
 							"raw": "{\n    \"username\": \"newuser@example.com\",\n    \"email\": \"newuser@example.com\",\n    \"password\": \"Password123\",\n    \"firstName\": \"New\",\n    \"lastName\": \"User\",\n    \"mobileNumber\": \"9876543210\",\n    \"role\": \"STUDENT\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/user/registerUser",
+
+					"raw": "{{base_url}}/user/registerUser",
 							"host": [
 								"{{base_url}}"
 							],

@@ -1,5 +1,6 @@
 package com.spring.jwt.Exam.controller;
 
+import com.spring.jwt.Exam.Dto.ClassResultResponseDto;
 import com.spring.jwt.Exam.Dto.ExamResultDTO;
 import com.spring.jwt.Exam.entity.ExamSession;
 import com.spring.jwt.Exam.repository.ExamSessionRepository;
@@ -180,5 +181,11 @@ public class ExamResultController {
             log.error("Error fixing date format: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("Error fixing date format: " + e.getMessage());
         }
+    }
+
+
+    @GetMapping("/by-class")
+    public ResponseEntity<ClassResultResponseDto> getResultsByClass(@RequestParam String studentClass) {
+        return ResponseEntity.ok((ClassResultResponseDto) examResultService.getResultsByStudentClass1(studentClass));
     }
 } 
