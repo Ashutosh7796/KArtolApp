@@ -61,7 +61,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("User not found: {}", exception.getMessage());
         ErrorResponseDto errorResponseDTO = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.BAD_REQUEST,
+                HttpStatus.BAD_REQUEST.value(),
                 exception.getMessage(),
                 LocalDateTime.now()
         );
@@ -73,7 +73,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("Page not found: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.NOT_FOUND,
+                HttpStatus.NOT_FOUND.value(),
                 exception.getMessage(),
                 LocalDateTime.now()
         );
@@ -85,7 +85,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("Validation error: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.BAD_REQUEST,
+                HttpStatus.BAD_REQUEST.value(),
                 exception.getMessage(),
                 LocalDateTime.now()
         );
@@ -97,7 +97,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("Invalid OTP: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.BAD_REQUEST,
+                HttpStatus.BAD_REQUEST.value(),
                 exception.getMessage(),
                 LocalDateTime.now()
         );
@@ -109,7 +109,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("OTP expired: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.BAD_REQUEST,
+                HttpStatus.BAD_REQUEST.value(),
                 exception.getMessage(),
                 LocalDateTime.now()
         );
@@ -121,7 +121,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("Email not verified: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.BAD_REQUEST,
+                HttpStatus.BAD_REQUEST.value(),
                 exception.getMessage(),
                 LocalDateTime.now()
         );
@@ -133,7 +133,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("Authentication error: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.UNAUTHORIZED,
+                HttpStatus.UNAUTHORIZED.value(),
                 "Authentication failed: " + exception.getMessage(),
                 LocalDateTime.now()
         );
@@ -145,7 +145,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("Bad credentials: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.UNAUTHORIZED,
+                HttpStatus.UNAUTHORIZED.value(),
                 "Invalid username or password",
                 LocalDateTime.now()
         );
@@ -157,7 +157,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("Access denied: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.FORBIDDEN,
+                HttpStatus.FORBIDDEN.value(),
                 "Access denied: You don't have permission to access this resource",
                 LocalDateTime.now()
         );
@@ -169,7 +169,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("Database error: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.INTERNAL_SERVER_ERROR,
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Database error occurred",
                 LocalDateTime.now()
         );
@@ -188,7 +188,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         }
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 request.getDescription(false),
-                HttpStatus.BAD_REQUEST,
+                HttpStatus.BAD_REQUEST.value(),
                 error,
                 LocalDateTime.now()
         );
@@ -249,7 +249,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("Uncaught error occurred: ", exception);
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.INTERNAL_SERVER_ERROR,
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "An unexpected error occurred",
                 LocalDateTime.now()
         );
@@ -261,7 +261,7 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         log.error("Exam time window error: {}", exception.getMessage());
         ErrorResponseDto errorResponseDto = new ErrorResponseDto(
                 webRequest.getDescription(false),
-                HttpStatus.BAD_REQUEST,
+                HttpStatus.BAD_REQUEST.value(),
                 exception.getMessage(),
                 LocalDateTime.now()
         );
