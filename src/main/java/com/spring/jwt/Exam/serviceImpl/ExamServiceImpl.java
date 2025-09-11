@@ -78,6 +78,9 @@ public class ExamServiceImpl implements ExamService {
 
     @Override
     public PaperWithQuestionsDTOn startExam(Integer userId, Integer paperId, String studentClass) {
+
+
+
         User user = userRepository.findById(Long.valueOf(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
@@ -90,6 +93,7 @@ public class ExamServiceImpl implements ExamService {
         List<ExamSession> sessions = examSessionRepository.findByUser_IdAndPaper_PaperIdOrderByStartTimeDesc(userId, paperId);
         if (!sessions.isEmpty()) {
             ExamSession existingSession = sessions.get(0); // latest session
+//            ExamSession existingSession = sessions.get(0); // latest session
 
             // ✅ Case: Exam already submitted
             if (existingSession.getScore() != null) {
@@ -224,6 +228,7 @@ public class ExamServiceImpl implements ExamService {
 //
 //        return buildExamDTO(savedSession, paper, studentClass);
 //    }
+
 @Override
 @Transactional // ensures consistency & prevents race condition
 public PaperWithQuestionsDTOnn startExamMobile(Integer userId, Integer paperId, String studentClass) {
@@ -284,6 +289,67 @@ public PaperWithQuestionsDTOnn startExamMobile(Integer userId, Integer paperId, 
 
     return buildExamDTO(savedSession, paper, studentClass);
 }
+//@Override
+//@Transactional
+//public PaperWithQuestionsDTOnn startExamMobile(Integer userId, Integer paperId, String studentClass) {
+//    LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
+//
+//    Paper paper = (Paper) paperRepository.findByIdWithTimesAndStatus(paperId)
+//            .orElseThrow(() -> new ResourceNotFoundException("Paper not found with ID: " + paperId));
+//
+//    LocalDateTime allowedStartTime = paper.getStartTime() != null
+//            ? paper.getStartTime().minusMinutes(10)
+//            : null;
+//
+//    // Early time window check to avoid DB calls if not in allowed time window
+//    if (allowedStartTime != null && paper.getPaperEndTime() != null) {
+//        if (now.isBefore(allowedStartTime) || now.isAfter(paper.getPaperEndTime())) {
+//            throw new ExamTimeWindowException("Exam can only be started between " + allowedStartTime + " and " + paper.getPaperEndTime());
+//        }
+//    } else if (paper.getStartTime() != null && now.isBefore(paper.getStartTime())) {
+//        throw new ExamTimeWindowException("Exam has not started yet.");
+//    } else if (paper.getPaperEndTime() != null && now.isAfter(paper.getPaperEndTime())) {
+//        throw new ExamTimeWindowException("Exam has already ended.");
+//    }
+//
+//    // Use correct repository method - assuming this method is implemented in repository:
+//    ExamSession existingSession = examSessionRepository.findFirstByUser_IdAndPaper_PaperIdOrderByStartTimeDesc(userId, paperId);
+//
+//    if (existingSession != null) {
+//        if (existingSession.getScore() != null) {
+//            throw new ExamTimeWindowException("Exam already submitted by you.");
+//        }
+//        if (paper.getPaperEndTime() != null && now.isAfter(paper.getPaperEndTime())) {
+//            throw new ExamTimeWindowException("Exam time is over. You cannot resume the exam.");
+//        }
+//        if (allowedStartTime != null && now.isBefore(allowedStartTime)) {
+//            throw new ExamTimeWindowException("You cannot resume the exam before " + allowedStartTime);
+//        }
+//        return buildExamDTO(existingSession, paper, existingSession.getStudentClass());
+//    }
+//
+//    // Fetch User only if session does not exist
+//    User user = userRepository.findById(Long.valueOf(userId))
+//            .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+//
+//    ExamSession newSession = new ExamSession();
+//    newSession.setUser(user);
+//    newSession.setPaper(paper);
+//    newSession.setStudentClass(studentClass);
+//    newSession.setStartTime(now);
+//    newSession.setScore(null);
+//    newSession.setUserAnswers(new ArrayList<>());
+//    ExamSession savedSession = examSessionRepository.save(newSession);
+//
+//    // Schedule result processing outside transaction if possible
+//    if (paper.getPaperEndTime() != null && paper.getPaperEndTime().isAfter(now)) {
+//        examSessionSchedulingService.scheduleExamResultProcessing(savedSession.getSessionId(),
+//                paper.getPaperEndTime().plusMinutes(5));
+//    }
+//
+//    return buildExamDTO(savedSession, paper, studentClass);
+//}
+
 
     public PaperWithQuestionsDTOnn buildExamDTO(ExamSession session, Paper paper, String studentClass) {
         PaperWithQuestionsDTOnn dto = new PaperWithQuestionsDTOnn();

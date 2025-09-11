@@ -1,5 +1,6 @@
 package com.spring.jwt.Exam.service;
 
+import com.spring.jwt.Exam.Dto.ClassResultResponseDto;
 import com.spring.jwt.Exam.Dto.ExamResultDTO;
 import com.spring.jwt.Exam.entity.ExamResult;
 import com.spring.jwt.Exam.entity.ExamSession;
@@ -51,4 +52,6 @@ public interface ExamResultService {
      * @return Number of records updated
      */
     int fixResultDateFormat();
+
+    ClassResultResponseDto getResultsByStudentClass1(String studentClass);
 } 

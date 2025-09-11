@@ -62,8 +62,8 @@ public interface ExamSessionRepository extends JpaRepository<ExamSession, Intege
 
     List<ExamSession> findByPaper_PaperId(Long paperId);
 
-    List<ExamSession> findByUser_IdAndPaper_PaperIdOrderByStartTimeDesc(Integer userId, Integer paperId);
+  List<ExamSession> findByUser_IdAndPaper_PaperIdOrderByStartTimeDesc(Integer userId, Integer paperId);
 
 
-
+//    ExamSession findFirstByUser_IdAndPaper_PaperIdOrderByStartTimeDesc(Integer userId, Integer paperId);
 }

@@ -8,8 +8,10 @@ import java.util.stream.Collectors;
  public class ClassesServiceImpl implements ClassesService{
     @Autowired
     private ClassesRepository classesRepository;
-    @Autowired    private ClassMapper mapper;
-    @Override    public ClassesDto createClass(ClassesDto classesDto) {
+    @Autowired
+    private ClassMapper mapper;
+    @Override
+    public ClassesDto createClass(ClassesDto classesDto) {
         if(classesDto==null) {
             throw new IllegalArgumentException("Class data cannot be null");
         }        Classes entity = mapper.toEntity(classesDto);
@@ -44,7 +46,8 @@ import java.util.stream.Collectors;
         }
         Classes savedClass = classesRepository.save(classes);
         return mapper.toDto(savedClass);
-    }    @Override
+    }
+    @Override
     public void deleteClass(Long id) {
         Classes classes = classesRepository.findById(id).
                 orElseThrow(() -> new ClassesNotFoundException("Class does not exist"));

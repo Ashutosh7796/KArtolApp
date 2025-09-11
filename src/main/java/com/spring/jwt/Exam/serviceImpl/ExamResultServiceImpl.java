@@ -1,12 +1,16 @@
 package com.spring.jwt.Exam.serviceImpl;
 
+import com.spring.jwt.Exam.Dto.ClassResultResponseDto;
 import com.spring.jwt.Exam.Dto.ExamResultDTO;
+import com.spring.jwt.Exam.Dto.StudentResultDto;
+import com.spring.jwt.Exam.Dto.SubjectScoreDto;
 import com.spring.jwt.Exam.entity.ExamResult;
 import com.spring.jwt.Exam.entity.ExamSession;
 import com.spring.jwt.Exam.entity.UserAnswer;
 import com.spring.jwt.Exam.repository.ExamResultRepository;
 import com.spring.jwt.Exam.repository.ExamSessionRepository;
 import com.spring.jwt.Exam.service.ExamResultService;
+import com.spring.jwt.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +19,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -214,4 +220,64 @@ public class ExamResultServiceImpl implements ExamResultService {
                 .map(ExamResultDTO::fromEntity)
                 .collect(Collectors.toList());
     }
-} 
+    @Override
+    public ClassResultResponseDto getResultsByStudentClass1(String studentClass) {
+        List<ExamResult> results = examResultRepository.findByStudentClass(studentClass);
+
+        if (results.isEmpty()) {
+            throw new ResourceNotFoundException("No results found for class: " + studentClass);
+        }
+
+        Map<Integer, List<ExamResult>> groupedByStudent =
+                results.stream().collect(Collectors.groupingBy(r -> r.getUser().getId()));
+
+        List<StudentResultDto> studentResults = new ArrayList<>();
+        double totalScore = 0.0;
+        int totalCount = 0;
+
+        for (Map.Entry<Integer, List<ExamResult>> entry : groupedByStudent.entrySet()) {
+            List<ExamResult> studentResultsList = entry.getValue();
+            String studentName = "Unknown Student";
+
+            if (studentResultsList.get(0).getUser() != null) {
+                studentName =
+                        (studentResultsList.get(0).getUser().getFirstName() != null
+                                ? studentResultsList.get(0).getUser().getFirstName()
+                                : "")
+                                + " "
+                                + (studentResultsList.get(0).getUser().getLastName() != null
+                                ? studentResultsList.get(0).getUser().getLastName()
+                                : "");
+            }
+
+            List<SubjectScoreDto> subjects = studentResultsList.stream()
+                    .map(r -> new SubjectScoreDto(
+                            r.getPaper() != null && r.getPaper().getPaperPattern() != null
+                                    ? r.getPaper().getPaperPattern().getSubject()
+                                    : "Unknown Subject",
+                            r.getScore() != null ? r.getScore() : 0.0
+                    ))
+                    .collect(Collectors.toList());
+
+            double avgScore = subjects.stream()
+                    .mapToDouble(SubjectScoreDto::getScore)
+                    .average()
+                    .orElse(0.0);
+            totalScore += subjects.stream().mapToDouble(SubjectScoreDto::getScore).sum();
+            totalCount += subjects.size();
+
+            studentResults.add(new StudentResultDto(studentName.trim(), subjects, avgScore, 0));
+        }
+
+        studentResults.sort(Comparator.comparingDouble(StudentResultDto::getAverageScore).reversed());
+        int rank = 1;
+        for (StudentResultDto student : studentResults) {
+            student.setRank(rank++);
+        }
+        double overallAvg = totalCount > 0 ? totalScore / totalCount : 0.0;
+
+        return new ClassResultResponseDto(studentClass, studentResults, overallAvg);
+    }
+
+
+}

@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class Parents {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer parentsId;
     private String name;
     private String batch;

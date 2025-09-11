@@ -10,4 +10,6 @@ import java.util.List;
 public interface StudentRepository extends JpaRepository<Student, Integer> {
     Student findByUserId(Integer userId);
     List<Student> findByStudentClass(String studentClass);
+
+    List<Student> findByStudentClassAndBatch(String studentClass, String batch);
 }
