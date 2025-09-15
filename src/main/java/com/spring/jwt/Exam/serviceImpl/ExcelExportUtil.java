@@ -11,56 +11,112 @@ import java.util.List;
 
 public class ExcelExportUtil {
 
-    public static InputStream exportExamSessionsToExcel(List<ExamSessionShowResultDto> sessions) throws Exception {
-        String[] headers = {
-                "Session ID", "User ID", "Student Name", "Paper ID", "Paper Title",
-                "Student Class", "Start Time", "End Time", "Result Date",
-                "Score", "Negative Count", "Negative Score"
-        };
+//    public static InputStream exportExamSessionsToExcel(List<ExamSessionShowResultDto> sessions) throws Exception {
+//        String[] headers = {
+//                "Session ID", "User ID", "Student Name", "Paper ID", "Paper Title",
+//                "Student Class", "Start Time", "End Time", "Result Date",
+//                "Score", "Negative Count", "Negative Score"
+//        };
+//
+//        Workbook workbook = new XSSFWorkbook();
+//        Sheet sheet = workbook.createSheet("ExamSessions");
+//
+//        // Create header
+//        Row headerRow = sheet.createRow(0);
+//        CellStyle headerStyle = workbook.createCellStyle();
+//        Font font = workbook.createFont();
+//        font.setBold(true);
+//        headerStyle.setFont(font);
+//
+//        for (int i = 0; i < headers.length; i++) {
+//            Cell cell = headerRow.createCell(i);
+//            cell.setCellValue(headers[i]);
+//            cell.setCellStyle(headerStyle);
+//        }
+//
+//        // Fill data
+//        int rowNum = 1;
+//        for (ExamSessionShowResultDto dto : sessions) {
+//            Row row = sheet.createRow(rowNum++);
+//            row.createCell(0).setCellValue(dto.getSessionId());
+//            row.createCell(1).setCellValue(dto.getUserId() != null ? dto.getUserId() : 0);
+//            row.createCell(2).setCellValue(dto.getStudentName());
+//            row.createCell(3).setCellValue(dto.getPaperId());
+//            row.createCell(4).setCellValue(dto.getTitle());
+//            row.createCell(5).setCellValue(dto.getStudentClass());
+//            row.createCell(6).setCellValue(dto.getStartTime() != null ? dto.getStartTime().toString() : "");
+//            row.createCell(7).setCellValue(dto.getEndTime() != null ? dto.getEndTime().toString() : "");
+//            row.createCell(8).setCellValue(dto.getResultDate() != null ? dto.getResultDate().toString() : "");
+//            row.createCell(9).setCellValue(dto.getScore() != null ? dto.getScore() : 0);
+//            row.createCell(10).setCellValue(dto.getNegativeCount() != null ? dto.getNegativeCount() : 0);
+//            row.createCell(11).setCellValue(dto.getNegativeScore() != null ? dto.getNegativeScore() : 0);
+//        }
+//
+//        // Auto-size columns
+//        for (int i = 0; i < headers.length; i++) {
+//            sheet.autoSizeColumn(i);
+//        }
+//
+//        // Convert workbook to InputStream
+//        ByteArrayOutputStream out = new ByteArrayOutputStream();
+//        workbook.write(out);
+//        workbook.close();
+//        return new ByteArrayInputStream(out.toByteArray());
+//    }
+public static InputStream exportExamSessionsToExcel(List<ExamSessionShowResultDto> sessions) throws Exception {
+    String[] headers = {
+            "Session ID", "User ID", "Student Name", "Paper ID", "Paper Title",
+            "Student Class", "Start Time", "End Time", "Result Date",
+            "Score", "Negative Count", "Negative Score",
+            "Right Answers", "Wrong Answers", "Attempted Questions", "Total Questions", "Not Attempted Questions"
+    };
 
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("ExamSessions");
-
-        // Create header
-        Row headerRow = sheet.createRow(0);
-        CellStyle headerStyle = workbook.createCellStyle();
-        Font font = workbook.createFont();
-        font.setBold(true);
-        headerStyle.setFont(font);
-
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(headers[i]);
-            cell.setCellStyle(headerStyle);
-        }
-
-        // Fill data
-        int rowNum = 1;
-        for (ExamSessionShowResultDto dto : sessions) {
-            Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(dto.getSessionId());
-            row.createCell(1).setCellValue(dto.getUserId() != null ? dto.getUserId() : 0);
-            row.createCell(2).setCellValue(dto.getStudentName());
-            row.createCell(3).setCellValue(dto.getPaperId());
-            row.createCell(4).setCellValue(dto.getTitle());
-            row.createCell(5).setCellValue(dto.getStudentClass());
-            row.createCell(6).setCellValue(dto.getStartTime() != null ? dto.getStartTime().toString() : "");
-            row.createCell(7).setCellValue(dto.getEndTime() != null ? dto.getEndTime().toString() : "");
-            row.createCell(8).setCellValue(dto.getResultDate() != null ? dto.getResultDate().toString() : "");
-            row.createCell(9).setCellValue(dto.getScore() != null ? dto.getScore() : 0);
-            row.createCell(10).setCellValue(dto.getNegativeCount() != null ? dto.getNegativeCount() : 0);
-            row.createCell(11).setCellValue(dto.getNegativeScore() != null ? dto.getNegativeScore() : 0);
-        }
-
-        // Auto-size columns
-        for (int i = 0; i < headers.length; i++) {
-            sheet.autoSizeColumn(i);
-        }
-
-        // Convert workbook to InputStream
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        workbook.write(out);
-        workbook.close();
-        return new ByteArrayInputStream(out.toByteArray());
+    Workbook workbook = new XSSFWorkbook();
+    Sheet sheet = workbook.createSheet("ExamSessions");
+    Row headerRow = sheet.createRow(0);
+    CellStyle headerStyle = workbook.createCellStyle();
+    Font font = workbook.createFont();
+    font.setBold(true);
+    headerStyle.setFont(font);
+    for (int i = 0; i < headers.length; i++) {
+        Cell cell = headerRow.createCell(i);
+        cell.setCellValue(headers[i]);
+        cell.setCellStyle(headerStyle);
     }
+
+    int rowNum = 1;
+    for (ExamSessionShowResultDto dto : sessions) {
+        Row row = sheet.createRow(rowNum++);
+        row.createCell(0).setCellValue(dto.getSessionId());
+        row.createCell(1).setCellValue(dto.getUserId() != null ? dto.getUserId() : 0);
+        row.createCell(2).setCellValue(dto.getStudentName());
+        row.createCell(3).setCellValue(dto.getPaperId());
+        row.createCell(4).setCellValue(dto.getTitle());
+        row.createCell(5).setCellValue(dto.getStudentClass());
+        row.createCell(6).setCellValue(dto.getStartTime() != null ? dto.getStartTime().toString() : "");
+        row.createCell(7).setCellValue(dto.getEndTime() != null ? dto.getEndTime().toString() : "");
+        row.createCell(8).setCellValue(dto.getResultDate() != null ? dto.getResultDate().toString() : "");
+        row.createCell(9).setCellValue(dto.getScore() != null ? dto.getScore() : 0);
+        row.createCell(10).setCellValue(dto.getNegativeCount() != null ? dto.getNegativeCount() : 0);
+        row.createCell(11).setCellValue(dto.getNegativeScore() != null ? dto.getNegativeScore() : 0);
+        row.createCell(12).setCellValue(dto.getRightAnswers() != null ? dto.getRightAnswers() : 0);
+        row.createCell(13).setCellValue(dto.getWrongAnswers() != null ? dto.getWrongAnswers() : 0);
+        row.createCell(14).setCellValue(dto.getAttemptedQuestions() != null ? dto.getAttemptedQuestions() : 0);
+        row.createCell(15).setCellValue(dto.getTotalQuestions() != null ? dto.getTotalQuestions() : 0);
+        int notAttempted = (dto.getTotalQuestions() != null ? dto.getTotalQuestions() : 0) -
+                ((dto.getRightAnswers() != null ? dto.getRightAnswers() : 0) +
+                        (dto.getWrongAnswers() != null ? dto.getWrongAnswers() : 0));
+        row.createCell(16).setCellValue(notAttempted);
+    }
+
+    for (int i = 0; i < headers.length; i++) {
+        sheet.autoSizeColumn(i);
+    }
+
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    workbook.write(out);
+    workbook.close();
+    return new ByteArrayInputStream(out.toByteArray());
+}
+
 }

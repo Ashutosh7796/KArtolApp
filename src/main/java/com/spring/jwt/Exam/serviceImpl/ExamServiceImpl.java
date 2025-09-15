@@ -48,6 +48,8 @@ public class ExamServiceImpl implements ExamService {
     private ExamSessionSchedulingService examSessionSchedulingService;
     @Autowired
     private NegativeMarksRepository negativeMarksRepository;
+    @Autowired
+    private ExamResultRepository examResultRepository;
 
 
     private QuestionNoAnswerDTO convertToQuestionNoAnswerDTO(Question question) {
@@ -1257,50 +1259,148 @@ public PaperWithQuestionsDTOnn startExamMobile(Integer userId, Integer paperId, 
         }
         return dtos;
     }
-
     @Override
     public List<ExamSessionShowResultDto> getSessionsByPaperId(Integer paperId) {
 
         List<ExamSession> sessions = examSessionRepository.findByPaper_PaperId(paperId);
-        if (sessions == null || sessions.isEmpty()) {
-            throw new ResourceNotFoundException("No ExamSession found for paperId: " + paperId);
-        }
 
-        // Get the paper object once, since all sessions have the same paper
-        Paper paper = paperRepository.findById(paperId)
-                .orElseThrow(() -> new ResourceNotFoundException("Paper not found for paperId: " + paperId));
-        String paperTitle = paper.getTitle();
+        if (sessions != null && !sessions.isEmpty()) {
+            // If ExamSession data was found, map to DTOs as before
+            List<ExamSessionShowResultDto> result = new ArrayList<>();
+            Paper paper = paperRepository.findById(paperId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Paper not found for paperId: " + paperId));
+            String paperTitle = paper.getTitle();
 
-        List<ExamSessionShowResultDto> result = new ArrayList<>();
-        for (ExamSession session : sessions) {
-            User user = session.getUser();
-            String studentName = "";
-            if (user != null) {
-                studentName = (user.getFirstName() != null ? user.getFirstName() : "") +
-                        " " +
-                        (user.getLastName() != null ? user.getLastName() : "");
-                studentName = studentName.trim();
+            for (ExamSession session : sessions) {
+                User user = session.getUser();
+                String studentName = (user != null)
+                        ? ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                        (user.getLastName() != null ? user.getLastName() : "")).trim()
+                        : "";
+
+                Integer rightAnswers = session.getRightAnswers() != null ? session.getRightAnswers() : 0;
+                Integer wrongAnswers = session.getWrongAnswers() != null ? session.getWrongAnswers() : 0;
+                Integer totalQuestions = session.getTotalQuestions() != null ? session.getTotalQuestions() : 0;
+                Integer notAttemptedQuestions = totalQuestions - (rightAnswers + wrongAnswers);
+
+                result.add(new ExamSessionShowResultDto(
+                        session.getSessionId(),
+                        user != null ? user.getId() : null,
+                        studentName,
+                        paper.getPaperId(),
+                        paperTitle,
+                        session.getStudentClass(),
+                        session.getStartTime(),
+                        session.getEndTime(),
+                        session.getResultDate(),
+                        session.getScore(),
+                        session.getNegativeCount(),
+                        session.getNegativeScore(),
+                        rightAnswers,
+                        wrongAnswers,
+                        session.getAttemptedQuestions() != null ? session.getAttemptedQuestions() : 0,
+                        totalQuestions,
+                        notAttemptedQuestions
+                ));
             }
+            return result;
+        } else {
+            // If not found in ExamSession, try ExamResult
+            List<ExamResult> results = examResultRepository.findByPaper_PaperId(paperId);
+            if (results != null && !results.isEmpty()) {
+                Paper paper = paperRepository.findById(paperId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Paper not found for paperId: " + paperId));
+                String paperTitle = paper.getTitle();
+                List<ExamSessionShowResultDto> dtoResults = new ArrayList<>();
+                for (ExamResult er : results) {
+                    User user = er.getUser();
+                    String studentName = (user != null)
+                            ? ((user.getFirstName() != null ? user.getFirstName() : "") + " " +
+                            (user.getLastName() != null ? user.getLastName() : "")).trim()
+                            : "";
 
-            result.add(new ExamSessionShowResultDto(
-                    session.getSessionId(),
-                    user != null ? user.getId() : null,
-                    studentName,
-                    paper.getPaperId(),
-                    paperTitle,
-                    session.getStudentClass(),
-                    session.getStartTime(),
-                    session.getEndTime(),
-                    session.getResultDate(),
-                    session.getScore(),
-                    session.getNegativeCount(),
-                    session.getNegativeScore(),
-                    session.getRightAnswers(),         // ✅ added
-                    session.getWrongAnswers(),         // ✅ added
-                    session.getAttemptedQuestions(),   // ✅ added
-                    session.getTotalQuestions()
-            ));
+                    Integer rightAnswers = er.getCorrectAnswers() != null ? er.getCorrectAnswers() : 0;
+                    Integer wrongAnswers = er.getIncorrectAnswers() != null ? er.getIncorrectAnswers() : 0;
+                    Integer totalQuestions = er.getTotalQuestions() != null ? er.getTotalQuestions() : 0;
+                    Integer notAttemptedQuestions = er.getUnansweredQuestions() != null ? er.getUnansweredQuestions()
+                            : totalQuestions - (rightAnswers + wrongAnswers);
+
+                    dtoResults.add(new ExamSessionShowResultDto(
+                            er.getOriginalSessionId(),
+                            user != null ? user.getId() : null,
+                            studentName,
+                            paper.getPaperId(),
+                            paperTitle,
+                            er.getStudentClass(),
+                            er.getExamStartTime(),
+                            er.getExamEndTime(),
+                            er.getResultProcessedTime(),
+                            er.getScore(),
+                            er.getNegativeCount(),
+                            er.getNegativeScore(),
+                            rightAnswers,
+                            wrongAnswers,
+                            rightAnswers + wrongAnswers, // Attempted questions
+                            totalQuestions,
+                            notAttemptedQuestions
+                    ));
+                }
+                return dtoResults;
+            } else {
+                throw new ResourceNotFoundException("No ExamSession or Result found for paperId: " + paperId);
+            }
         }
-        return result;
     }
+
+//    @Override
+//    public List<ExamSessionShowResultDto> getSessionsByPaperId(Integer paperId) {
+//
+//        List<ExamSession> sessions = examSessionRepository.findByPaper_PaperId(paperId);
+//        if (sessions == null || sessions.isEmpty()) {
+//            throw new ResourceNotFoundException("No ExamSession found for paperId: " + paperId);
+//        }
+//
+//        Paper paper = paperRepository.findById(paperId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Paper not found for paperId: " + paperId));
+//        String paperTitle = paper.getTitle();
+//
+//        List<ExamSessionShowResultDto> result = new ArrayList<>();
+//        for (ExamSession session : sessions) {
+//            User user = session.getUser();
+//            String studentName = "";
+//            if (user != null) {
+//                studentName = (user.getFirstName() != null ? user.getFirstName() : "") +
+//                        " " +
+//                        (user.getLastName() != null ? user.getLastName() : "");
+//                studentName = studentName.trim();
+//            }
+//
+//            Integer rightAnswers = session.getRightAnswers() != null ? session.getRightAnswers() : 0;
+//            Integer wrongAnswers = session.getWrongAnswers() != null ? session.getWrongAnswers() : 0;
+//            Integer totalQuestions = session.getTotalQuestions() != null ? session.getTotalQuestions() : 0;
+//            Integer notAttemptedQuestions = totalQuestions - (rightAnswers + wrongAnswers);
+//
+//            result.add(new ExamSessionShowResultDto(
+//                    session.getSessionId(),
+//                    user != null ? user.getId() : null,
+//                    studentName,
+//                    paper.getPaperId(),
+//                    paperTitle,
+//                    session.getStudentClass(),
+//                    session.getStartTime(),
+//                    session.getEndTime(),
+//                    session.getResultDate(),
+//                    session.getScore(),
+//                    session.getNegativeCount(),
+//                    session.getNegativeScore(),
+//                    rightAnswers,
+//                    wrongAnswers,
+//                    session.getAttemptedQuestions() != null ? session.getAttemptedQuestions() : 0,
+//                    totalQuestions,
+//                    notAttemptedQuestions
+//            ));
+//        }
+//        return result;
+//    }
+
 }
