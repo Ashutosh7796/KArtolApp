@@ -161,6 +161,8 @@ public class UserServiceImpl implements UserService {
         student.setStudentcol1(userDTO.getStudentcol1());
         student.setStudentClass(userDTO.getStudentClass());
         student.setUserId(user.getId().intValue());
+        student.setParentsId(userDTO.getParentsId());
+        System.out.println(userDTO.getParentsId());
         
         studentRepository.save(student);
         log.info("Created student profile for user ID: {}", user.getId());
