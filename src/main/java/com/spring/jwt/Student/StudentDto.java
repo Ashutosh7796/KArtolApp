@@ -18,5 +18,5 @@ public class StudentDto {
     private String studentcol1;
     private String studentClass;
     private Integer userId;
-
+    private Integer parentsId;
 }
