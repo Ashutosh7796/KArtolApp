@@ -10,4 +10,7 @@ import lombok.NoArgsConstructor;
 public class StudentInfo {
     private Integer userId;
     private String name;
+    private String batch;
+    private String studentClass;
+
 }

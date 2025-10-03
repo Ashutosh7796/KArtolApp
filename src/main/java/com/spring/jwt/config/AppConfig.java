@@ -126,6 +126,7 @@ public class AppConfig {
                 "api/v1/userFee",
                 "/api/v1/fees",
                 "/api/v1/students",
+                "/api/v1/users/**",
                 jwtConfig.getUrl(),
                 jwtConfig.getRefreshUrl()
             )
@@ -155,6 +156,7 @@ public class AppConfig {
                 .requestMatchers("/api/v1/exam/**").permitAll()
                 .requestMatchers("/api/v1/**").permitAll()
                 .requestMatchers(jwtConfig.getUrl()).permitAll()
+                .requestMatchers("/api/v1/users/**").permitAll()
                 .requestMatchers(jwtConfig.getRefreshUrl()).permitAll()
 
                 .requestMatchers(
@@ -227,6 +229,7 @@ public class AppConfig {
                     new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/Classes/**"),
                     new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/userFee/**"),
                     new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/students/**"),
+                    new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/v1/users/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getUrl()),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher(jwtConfig.getRefreshUrl())
             );

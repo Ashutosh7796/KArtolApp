@@ -115,7 +115,9 @@ public class StudentServiceImpl implements StudentService {
         return students.stream()
                 .map(s -> new StudentInfo(
                         s.getUserId(),
-                        s.getName() + " " + s.getLastName()
+                        s.getName() + " " + s.getLastName(),
+                        s.getStudentClass(),
+                        s.getBatch()
                 ))
                 .collect(Collectors.toList());
     }
