@@ -1,4 +1,5 @@
 package com.spring.jwt.Classes;
+import com.spring.jwt.exception.ResourceNotFoundException;
 import com.spring.jwt.utils.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 import java.util.List;
 @RestController
 @RequestMapping("/api/v1/Classes")
@@ -75,6 +78,24 @@ public class ClassesController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(HttpStatus.NOT_FOUND, "Class not found", e.getMessage()));
         }catch (Exception e){
             return ResponseEntity.badRequest().body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to delete a class", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/today")
+    public ResponseEntity<?> getClassesBySubjectToday(
+            @RequestParam String sub,
+            @RequestParam String studentClass,
+            @RequestParam String date) {
+
+        try {
+            LocalDate parsedDate = LocalDate.parse(date);
+            List<ClassesDto> result = classesService.getClassBySubjectToday(sub, studentClass, parsedDate);
+            return ResponseEntity.ok(result);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching classes: " + e.getMessage());
         }
     }
 }
