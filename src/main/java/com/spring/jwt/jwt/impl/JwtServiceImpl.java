@@ -5,6 +5,7 @@ import com.spring.jwt.jwt.JwtConfig;
 import com.spring.jwt.jwt.JwtService;
 import com.spring.jwt.jwt.TokenBlacklistService;
 import com.spring.jwt.jwt.ActiveSessionService;
+import com.spring.jwt.repository.StudentRepository;
 import com.spring.jwt.repository.UserRepository;
 import com.spring.jwt.service.security.UserDetailsCustom;
 import io.jsonwebtoken.*;
@@ -42,6 +43,7 @@ public class JwtServiceImpl implements JwtService {
 
     private final UserRepository userRepository;
     private final JwtConfig jwtConfig;
+    private final StudentRepository studentRepository;
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
     private final ActiveSessionService activeSessionService;
@@ -51,9 +53,10 @@ public class JwtServiceImpl implements JwtService {
                           UserRepository userRepository, 
                           @Lazy JwtConfig jwtConfig,
                            TokenBlacklistService tokenBlacklistService,
-                           ActiveSessionService activeSessionService) {
+                           ActiveSessionService activeSessionService, StudentRepository studentRepository) {
         this.userDetailsService = userDetailsService;
         this.userRepository = userRepository;
+        this.studentRepository = studentRepository;
         this.jwtConfig = jwtConfig;
         this.tokenBlacklistService = tokenBlacklistService;
         this.activeSessionService = activeSessionService;
@@ -120,6 +123,15 @@ public class JwtServiceImpl implements JwtService {
         if (userDetailsCustom.getParentId() != null) {
             jwtBuilder.claim("parentId", userDetailsCustom.getParentId());
         }
+
+        studentRepository.findById(userDetailsCustom.getStudentId()).ifPresent(student ->
+        {
+            Map <String, Object> studentInfo = new HashMap<>();
+            studentInfo.put("StudentClass", student.getStudentClass());
+            studentInfo.put("studentBatch", student.getBatch());
+
+            jwtBuilder.claim("student", studentInfo);
+        });
         
         jwtBuilder.claim(CLAIM_KEY_TOKEN_TYPE, TOKEN_TYPE_ACCESS)
                 .setIssuedAt(Date.from(now))

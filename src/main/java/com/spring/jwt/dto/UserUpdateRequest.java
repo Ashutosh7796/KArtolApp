@@ -37,10 +37,6 @@ public class UserUpdateRequest {
     )
     private String lastName;
 
-    @Pattern(regexp = "^[0-9]{10}$", message = "Mobile number must be 10 digits")
-    @Schema(
-            description = "Mobile Number of the customer", example = "9822222212"
-    )
     private Long mobileNumber;
 }
 
