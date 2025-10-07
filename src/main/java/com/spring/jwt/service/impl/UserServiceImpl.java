@@ -1,5 +1,6 @@
 package com.spring.jwt.service.impl;
 
+import com.spring.jwt.Student.StudentNotFoundException;
 import com.spring.jwt.dto.ResetPassword;
 import com.spring.jwt.dto.UserDTO;
 import com.spring.jwt.dto.UserUpdateRequest;
@@ -150,7 +151,8 @@ public class UserServiceImpl implements UserService {
 
         return user;
     }
-    
+
+
     private void createStudentProfile(User user, UserDTO userDTO) {
         Student student = new Student();
         student.setName(userDTO.getFirstName());
@@ -431,6 +433,8 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundExceptions("User not found with id: " + id));
 
+        Student studentData = studentRepository.findByUserId(user.getId());
+
         if (request.getFirstName() != null) {
             user.setFirstName(request.getFirstName());
         }
@@ -443,10 +447,27 @@ public class UserServiceImpl implements UserService {
         if (request.getMobileNumber() != null) {
             user.setMobileNumber(request.getMobileNumber());
         }
-        
+
+        if (studentData != null) {
+            if (request.getFirstName() != null) {
+
+                studentData.setName(request.getFirstName());
+            }
+            if (request.getLastName() != null) {
+                studentData.setLastName(request.getLastName());
+            }
+            if (request.getAddress() != null) {
+                studentData.setAddress(request.getAddress());
+            }
+
+            studentRepository.save(studentData);
+        }
+
         User updatedUser = userRepository.save(user);
+
         return userMapper.toDTO(updatedUser);
     }
+
 
     @Override
     public UserProfileDTO getUserProfileById(Long id) {
