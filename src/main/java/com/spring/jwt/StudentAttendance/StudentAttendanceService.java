@@ -18,7 +18,7 @@ public interface StudentAttendanceService {
     List<StudentAttendanceDTO> getByDate(LocalDate date);
     List<StudentAttendanceDTO> getBySub(String sub);
     List<StudentAttendanceDTO> getByTeacherId(Integer teacherId);
-    List<StudentAttendanceDTO> getByStudentClass(String studentClass);
+    List<StudentAttendanceSummaryDTO> getByStudentClass(String studentClass);
     List<StudentAttendanceDTO> getByDateAndStudentClassAndTeacherId(LocalDate date, String studentClass, Integer teacherId);
 
     AttendanceScoreDto getAttendanceScores(Integer userId);

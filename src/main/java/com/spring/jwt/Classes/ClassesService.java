@@ -8,4 +8,6 @@ public interface ClassesService {
     void deleteClass(Long id);
     List<ClassesDto> getClassBySubjectToday(String sub, String studentClass, LocalDate date);
 
+    List<ClassesDto>getTodayClasses();
+
 }

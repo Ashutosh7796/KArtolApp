@@ -12,4 +12,6 @@ import java.util.List;public interface ClassesRepository extends JpaRepository<C
     List<Classes> findClassBySubject(String sub, String studentClass);
 
     List<Classes> findBySubAndStudentClassAndDate(String sub, String studentClass, LocalDate date);
+
+    List<Classes> findByDate(LocalDate today);
 }
