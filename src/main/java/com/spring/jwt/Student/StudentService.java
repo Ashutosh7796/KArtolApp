@@ -14,4 +14,6 @@ public interface StudentService {
 
     List<StudentDto> getStudentsByClassAndBatch(String studentClass, String batch);
 
+    List<StudentInfo>getStudentId(Integer parentsId);
+
 }

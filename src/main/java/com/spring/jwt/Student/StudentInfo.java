@@ -7,16 +7,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudentDto {
-
-    private Integer studentId;
-    private String name;
-    private String lastName;
-    private String dateOfBirth;
-    private String address;
-    private String batch;
-    private String studentcol1;
-    private String studentClass;
+public class StudentInfo {
     private Integer userId;
-    private Integer parentsId;
+    private String name;
+    private String batch;
+    private String studentClass;
+
 }

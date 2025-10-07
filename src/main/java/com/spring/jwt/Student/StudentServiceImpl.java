@@ -25,7 +25,8 @@ public class StudentServiceImpl implements StudentService {
                 student.getBatch(),
                 student.getStudentcol1(),
                 student.getStudentClass(),
-                student.getUserId()
+                student.getUserId(),
+                student.getParentsId()
         );
     }
 
@@ -39,7 +40,8 @@ public class StudentServiceImpl implements StudentService {
                 dto.getBatch(),
                 dto.getStudentcol1(),
                 dto.getStudentClass(),
-                dto.getUserId()
+                dto.getUserId(),
+                dto.getParentsId()
         );
     }
 
@@ -99,6 +101,24 @@ public class StudentServiceImpl implements StudentService {
 
         return students.stream()
                 .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<StudentInfo> getStudentId(Integer parentsId) {
+        List<Student> students = studentRepository.findByParentsId(parentsId);
+
+        if (students.isEmpty()) {
+            throw new ResourceNotFoundException("No students found for parentId: " + parentsId);
+        }
+
+        return students.stream()
+                .map(s -> new StudentInfo(
+                        s.getUserId(),
+                        s.getName() + " " + s.getLastName(),
+                        s.getStudentClass(),
+                        s.getBatch()
+                ))
                 .collect(Collectors.toList());
     }
 

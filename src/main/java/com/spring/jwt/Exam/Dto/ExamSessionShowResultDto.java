@@ -26,4 +26,5 @@ public class ExamSessionShowResultDto {
     private Integer wrongAnswers;
     private Integer attemptedQuestions;
     private Integer totalQuestions;
+    private Integer notAttemptedQuestions;
 }

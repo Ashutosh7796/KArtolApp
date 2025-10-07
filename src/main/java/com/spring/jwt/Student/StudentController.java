@@ -1,7 +1,9 @@
 package com.spring.jwt.Student;
 
 import com.spring.jwt.dto.ResponseDto;
+import com.spring.jwt.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,4 +48,23 @@ public class StudentController {
         List<StudentDto> students = studentService.getStudentsByClassAndBatch(studentClass, batch);
         return ResponseEntity.ok(ResponseDto.success("Students fetched successfully", students));
     }
+
+    @GetMapping("/parent")
+    public ResponseEntity<ResponseDto<List<StudentInfo>>> getStudentsByParent(@RequestParam Integer parentId) {
+        try {
+            List<StudentInfo> studentInfo = studentService.getStudentId(parentId);
+            return ResponseEntity.ok(
+                    ResponseDto.success("Students fetched successfully", studentInfo)
+            );
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseDto.error("Failed to fetch students", ex.getMessage())
+            );
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    ResponseDto.error("Something went wrong", ex.getMessage())
+            );
+        }
+    }
+
 }

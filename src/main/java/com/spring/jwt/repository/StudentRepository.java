@@ -12,4 +12,6 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
     List<Student> findByStudentClass(String studentClass);
 
     List<Student> findByStudentClassAndBatch(String studentClass, String batch);
+
+    List<Student> findByParentsId(Integer parentsId);
 }

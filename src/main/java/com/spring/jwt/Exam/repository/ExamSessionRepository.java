@@ -2,8 +2,10 @@ package com.spring.jwt.Exam.repository;
 
 import com.spring.jwt.Exam.Dto.ExamPaperSummaryDto;
 import com.spring.jwt.Exam.entity.ExamSession;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -66,4 +68,8 @@ public interface ExamSessionRepository extends JpaRepository<ExamSession, Intege
 
 
 //    ExamSession findFirstByUser_IdAndPaper_PaperIdOrderByStartTimeDesc(Integer userId, Integer paperId);
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+@Query("SELECT e FROM ExamSession e WHERE e.user.id = :userId AND e.paper.paperId = :paperId")
+Optional<ExamSession> findByUserIdAndPaperIdForUpdate(@Param("userId") long userId, @Param("paperId") Integer paperId);
+
 }

@@ -60,6 +60,7 @@ public class UserDTO {
     private String batch;
     private String studentcol1;
     private String studentClass;
+    private Integer parentsId;
     private String role; // Single role field for backward compatibility
 
     public UserDTO(User user) {
@@ -69,6 +70,7 @@ public class UserDTO {
         this.lastName = user.getLastName();
         this.mobileNumber = user.getMobileNumber();
         this.userId = user.getId().toString();
+
         
         if (user.getRoles() != null) {
             this.roles = user.getRoles().stream()
