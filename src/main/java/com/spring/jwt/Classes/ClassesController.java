@@ -98,4 +98,22 @@ public class ClassesController {
                     .body("Error fetching classes: " + e.getMessage());
         }
     }
+
+    @GetMapping("/upcoming")
+    public ResponseEntity<?> getTodayClasses() {
+
+
+        try {
+            List<ClassesDto> result = classesService.getTodayClasses();
+            return ResponseEntity.ok(result);
+
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching today's classes: " + e.getMessage());
+        }
+    }
+
 }

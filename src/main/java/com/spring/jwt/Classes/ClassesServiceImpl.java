@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -89,6 +90,40 @@ import java.util.stream.Collectors;
             throw new RuntimeException("Error fetching class details: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public List<ClassesDto> getTodayClasses() {
+        log.info("Fetching today's classes (Asia/Kolkata timezone)");
+
+        try {
+            // Get today's date in Asia/Kolkata timezone
+            ZoneId zoneId = ZoneId.of("Asia/Kolkata");
+            LocalDate today = LocalDate.now(zoneId);
+
+            log.debug("Resolved today's date as {} using timezone {}", today, zoneId);
+
+            // Fetch from repository
+            List<Classes> classesList = classesRepository.findByDate(today);
+
+            if (classesList.isEmpty()) {
+                log.warn("No classes found for today's date: {}", today);
+                throw new ResourceNotFoundException(
+                        String.format("No classes scheduled for today (%s)", today)
+                );
+            }
+
+            return classesList.stream()
+                    .map(mapper::toDto)
+                    .collect(Collectors.toList());
+
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error fetching today's classes -> {}", e.getMessage(), e);
+            throw new RuntimeException("Error fetching today's classes: " + e.getMessage(), e);
+        }
+    }
+
 }
 
 

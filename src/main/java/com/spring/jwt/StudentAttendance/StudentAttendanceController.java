@@ -167,12 +167,12 @@ public class StudentAttendanceController {
     @GetMapping("/class")
     @PermitAll
     @Operation(summary = "Get attendance by class", description = "Fetches attendance records for a class")
-    public ResponseEntity<ApiResponse<List<StudentAttendanceDTO>>> getByStudentClass(@RequestParam String studentClass) {
+    public ResponseEntity<ApiResponse<List<StudentAttendanceSummaryDTO>>> getByStudentClass(@RequestParam String studentClass) {
         try {
-            List<StudentAttendanceDTO> list = studentAttendanceService.getByStudentClass(studentClass);
+            List<StudentAttendanceSummaryDTO> list = studentAttendanceService.getByStudentClass(studentClass);
             return ResponseEntity.ok(ApiResponse.success("Attendance fetched for class", list));
         } catch (Exception e) {
-            log.error("Failed to fetch attendance by class: {}", e.getMessage(), e);
+
             return ResponseEntity.badRequest().body(ApiResponse.error(HttpStatus.BAD_REQUEST, "Failed to fetch attendance by class", e.getMessage()));
         }
     }
