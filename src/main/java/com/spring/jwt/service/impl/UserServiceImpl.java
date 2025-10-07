@@ -450,6 +450,7 @@ public class UserServiceImpl implements UserService {
 
         if (studentData != null) {
             if (request.getFirstName() != null) {
+
                 studentData.setName(request.getFirstName());
             }
             if (request.getLastName() != null) {
