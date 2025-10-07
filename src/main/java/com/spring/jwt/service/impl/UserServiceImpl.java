@@ -150,7 +150,8 @@ public class UserServiceImpl implements UserService {
 
         return user;
     }
-    
+
+
     private void createStudentProfile(User user, UserDTO userDTO) {
         Student student = new Student();
         student.setName(userDTO.getFirstName());
