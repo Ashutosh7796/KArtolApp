@@ -235,17 +235,85 @@ public class StudentAttendanceServiceImpl implements StudentAttendanceService {
     }
 
     @Override
-    public List<StudentAttendanceDTO> getByStudentClass(String studentClass) {
+    public List<StudentAttendanceSummaryDTO> getByStudentClass(String studentClass) {
         if (studentClass == null || studentClass.trim().isEmpty()) {
             throw new IllegalArgumentException("studentClass is required and cannot be empty");
         }
+
         try {
             List<StudentAttendance> attendances = repository.findByStudentClass(studentClass);
-            return attendances.stream().map(this::toDTO).collect(Collectors.toList());
+
+            if (attendances.isEmpty()) {
+                throw new ResourceNotFoundException("No attendance records found for class: " + studentClass);
+            }
+
+            // Group by userId (student)
+            Map<Integer, List<StudentAttendance>> byStudent = attendances.stream()
+                    .collect(Collectors.groupingBy(StudentAttendance::getUserId));
+
+            List<StudentAttendanceSummaryDTO> result = new ArrayList<>();
+
+            for (Map.Entry<Integer, List<StudentAttendance>> studentEntry : byStudent.entrySet()) {
+                Integer userId = studentEntry.getKey();
+                List<StudentAttendance> studentRecords = studentEntry.getValue();
+
+                String name = studentRecords.get(0).getName();
+                String cls = studentRecords.get(0).getStudentClass();
+
+                // Group by subject within this student's records
+                Map<String, List<StudentAttendance>> bySubject = studentRecords.stream()
+                        .collect(Collectors.groupingBy(StudentAttendance::getSub));
+
+                List<SubjectAttendanceDTO> subjectDtos = new ArrayList<>();
+                double totalPercentageSum = 0.0;
+
+                for (Map.Entry<String, List<StudentAttendance>> subEntry : bySubject.entrySet()) {
+                    String subject = subEntry.getKey();
+                    List<StudentAttendance> subjectRecords = subEntry.getValue();
+
+                    long totalClasses = subjectRecords.size();
+                    long presentCount = subjectRecords.stream()
+                            .filter(StudentAttendance::getAttendance)
+                            .count();
+
+                    double attendancePercentage = totalClasses > 0
+                            ? (presentCount * 100.0) / totalClasses
+                            : 0.0;
+
+                    totalPercentageSum += attendancePercentage;
+
+                    SubjectAttendanceDTO subjectDTO = new SubjectAttendanceDTO();
+                    subjectDTO.setSub(subject);
+                    subjectDTO.setTotalPresent(presentCount);
+                    subjectDTO.setAttendancePercentage(attendancePercentage);
+
+                    subjectDtos.add(subjectDTO);
+                }
+
+                // Calculate average percentage across subjects
+                double overallPercentage = subjectDtos.isEmpty()
+                        ? 0.0
+                        : totalPercentageSum / subjectDtos.size();
+
+                StudentAttendanceSummaryDTO summaryDTO = new StudentAttendanceSummaryDTO();
+                summaryDTO.setUserId(userId);
+                summaryDTO.setName(name);
+                summaryDTO.setStudentClass(cls);
+                summaryDTO.setSubjects(subjectDtos);
+                summaryDTO.setOverallPercentage(overallPercentage);
+
+                result.add(summaryDTO);
+            }
+
+            return result;
+
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to fetch attendance by studentClass: " + studentClass, ex);
+            throw new RuntimeException("Failed to fetch attendance summary for class: " + studentClass, ex);
         }
     }
+
 
     @Override
     public List<StudentAttendanceDTO> getByDateAndStudentClassAndTeacherId(LocalDate date, String studentClass, Integer teacherId) {
