@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.sql.Time;
 import java.time.LocalDate;
 @Data
 @NoArgsConstructor
@@ -22,4 +24,6 @@ public class ClassesDto {
     @Schema(description = "Class of student", example = "11th")
     private String studentClass;
     @Schema(description = "Unique id of teacher who will conduct the class", example = "11")
-    private Integer teacherId;}
+    private Integer teacherId;
+    private Time time;
+}

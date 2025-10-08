@@ -22,3 +22,4 @@ public class Teacher {
 
     private Integer userId;
 }
+

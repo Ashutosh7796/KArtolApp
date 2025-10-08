@@ -3,6 +3,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.sql.Time;
 import java.time.LocalDate;
 @Entity
 @Data
@@ -22,4 +24,6 @@ public class Classes {
     @Column(name = "student_Class")
     private String studentClass;
     @Column(name = "teacher_Id")
-    private Integer teacherId;}
+    private Integer teacherId;
+    private Time time;
+}

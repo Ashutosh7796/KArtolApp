@@ -14,4 +14,9 @@ import java.util.List;public interface ClassesRepository extends JpaRepository<C
     List<Classes> findBySubAndStudentClassAndDate(String sub, String studentClass, LocalDate date);
 
     List<Classes> findByDate(LocalDate today);
+
+    List<Classes> findByStudentClassAndDate(String studentClass, LocalDate today);
+
+    @Query("SELECT DISTINCT c.sub FROM Classes c")
+    List<String> findDistinctSubjects();
 }
