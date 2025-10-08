@@ -6,8 +6,10 @@ public interface ClassesService {
     List<ClassesDto> getClassBySubject(String sub, String studentClass);
     ClassesDto updateClass(Long id, ClassesDto classesDto);
     void deleteClass(Long id);
-    List<ClassesDto> getClassBySubjectToday(String sub, String studentClass, LocalDate date);
+    List<ClassesDetailsDto> getClassBySubjectToday(String sub, String studentClass, LocalDate date);
 
-    List<ClassesDto>getTodayClasses();
+    public List<ClassesDto> getTodayClassesByStudentClass(String studentClass);
+
+    List<String> getUniqueSubjects();
 
 }

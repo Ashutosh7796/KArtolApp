@@ -1,6 +1,8 @@
 package com.spring.jwt.Classes;
 import com.spring.jwt.entity.Classes;
+import com.spring.jwt.entity.Teacher;
 import com.spring.jwt.exception.ResourceNotFoundException;
+import com.spring.jwt.repository.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
     private final ClassesRepository classesRepository;
 
     private final ClassMapper mapper;
+
+    private final TeacherRepository teacherRepository;
     @Override
     public ClassesDto createClass(ClassesDto classesDto) {
         if(classesDto==null) {
@@ -66,49 +70,51 @@ import java.util.stream.Collectors;
     }
 
     @Override
-    public List<ClassesDto> getClassBySubjectToday(String sub, String studentClass, LocalDate date) {
+    public List<ClassesDetailsDto> getClassBySubjectToday(String sub, String studentClass, LocalDate date) {
         log.info("Fetching classes for subject={}, studentClass={}, date={}", sub, studentClass, date);
 
-        try {
-            List<Classes> classesList =
-                    classesRepository.findBySubAndStudentClassAndDate(sub, studentClass, date);
+        List<Classes> classesList = classesRepository.findBySubAndStudentClassAndDate(sub, studentClass, date);
 
-            if (classesList.isEmpty()) {
-                log.warn("No classes found for subject={}, class={}, date={}", sub, studentClass, date);
-                throw new ResourceNotFoundException(
-                        String.format("No classes found for subject: %s, class: %s on date: %s", sub, studentClass, date)
-                );
-            }
-            return classesList.stream()
-                    .map(mapper::toDto)
-                    .collect(Collectors.toList());
-
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error fetching classes for {}, {}, {} -> {}", sub, studentClass, date, e.getMessage());
-            throw new RuntimeException("Error fetching class details: " + e.getMessage(), e);
+        if (classesList.isEmpty()) {
+            log.warn("No classes found for subject={}, class={}, date={}", sub, studentClass, date);
+            throw new ResourceNotFoundException(
+                    String.format("No classes found for subject: %s, class: %s on date: %s", sub, studentClass, date)
+            );
         }
+
+        // Map each class to ClassesDetailsDto with teacher name
+        return classesList.stream()
+                .map(classes -> {
+                    Teacher teacher = teacherRepository.findByUserId(classes.getTeacherId());
+                    return mapper.toDetailsDto(classes, teacher);
+                })
+                .collect(Collectors.toList());
     }
 
+
+
     @Override
-    public List<ClassesDto> getTodayClasses() {
-        log.info("Fetching today's classes (Asia/Kolkata timezone)");
+    public List<ClassesDto> getTodayClassesByStudentClass(String studentClass) {
+        log.info("Fetching today's classes for class: {} (Asia/Kolkata timezone)", studentClass);
 
         try {
+            if (studentClass == null || studentClass.trim().isEmpty()) {
+                throw new IllegalArgumentException("studentClass is required and cannot be empty");
+            }
+
             // Get today's date in Asia/Kolkata timezone
             ZoneId zoneId = ZoneId.of("Asia/Kolkata");
             LocalDate today = LocalDate.now(zoneId);
 
             log.debug("Resolved today's date as {} using timezone {}", today, zoneId);
 
-            // Fetch from repository
-            List<Classes> classesList = classesRepository.findByDate(today);
+            // Fetch from repository for today and given student class
+            List<Classes> classesList = classesRepository.findByStudentClassAndDate(studentClass, today);
 
             if (classesList.isEmpty()) {
-                log.warn("No classes found for today's date: {}", today);
+                log.warn("No classes found for {} on date {}", studentClass, today);
                 throw new ResourceNotFoundException(
-                        String.format("No classes scheduled for today (%s)", today)
+                        String.format("No classes scheduled for class %s today (%s)", studentClass, today)
                 );
             }
 
@@ -119,11 +125,27 @@ import java.util.stream.Collectors;
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error fetching today's classes -> {}", e.getMessage(), e);
+            log.error("Unexpected error fetching today's classes for {} -> {}", studentClass, e.getMessage(), e);
             throw new RuntimeException("Error fetching today's classes: " + e.getMessage(), e);
         }
     }
 
+    @Override
+    public List<String> getUniqueSubjects() {
+        log.info("Fetching unique subjects from Classes table");
+        try {
+            List<String> subjects = classesRepository.findDistinctSubjects();
+
+            if (subjects.isEmpty()) {
+                throw new ResourceNotFoundException("No subjects found in the Classes table");
+            }
+
+            return subjects;
+        } catch (Exception e) {
+            log.error("Error fetching unique subjects -> {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to fetch unique subjects: " + e.getMessage());
+        }
+    }
 }
 
 
