@@ -37,6 +37,12 @@ public class UserUpdateRequest {
     )
     private String lastName;
 
+    private String studentClass;
+
+    private String batch;
+
+    private String dateOfBirth;
+
     private Long mobileNumber;
 }
 
