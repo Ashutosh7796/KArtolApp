@@ -56,6 +56,21 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(response, status);
     }
 
+    @ExceptionHandler(UnauthorizedAccessException.class)
+
+    public ResponseEntity<ErrorResponseDto> handleUnauthorizedAccessException (UnauthorizedAccessException unauthorizedAccessException, WebRequest webRequest)
+    {
+        log.error("Unauthorized Access Exception", unauthorizedAccessException.getMessage());
+
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                webRequest.getDescription(false),
+                HttpStatus.UNAUTHORIZED.value(),
+                unauthorizedAccessException.getMessage(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(errorResponseDto, HttpStatus.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(UserNotFoundExceptions.class)
     public ResponseEntity<ErrorResponseDto> handleUserNotFoundException(UserNotFoundExceptions exception, WebRequest webRequest){
         log.error("User not found: {}", exception.getMessage());

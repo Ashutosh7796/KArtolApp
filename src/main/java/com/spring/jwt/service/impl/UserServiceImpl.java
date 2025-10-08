@@ -10,6 +10,7 @@ import com.spring.jwt.entity.User;
 import com.spring.jwt.entity.Teacher;
 import com.spring.jwt.entity.Parents;
 import com.spring.jwt.exception.BaseException;
+import com.spring.jwt.exception.UnauthorizedAccessException;
 import com.spring.jwt.exception.UserNotFoundExceptions;
 import com.spring.jwt.repository.RoleRepository;
 import com.spring.jwt.repository.StudentRepository;
@@ -33,6 +34,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -433,38 +435,35 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundExceptions("User not found with id: " + id));
 
+        String currentUserRole = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().findFirst().map(GrantedAuthority::getAuthority).orElse(null);
+
         Student studentData = studentRepository.findByUserId(user.getId());
 
-        if (request.getFirstName() != null) {
-            user.setFirstName(request.getFirstName());
-        }
-        if (request.getLastName() != null) {
-            user.setLastName(request.getLastName());
-        }
-        if (request.getAddress() != null) {
-            user.setAddress(request.getAddress());
-        }
-        if (request.getMobileNumber() != null) {
-            user.setMobileNumber(request.getMobileNumber());
-        }
+        if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
+        if (request.getLastName() != null) user.setLastName(request.getLastName());
+        if (request.getAddress() != null) user.setAddress(request.getAddress());
+        if (request.getMobileNumber() != null) user.setMobileNumber(request.getMobileNumber());
 
         if (studentData != null) {
-            if (request.getFirstName() != null) {
+            if (request.getFirstName() != null) studentData.setName(request.getFirstName());
+            if (request.getLastName() != null) studentData.setLastName(request.getLastName());
+            if (request.getAddress() != null) studentData.setAddress(request.getAddress());
 
-                studentData.setName(request.getFirstName());
-            }
-            if (request.getLastName() != null) {
-                studentData.setLastName(request.getLastName());
-            }
-            if (request.getAddress() != null) {
-                studentData.setAddress(request.getAddress());
+            if ("ROLE_ADMIN".equals(currentUserRole)) {
+                if (request.getStudentClass() != null) studentData.setStudentClass(request.getStudentClass());
+                if (request.getBatch() != null) studentData.setBatch(request.getBatch());
+            } else {
+
+                if (request.getStudentClass() != null || request.getBatch() != null) {
+                    throw new UnauthorizedAccessException("You are not allowed to update class or batch details");
+                }
             }
 
             studentRepository.save(studentData);
         }
 
         User updatedUser = userRepository.save(user);
-
         return userMapper.toDTO(updatedUser);
     }
 
