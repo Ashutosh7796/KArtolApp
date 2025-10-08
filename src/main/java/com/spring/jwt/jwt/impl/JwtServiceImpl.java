@@ -376,7 +376,6 @@ public class JwtServiceImpl implements JwtService {
         } catch (Exception e) {
             throw new BaseException(String.valueOf(HttpStatus.UNAUTHORIZED.value()), e.getLocalizedMessage());
         }
-
         return claims;
     }
 
