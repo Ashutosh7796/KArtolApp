@@ -57,7 +57,6 @@ public class GlobalException extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(UnauthorizedAccessException.class)
-
     public ResponseEntity<ErrorResponseDto> handleUnauthorizedAccessException (UnauthorizedAccessException unauthorizedAccessException, WebRequest webRequest)
     {
         log.error("Unauthorized Access Exception", unauthorizedAccessException.getMessage());

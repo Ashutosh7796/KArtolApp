@@ -327,9 +327,36 @@ public class JwtServiceImpl implements JwtService {
 
             try {
                 String tokenId = claims.getId();
-                if (StringUtils.hasText(tokenId) && !activeSessionService.isCurrentAccessToken(username, tokenId)) {
-                    log.warn("Access token is not current for user: {}", username);
-                    return false;
+                String tokenType = claims.get(CLAIM_KEY_TOKEN_TYPE, String.class);
+
+                log.debug("Validating token type : {} for user : {}", tokenType, username);
+
+                if (StringUtils.hasText(tokenId))
+                {
+                    boolean isCurrentToken;
+                    if (TOKEN_TYPE_REFRESH.equals(tokenType))
+                    {
+                        log.debug("Checking refresh token validity for user: {}", username);
+                        isCurrentToken = activeSessionService.isCurrentRefreshToken(username,tokenId);
+                        if(!isCurrentToken)
+                        {
+                            log.warn("Refresh token is not current for user: {}", username);
+                            return false;
+                        }
+                        log.debug("Refresh token is valid for user: {}", username);
+                    }
+                    else if (TOKEN_TYPE_ACCESS.equals(tokenType))
+                    {
+                        log.debug("Checking access token validity for user: {}", username);
+                        isCurrentToken = activeSessionService.isCurrentAccessToken(username,tokenId);
+                        if(!isCurrentToken)
+                        {
+                            log.warn("Access token is not current for user: {}", username);
+                            return false;
+                        }
+                        log.debug("Access token is valid for user: {}", username);
+                    }
+
                 }
             } catch (Exception e) {
                 log.warn("Could not verify active session: {}", e.getMessage());
