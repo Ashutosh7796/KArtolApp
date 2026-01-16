@@ -1,0 +1,114 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@kartol.com'
+  smtp_auth_username: 'alerts@kartol.com'
+  smtp_auth_password: 'your-app-password'
+
+route:
+  group_by: ['alertname', 'job', 'namespace']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'web.hook'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 5s
+      repeat_interval: 30m
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      repeat_interval: 2h
+    - match:
+        severity: info
+      receiver: 'info-alerts'
+      repeat_interval: 24h
+
+receivers:
+  - name: 'web.hook'
+    webhook_configs:
+      - url: 'http://localhost:5001/'
+
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'oncall@kartol.com,devops@kartol.com'
+        subject: '[CRITICAL] {{ .GroupLabels.alertname }} in {{ .GroupLabels.job }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#alerts-critical'
+        title: '🚨 Critical Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Namespace:* {{ .GroupLabels.namespace }}
+          *Job:* {{ .GroupLabels.job }}
+          {{ end }}
+    webhook_configs:
+      - url: 'https://api.pagerduty.com/integrations/v2/enqueue/YOUR_INTEGRATION_KEY'
+
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'devops@kartol.com,dev-team@kartol.com'
+        subject: '[WARNING] {{ .GroupLabels.alertname }} in {{ .GroupLabels.job }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#alerts-warning'
+        title: '⚠️ Warning Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Namespace:* {{ .GroupLabels.namespace }}
+          {{ end }}
+
+  - name: 'info-alerts'
+    email_configs:
+      - to: 'dev-team@kartol.com'
+        subject: '[INFO] {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#alerts-info'
+        title: 'ℹ️ Info Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'job', 'namespace']
+
+  - source_match:
+      alertname: 'ApplicationDown'
+    target_match:
+      alertname: 'ApplicationHighErrorRate'
+    equal: ['job', 'namespace']
+
+  - source_match:
+      alertname: 'PodCrashLooping'
+    target_match:
+      alertname: 'ApplicationDown'
+    equal: ['namespace']
