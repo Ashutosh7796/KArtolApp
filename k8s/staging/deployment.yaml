@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kartol-app-staging
+  namespace: kartol-staging
+  labels:
+    app: kartol-app-staging
+    version: staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kartol-app-staging
+  template:
+    metadata:
+      labels:
+        app: kartol-app-staging
+        version: staging
+    spec:
+      containers:
+      - name: kartol-app
+        image: ghcr.io/$(git config --get remote.origin.url | sed 's/.*\///' | sed 's/.git$//'):latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - configMapRef:
+            name: kartol-app-staging-config
+        - secretRef:
+            name: kartol-app-staging-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          fsGroup: 1000
+      imagePullSecrets:
+      - name: ghcr-secret
+      restartPolicy: Always
