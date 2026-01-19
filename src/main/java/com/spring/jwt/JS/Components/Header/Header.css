@@ -1,0 +1,50 @@
+.top-navbar {
+  position: fixed;  
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 14px 24px;
+  height: 64px; 
+}
+ 
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+ 
+.school-logo {
+  height: 45px;
+  width: 120px;
+}
+ 
+.menu-icon {
+  display: none;
+  font-size: 22px;
+  background: none;
+  border: 0;
+  margin-right: 10px;
+  cursor: pointer;
+}
+ 
+.profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #eef2f7;
+}
+ 
+@media (max-width: 768px) {
+  .menu-icon {
+    display: inline-block;
+  }
+}
+ 
+ 

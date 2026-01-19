@@ -1,0 +1,437 @@
+.edit-fees-page {
+  padding: 35px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+  color: #333;
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  margin-left: 250px;
+  margin-top: 65px;
+}
+ 
+ 
+.edit-fees-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+ 
+.edit-fees-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+ 
+.edit-fees-header-left h2 {
+     font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    color: #111827;
+}
+ 
+.edit-fees-menu-icon {
+  font-size: 24px;
+  cursor: pointer;
+}
+ 
+ 
+.edit-fees-hamburger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: #111827;
+  cursor: pointer;
+  padding: 4px;
+}
+ 
+.edit-fees-hamburger:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+  border-radius: 6px;
+}
+ 
+.edit-fees-hamburger svg {
+  width: 20px;
+  height: 14px;
+  display: block;
+  pointer-events: none;
+}
+ 
+ 
+.edit-fees-container {
+  background: #f8f9fa;
+  color: #333;
+  font-family: inherit;
+  min-height: 100vh;
+}
+ 
+ 
+.edit-fees-form .edit-fees-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px 20px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+ 
+.edit-fees-form-group {
+  display: flex;
+  flex-direction: column;
+}
+ 
+.edit-fees-form-group label {
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 14px;
+}
+ 
+.edit-fees-form-group input,
+.edit-fees-form-group select {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border 0.2s ease;
+}
+ 
+.edit-fees-form-group input:focus,
+.edit-fees-form-group select:focus {
+  border-color: #3e6be1;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(62, 107, 225, 0.2);
+}
+ 
+ 
+.edit-fees-submit-btn {
+  margin-top: 20px;
+  padding: 10px 16px;
+  background: #3e6be1;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+ 
+.edit-fees-submit-btn:hover {
+  background: #3256b3;
+}
+ 
+.edit-fees-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 20px;
+  gap: 10px;
+}
+ 
+ 
+.search-area-below {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 8px;
+}
+ 
+.search-area-below input {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  outline: none;
+  width: 250px;
+}
+ 
+.search-area-below input:focus {
+  border-color: #3e6be1;
+  box-shadow: 0 0 0 2px rgba(62, 107, 225, 0.15);
+}
+ 
+.search-area-below .search-btn {
+  padding: 8px 12px;
+  background-color: #3e6be1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 8px;
+}
+ 
+.search-area-below .search-btn:hover {
+  background-color: #3256b3;
+}
+ 
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+ 
+.edit-icon-btn,
+.delete-icon-btn {
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s ease;
+}
+ 
+.edit-icon-btn {
+  background-color: #f0ad4e;
+}
+ 
+.edit-icon-btn:hover {
+  background-color: #ec971f;
+}
+ 
+.delete-icon-btn {
+  background-color: #d9534f;
+}
+ 
+.delete-icon-btn:hover {
+  background-color: #c9302c;
+}
+ 
+ 
+@media (max-width: 768px) {
+  .edit-fees-form .edit-fees-form-grid {
+    grid-template-columns: 1fr;
+  }
+ 
+  .edit-fees-page {
+    margin-left: 0;
+    padding: 15px;
+  }
+ 
+  .search-area input {
+    width: 100%;
+  }
+}
+ 
+@media (max-width: 1180px) {
+  .edit-fees-page {
+    margin-left: 0 !important;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+ 
+.edit-fees-card.edit-fees-table-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  padding: 3px;
+  margin-top: 20px;
+  overflow-x: hidden;
+}
+ 
+.edit-fees-table-wrap {
+  width: 100%;
+  overflow-x: hidden;
+}
+ 
+.edit-fees-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: inherit;
+  font-size: 14px;
+  min-width: 800px;
+}
+ 
+.edit-fees-table th {
+  background-color: #f1f3f5;
+  font-weight: 600;
+  color: #333;
+  text-align: left;
+  padding: 12px 15px;
+  border-bottom: 2px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+ 
+.edit-fees-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  color: #333;
+}
+ 
+.edit-fees-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+ 
+.edit-fees-table .action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+ 
+.edit-fees-table .edit-icon-btn {
+  background-color: #f0ad4e;
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+ 
+.edit-fees-table .edit-icon-btn:hover {
+  background-color: #ec971f;
+}
+ 
+.edit-fees-table .delete-icon-btn {
+  background-color: #d9534f;
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+ 
+.edit-fees-table .delete-icon-btn:hover {
+  background-color: #c9302c;
+}
+ 
+@media (max-width: 1024px) {
+  .edit-fees-table {
+    font-size: 13px;
+    min-width: 700px;
+  }
+  .edit-fees-table th,
+  .edit-fees-table td {
+    padding: 10px 12px;
+  }
+}
+ 
+@media (max-width: 768px) {
+  .edit-fees-table {
+    min-width: 600px;
+  }
+}
+ 
+@media (max-width: 480px) {
+  .edit-fees-table {
+    font-size: 12px;
+    min-width: 500px;
+  }
+}
+ 
+.edit-fees-table th:nth-child(1),
+.edit-fees-table th:nth-child(7),
+.edit-fees-table th:nth-child(8),
+.edit-fees-table th:nth-child(9),
+.edit-fees-table td:nth-child(1),
+.edit-fees-table td:nth-child(7),
+.edit-fees-table td:nth-child(8),
+.edit-fees-table td:nth-child(9) {
+  text-align: center;
+  white-space: nowrap;
+}
+ 
+@media only screen and (max-width: 600px) {
+ 
+  .edit-fees-table,
+  .edit-fees-table tbody,
+  .edit-fees-table tr {
+    display: block;
+    width: 100%;
+  }
+ 
+  .edit-fees-table thead {
+    display: none;
+  }
+ 
+  .edit-fees-table tr {
+    background: #ffffff;
+    margin-bottom: 14px;
+    padding: 14px;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  }
+ 
+  .edit-fees-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 40px;
+    border: none;
+    font-size: 13px;
+    color: #111827;
+  }
+ 
+  .edit-fees-table td::before {
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 12px;
+    flex: 1;
+    text-align: left;
+    padding-right: 10px;
+  }
+ 
+  .edit-fees-table td:nth-child(1)::before { content: "Fees ID"; }
+  .edit-fees-table td:nth-child(2)::before { content: "Name"; }
+  .edit-fees-table td:nth-child(3)::before { content: "Fee Amount"; }
+  .edit-fees-table td:nth-child(4)::before { content: "Type"; }
+  .edit-fees-table td:nth-child(5)::before { content: "Class"; }
+  .edit-fees-table td:nth-child(6)::before { content: "Status"; }
+  .edit-fees-table td:nth-child(7)::before { content: "Date"; }
+  .edit-fees-table td:nth-child(8)::before { content: "Batch"; }
+  .edit-fees-table td:nth-child(9)::before { content: "Action"; }
+ 
+  .edit-fees-table td:last-child {
+    justify-content: flex-start;
+    gap: 8px;
+    margin-top: 6px;
+  }
+ 
+  .edit-fees-table .edit-icon-btn,
+  .edit-fees-table .delete-icon-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+ 
+  .edit-fees-table {
+    min-width: 100% !important;
+  }
+}
+/* ===== STATUS COLOR ===== */
+.status-active {
+  padding: 6px 12px;
+  background: #e6ffef;
+  color: #0f8a46;
+  font-weight: 600;
+  border-radius: 8px;
+}
+ 
+.status-inactive {
+  padding: 6px 12px;
+  background: #ffe2e2;
+  color: #d10000;
+  font-weight: 600;
+  border-radius: 8px;
+}
+ 
+ 
