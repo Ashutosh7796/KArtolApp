@@ -1,0 +1,305 @@
+
+:root {
+  --bg: #f6f7fb;
+  --white: #fff;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e6e9ef;
+  --primary: #667eea;
+  --primary2: #764ba2;
+  --radius: 12px;
+  --shadow: 0 8px 30px rgba(2, 6, 23, 0.06);
+  --sidebar-width: 250px;
+}
+
+html,
+body {
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: Arial, sans-serif;
+}
+
+.salarystructure-content {
+  display: flex;
+  height: auto;
+  overflow: visible;
+}
+
+
+.salarystructure-page-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--sidebar-width);
+  margin-top: 60px;
+  padding: 20px 30px;
+  overflow-x: hidden;
+  overflow-y: visible;
+  background: var(--bg);
+}
+
+.salarystructure-title {
+  font-weight: 600;
+  margin-bottom: 15px;
+  font-size: 22px;
+  color: #1f2937;
+}
+
+
+.salarystructure-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+
+.salarystructure-form {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.salarystructure-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.salarystructure-label {
+  font-size: 14px;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.salarystructure-input {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.salarystructure-btnrow {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.salarystructure-savebtn {
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  color: white;
+}
+
+.salarystructure-backbtn {
+  background: #e8e8e8;
+  color: #333;
+}
+
+
+.salarystructure-table {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: visible;
+}
+
+.salarystructure-table-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  max-height: none;
+}
+
+.salarystructure-tablebox {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+}
+
+.salarystructure-tablebox thead th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  z-index: 2;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 2px solid #eef2f6;
+  white-space: nowrap;
+  color: #374151;
+}
+
+.salarystructure-tablebox tbody td {
+  padding: 12px 14px;
+  font-size: 14px;
+  white-space: nowrap;
+  color: #475569;
+  border-bottom: 1px solid #f1f3f6;
+}
+
+.salarystructure-tablebox tbody tr:hover {
+  background: #fbfdff;
+}
+
+
+.salarystructure-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.salarystructure-editbtn,
+.salarystructure-deletebtn {
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.salarystructure-editbtn {
+  background: #fbbf24;
+}
+
+.salarystructure-deletebtn {
+  background: #ef4444;
+}
+
+.salarystructure-editbtn svg,
+.salarystructure-deletebtn svg {
+  color: #fff;
+  font-size: 16px;
+}
+
+
+.status-active {
+  padding: 6px 12px;
+  background: #e6ffef;
+  color: #0f8a46;
+  font-weight: 600;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.status-inactive {
+  padding: 6px 12px;
+  background: #ffe2e2;
+  color: #d10000;
+  font-weight: 600;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.salarystructure-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.salarystructure-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.salarystructure-pagination-button {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.salarystructure-pagination-select {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  cursor: pointer;
+  z-index: 10;
+  position: relative;
+}
+
+
+@media (max-width: 1024px) {
+  .salarystructure-page-container {
+    margin-left: 0;
+    padding: 15px;
+  }
+
+  .salarystructure-form {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .salarystructure-tablebox {
+    min-width: 600px;
+  }
+
+  .salarystructure-btnrow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .salarystructure-backbtn,
+  .salarystructure-savebtn {
+    width: 100%;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .salarystructure-form {
+    grid-template-columns: 1fr;
+  }
+
+  .salarystructure-tablebox {
+    min-width: 500px;
+  }
+
+  .salarystructure-title {
+    font-size: 20px;
+  }
+
+  .salarystructure-btnrow {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .salarystructure-page-container {
+    padding: 10px;
+  }
+
+  .salarystructure-tablebox {
+    min-width: 350px;
+  }
+
+  .salarystructure-title {
+    font-size: 18px;
+  }
+
+  .salarystructure-input {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .salarystructure-pagination {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .salarystructure-pagination-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
